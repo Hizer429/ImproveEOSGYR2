@@ -1,0 +1,19 @@
+directories:
+  output: dist
+  buildResources: build
+appId: com.yourcompany.gyr2eos
+productName: GYR2 EOS Dashboard
+files:
+  - filter:
+      - main.js
+      - preload.js
+      - renderer.js
+      - index.html
+      - styles.css
+      - assets/**/*
+win:
+  target: nsis
+mac:
+  target: dmg
+  icon: assets/icon.icns
+electronVersion: 28.3.3

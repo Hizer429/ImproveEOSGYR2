@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GYR2 EOS Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="starfield"></div>
+    
+    <header>
+        <img src="./assets/amazon-logo.png" alt="Amazon Logo" class="logo">
+        <h1>GYR2 END-OF-SHIFT (EOS)</h1>
+        <div class="user-info">
+            <span class="badge badge-vto">VTO</span>
+            <span class="badge badge-clerk">CLERK</span>
+        </div>
+    </header>
+
+    <main>
+        <div class="upload-container dual-upload-container">
+            <div class="upload-card" id="yms-card">
+                <i class="fas fa-database main-icon fa-5x"></i>
+                <h2>1. Load YMS File</h2>
+                <p id="yms-status">Select the **MOST UP-TO-DATE** manifest (for accuracy).</p>
+                <button id="browse-yms-btn" class="browse-btn">
+                    <i class="fas fa-search"></i> Select YMS File
+                </button>
+            </div>
+
+            <div class="upload-card" id="dockdash-card">
+                <i class="fas fa-file-csv main-icon fa-5x"></i>
+                <h2>2. Load Dock Dash File</h2>
+                <p id="dockdash-status">Select the **Dock Dash CSV** (Data to be validated).</p>
+                <button id="browse-dockdash-btn" class="browse-btn" disabled>
+                    <i class="fas fa-search"></i> Select Dock Dash File
+                </button>
+            </div>
+        </div>
+
+        <button id="reconcile-btn" class="browse-btn process-btn" disabled>
+            <i class="fas fa-sync-alt"></i> 3. Reconcile & Generate EOS
+        </button>
+        
+        <div id="action-panel" class="status-neutral">
+            <i id="action-icon" class="fas fa-info-circle"></i>
+            <span id="action-message">Awaiting file selections to begin reconciliation...</span>
+        </div>
+        <div class="metrics-grid">
+            <div class="metric-tile" id="dropPallets" data-category="Operations">
+                <div class="tile-content">
+                    <i class="fas fa-pallet icon"></i>
+                    <div class="label">DROP PALLETS</div>
+                    <div class="value">0</div>
+                </div>
+            </div>
+            <div class="metric-tile" id="dropFloor" data-category="Operations">
+                <div class="tile-content">
+                    <i class="fas fa-box-open icon"></i>
+                    <div class="label">DROP FLOOR</div>
+                    <div class="value">0</div>
+                </div>
+            </div>
+            <div class="metric-tile" id="totalParcels" data-category="Parcels">
+                <div class="tile-content">
+                    <i class="fas fa-boxes icon"></i>
+                    <div class="label">TOTAL PARCELS</div>
+                    <div class="value">0</div>
+                </div>
+            </div>
+            <div class="metric-tile" id="parcelsDock" data-category="Critical">
+                <div class="tile-content">
+                    <i class="fas fa-shipping-fast icon"></i>
+                    <div class="label">PARCELS ON DOCK</div>
+                    <div class="value">0</div>
+                </div>
+            </div>
+
+            <div class="metric-tile" id="parcelsYard" data-category="Parcels">
+                <div class="tile-content">
+                    <i class="fas fa-parking icon"></i>
+                    <div class="label">PARCELS IN YARD</div>
+                    <div class="value">0</div>
+                </div>
+            </div>
+            <div class="metric-tile" id="transshipYard" data-category="Operations">
+                <div class="tile-content">
+                    <i class="fas fa-exchange-alt icon"></i>
+                    <div class="label">TRANSSHIP IN YARD</div>
+                    <div class="value">0</div>
+                </div>
+            </div>
+            <div class="metric-tile" id="azngOver72" data-category="Critical">
+                <div class="tile-content">
+                    <i class="fas fa-clock icon"></i>
+                    <div class="label">AZNG > 72H</div>
+                    <div class="value">0</div>
+                </div>
+            </div>
+            <div class="metric-tile" id="livesHanded" data-category="Operations">
+                <div class="tile-content">
+                    <i class="fas fa-handshake icon"></i>
+                    <div class="label">LIVES HANDED OVER</div>
+                    <div class="value">0</div>
+                </div>
+            </div>
+
+            <div class="metric-tile" id="volumeDoors" data-category="Volume">
+                <div class="tile-content">
+                    <i class="fas fa-door-open icon"></i>
+                    <div class="label">VOLUME ON DOORS</div>
+                    <div class="value">0</div>
+                </div>
+            </div>
+            <div class="metric-tile" id="volumeYard" data-category="Volume">
+                <div class="tile-content">
+                    <i class="fas fa-ruler-combined icon"></i>
+                    <div class="label">VOLUME IN YARD</div>
+                    <div class="value">0</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="detail-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="close-modal-btn">&times;</span>
+            <h2 id="modal-title">Trailer Details</h2>
+            <div class="table-container">
+                <table id="detail-table">
+                    <thead>
+                        <tr>
+                            <th>ISA</th>
+                            <th>VRID</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detail-table-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <span id="eos-version">Version: 1.0.0</span>
+    </footer>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

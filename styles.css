@@ -1,0 +1,381 @@
+/* --- Global Styles & Reset --- */
+:root {
+    --primary-color: #ff9900;
+    --text-color: #ffffff;
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #0f0c29;
+    color: var(--text-color);
+    overflow-x: hidden;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- Starfield (Background) --- */
+#starfield {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0; 
+    overflow: hidden;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* --- Animations --- */
+.shooting-star {
+    position: absolute;
+    width: 100px;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(255,255,255,1), transparent);
+    transform: rotate(-45deg);
+    animation: shoot 2s linear forwards;
+    opacity: 0;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    z-index: 1;
+}
+
+@keyframes shoot {
+    0% { transform: translate(0, 0) rotate(-45deg); opacity: 1; }
+    100% { transform: translate(-500px, 500px) rotate(-45deg); opacity: 0; }
+}
+
+.star {
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+    animation: twinkle ease-in-out infinite;
+    z-index: 1;
+}
+
+@keyframes twinkle {
+    0%, 100% { opacity: 0.3; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* --- Header --- */
+header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 40px;
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--glass-border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo { height: 35px; width: auto; filter: drop-shadow(0 0 5px rgba(255, 153, 0, 0.5)); }
+
+header h1 {
+    font-size: 1.8rem;
+    background: linear-gradient(to right, #ff9900, #ffc800);
+    background-clip: text; 
+    -webkit-background-clip: text; 
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+    letter-spacing: 2px;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.user-info { display: flex; gap: 15px; }
+.badge { 
+    padding: 6px 12px; 
+    border-radius: 20px; 
+    font-size: 0.8rem; 
+    font-weight: bold; 
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.badge-vto { background: linear-gradient(45deg, #2193b0, #6dd5ed); border: 1px solid #6dd5ed; }
+.badge-clerk { background: linear-gradient(45deg, #11998e, #38ef7d); border: 1px solid #38ef7d; }
+
+/* --- Main Content --- */
+main {
+    flex-grow: 1;
+    /* 🛠️ Adjusted for tighter layout */
+    padding: 25px 30px; 
+    
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 10;
+}
+
+/* --- Upload Container --- */
+.upload-container {
+    display: flex;
+    justify-content: center;
+    /* 🛠️ Smaller margin below card */
+    margin-bottom: 30px; 
+}
+
+.upload-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px; 
+    
+    /* 🛠️ Smaller padding for a more compact card */
+    padding: 20px 30px; 
+    
+    text-align: center;
+    box-shadow: 0 0 30px rgba(0,0,0,0.2);
+    transition: transform 0.3s ease;
+    /* 🛠️ Narrower card */
+    max-width: 500px; 
+    width: 100%;
+}
+
+.upload-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 40px rgba(255, 153, 0, 0.15);
+    border-color: rgba(255, 153, 0, 0.3);
+}
+
+.main-icon {
+    color: #ff9900;
+    /* 🛠️ Smaller icon size */
+    margin-bottom: 10px; 
+    font-size: 3.5rem; 
+    
+    filter: drop-shadow(0 0 15px rgba(255, 153, 0, 0.6));
+}
+
+.upload-card h2 {
+    margin: 0 0 8px 0; 
+    font-weight: 300;
+    /* 🛠️ Smaller font */
+    font-size: 1.6rem; 
+}
+
+.upload-card p {
+    margin: 0 0 20px 0; 
+    opacity: 0.6;
+    /* 🛠️ Smaller font */
+    font-size: 0.9rem; 
+}
+
+.browse-btn {
+    background: linear-gradient(45deg, #ff9900, #ff5e00);
+    color: white;
+    border: none;
+    /* 🛠️ Smaller button padding */
+    padding: 12px 35px; 
+    
+    border-radius: 50px;
+    /* 🛠️ Smaller font */
+    font-size: 1rem; 
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(255, 153, 0, 0.4);
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px; 
+}
+
+.browse-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 25px rgba(255, 153, 0, 0.7);
+}
+
+/* --- Metrics Grid --- */
+.metrics-grid {
+    display: grid;
+    /* 🛠️ Narrower minimum tile size */
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    /* 🛠️ Smaller gap between tiles */
+    gap: 20px; 
+}
+
+@media (min-width: 1200px) {
+    .metrics-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* --- Metric Tiles --- */
+.metric-tile {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px; 
+    
+    /* 🛠️ Smaller tile padding */
+    padding: 15px; 
+    
+    box-shadow: var(--card-shadow);
+    transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.metric-tile:hover {
+    transform: translateY(-4px); 
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.tile-content { position: relative; z-index: 2; }
+.icon { 
+    /* 🛠️ Smaller icon size */
+    font-size: 1.7rem; 
+    margin-bottom: 8px; 
+    opacity: 0.9; 
+}
+.label { 
+    /* 🛠️ Smaller label size */
+    font-size: 0.8rem; 
+    font-weight: 600; 
+    text-transform: uppercase; 
+    letter-spacing: 1px; 
+    opacity: 0.8; 
+    margin-bottom: 3px; 
+}
+.value { 
+    /* 🛠️ Smaller value size */
+    font-size: 2.5rem; 
+    font-weight: 800; 
+    line-height: 1; 
+    text-shadow: 0 2px 10px rgba(0,0,0,0.3); 
+}
+
+/* --- Category Themes (no change here) --- */
+.metric-tile[data-category="Operations"] {
+    background: linear-gradient(135deg, rgba(6, 190, 182, 0.1), rgba(72, 177, 191, 0.05));
+    border-top: 4px solid #48b1bf;
+}
+.metric-tile[data-category="Operations"] .icon, .metric-tile[data-category="Operations"] .value { color: #48b1bf; }
+
+.metric-tile[data-category="Parcels"] {
+    background: linear-gradient(135deg, rgba(218, 34, 255, 0.1), rgba(151, 51, 238, 0.05));
+    border-top: 4px solid #da22ff;
+}
+.metric-tile[data-category="Parcels"] .icon, .metric-tile[data-category="Parcels"] .value { color: #da22ff; }
+
+.metric-tile[data-category="Critical"] {
+    background: linear-gradient(135deg, rgba(255, 65, 108, 0.1), rgba(255, 75, 43, 0.05));
+    border-top: 4px solid #ff416c;
+}
+.metric-tile[data-category="Critical"] .icon { color: #ff4b2b; }
+.metric-tile[data-category="Critical"] .value { color: #ff416c; }
+.metric-tile.critical-active { box-shadow: 0 0 20px rgba(255, 65, 108, 0.4); }
+
+.metric-tile[data-category="Volume"] {
+    background: linear-gradient(135deg, rgba(17, 153, 142, 0.1), rgba(56, 239, 125, 0.05));
+    border-top: 4px solid #38ef7d;
+}
+.metric-tile[data-category="Volume"] .icon, .metric-tile[data-category="Volume"] .value { color: #38ef7d; }
+
+/* * NOTE: Centering logic is now added here. 
+ * Assuming your index.html has the 'last-row-center' class on the Volume in Yard tile.
+ */
+@media (min-width: 1200px) {
+    .metrics-grid {
+        justify-content: center;
+    }
+    
+    .last-row-center {
+        grid-column: 2 / span 2;
+    }
+}
+
+footer {
+    padding: 20px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.3);
+    border-top: 1px solid var(--glass-border);
+    margin-top: auto;
+    position: relative;
+    z-index: 10;
+}
+
+/* --- Modal Styles (Add this block to styles.css) --- */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; 
+    z-index: 200; /* High z-index to ensure it sits on top of everything */
+    left: 0;
+    top: 0;
+    width: 100%; 
+    height: 100%; 
+    overflow: auto; 
+    background-color: rgba(0,0,0,0.8); /* Dark background with transparency */
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background-color: #24243e; /* Darker glass background */
+    margin: 5% auto; /* 5% from the top and centered */
+    padding: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    width: 80%; 
+    max-width: 900px; /* Limit max width for better appearance */
+    max-height: 90%;
+    overflow-y: auto;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: var(--primary-color); /* Uses your Amazon orange/yellow */
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Table Styling */
+#detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    color: var(--text-color);
+}
+
+#detail-table th, #detail-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#detail-table th {
+    background-color: rgba(255, 153, 0, 0.1);
+    color: var(--primary-color);
+    text-transform: uppercase;
+    font-size: 0.9em;
+}
+
+#detail-table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
