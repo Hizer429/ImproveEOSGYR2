@@ -1,10 +1,10 @@
 {
   "name": "gyr2-eos-dashboard",
-  "version": "3.0.1",
+  "version": "3.2.1",
   "description": "GYR2 End-of-Shift Dashboard with Dual CSV Reconciliation",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
+    "start": "node scripts/start-electron.js",
     "build": "npm run build:win",
     "build:win": "electron-builder --win",
     "build:mac": "electron-builder --mac",
@@ -24,7 +24,8 @@
     "electron-builder": "^24.9.1"
   },
   "dependencies": {
-    "electron-updater": "^6.1.7"
+    "electron-updater": "^6.1.7",
+    "jsbarcode": "^3.12.1"
   },
   "repository": {
     "type": "git",
@@ -33,6 +34,7 @@
   "build": {
     "appId": "com.gyr2.eosdashboard",
     "productName": "GYR2 EOS Dashboard",
+    "artifactName": "GYR2-EOS-Setup-${version}.${ext}",
     "publish": [
       {
         "provider": "github",
@@ -49,6 +51,8 @@
       "renderer.js",
       "index.html",
       "styles.css",
+      "database.js",
+      "vendor/**/*",
       "assets/**/*"
     ],
     "win": {

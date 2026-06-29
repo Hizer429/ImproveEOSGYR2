@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GYR2 EOS Dashboard</title>
+    <title>Amazon EOS</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="vendor/JsBarcode.all.min.js"></script>
 </head>
 <body>
     <div id="starfield"></div>
     
     <header class="app-header" style="position: relative; justify-content: center;">
-        <h1>GYR2 EOS</h1>
+        <h1>Ansancw</h1>
 
         <div class="user-info" style="position: absolute; right: 20px;">
             <span class="badge badge-vto">VTO</span>
@@ -21,10 +22,11 @@
 
     <main>
         <div class="upload-container dual-upload-container">
+            
             <div class="upload-card" id="yms-card">
                 <i class="fas fa-database main-icon fa-5x"></i>
                 <h2>1. Load YMS File</h2>
-                <p id="yms-status">Select the **MOST UP-TO-DATE** manifest (for accuracy).</p>
+                <p id="yms-status">Select the **MOST UP-TO-DATE** manifest.</p>
                 <button id="browse-yms-btn" class="browse-btn">
                     <i class="fas fa-search"></i> Select YMS File
                 </button>
@@ -33,100 +35,91 @@
             <div class="upload-card" id="dockdash-card">
                 <i class="fas fa-file-csv main-icon fa-5x"></i>
                 <h2>2. Load Dock Dash File</h2>
-                <p id="dockdash-status">Select the **Dock Dash CSV** (Data to be validated).</p>
+                <p id="dockdash-status">Select the **Dock Dash CSV**.</p>
                 <button id="browse-dockdash-btn" class="browse-btn" disabled>
                     <i class="fas fa-search"></i> Select Dock Dash File
                 </button>
             </div>
+
+            <div class="upload-card" id="gap-filler-card">
+                <i class="fas fa-network-wired main-icon fa-5x"></i>
+                <h2>3. Research Hub</h2>
+                <p id="gap-filler-status">Paste data to clear ghosts.</p>
+                <button id="open-hub-btn" class="browse-btn" style="background-color: #8e44ad;">
+                    <i class="fas fa-laptop-code"></i> OPEN HUB
+                </button>
+            </div>
+
         </div>
 
         <button id="reconcile-btn" class="browse-btn process-btn" disabled>
-            <i class="fas fa-sync-alt"></i> 3. Reconcile & Generate EOS
+            <i class="fas fa-sync-alt"></i> 4. Generate EOS
+        </button>
+
+        <button id="export-btn" class="browse-btn" style="background-color: #27ae60; margin-top: 10px;" disabled>
+            <i class="fas fa-file-export"></i> Export Verified CSV
         </button>
         
         <div id="action-panel" class="status-neutral">
             <i id="action-icon" class="fas fa-info-circle"></i>
-            <span id="action-message">Awaiting file selections to begin reconciliation...</span>
+            <span id="action-message">Awaiting file selections...</span>
         </div>
+        
         <div class="metrics-grid">
-            <div class="metric-tile" id="dropPallets" data-category="Operations">
-                <div class="tile-content">
-                    <i class="fas fa-pallet icon"></i>
-                    <div class="label">DROP PALLETS</div>
-                    <div class="value">0</div>
-                </div>
-            </div>
-            <div class="metric-tile" id="dropFloor" data-category="Operations">
-                <div class="tile-content">
-                    <i class="fas fa-box-open icon"></i>
-                    <div class="label">DROP FLOOR</div>
-                    <div class="value">0</div>
-                </div>
-            </div>
-            <div class="metric-tile" id="totalParcels" data-category="Parcels">
-                <div class="tile-content">
-                    <i class="fas fa-boxes icon"></i>
-                    <div class="label">TOTAL PARCELS</div>
-                    <div class="value">0</div>
-                </div>
-            </div>
-            <div class="metric-tile" id="parcelsDock" data-category="Critical">
-                <div class="tile-content">
-                    <i class="fas fa-shipping-fast icon"></i>
-                    <div class="label">PARCELS ON DOCK</div>
-                    <div class="value">0</div>
-                </div>
-            </div>
+            <div class="metric-tile" id="dropPallets" data-category="Operations"><div class="tile-content"><i class="fas fa-pallet icon"></i><div class="label">DROP PALLETS</div><div class="value">0</div></div></div>
+            <div class="metric-tile" id="dropFloor" data-category="Operations"><div class="tile-content"><i class="fas fa-box-open icon"></i><div class="label">DROP FLOOR</div><div class="value">0</div></div></div>
+            <div class="metric-tile" id="totalParcels" data-category="Parcels"><div class="tile-content"><i class="fas fa-boxes icon"></i><div class="label">TOTAL PARCELS</div><div class="value">0</div></div></div>
+            <div class="metric-tile" id="parcelsDock" data-category="Critical"><div class="tile-content"><i class="fas fa-shipping-fast icon"></i><div class="label">PARCELS ON DOCK</div><div class="value">0</div></div></div>
+            <div class="metric-tile" id="parcelsYard" data-category="Parcels"><div class="tile-content"><i class="fas fa-parking icon"></i><div class="label">PARCELS IN YARD</div><div class="value">0</div></div></div>
+            <div class="metric-tile" id="transshipYard" data-category="Operations"><div class="tile-content"><i class="fas fa-exchange-alt icon"></i><div class="label">TRANSSHIP IN YARD</div><div class="value">0</div></div></div>
+            <div class="metric-tile" id="azngOver72" data-category="Critical"><div class="tile-content"><i class="fas fa-clock icon"></i><div class="label">AZNG > 72H</div><div class="value">0</div></div></div>
+            <div class="metric-tile" id="researchQueue" data-category="Critical"><div class="tile-content"><i class="fas fa-search-plus icon"></i><div class="label">RESEARCH QUEUE</div><div class="value">0</div></div></div>
+            <div class="metric-tile" id="livesHanded" data-category="Operations"><div class="tile-content"><i class="fas fa-handshake icon"></i><div class="label">LIVES HANDED OVER</div><div class="value">0</div></div></div>
+            <div class="metric-tile" id="volumeDoors" data-category="Volume"><div class="tile-content"><i class="fas fa-door-open icon"></i><div class="label">VOLUME ON DOORS</div><div class="value">0</div></div></div>
+            <div class="metric-tile" id="volumeYard" data-category="Volume"><div class="tile-content"><i class="fas fa-ruler-combined icon"></i><div class="label">VOLUME IN YARD</div><div class="value">0</div></div></div>
+        </div> 
 
-            <div class="metric-tile" id="parcelsYard" data-category="Parcels">
-                <div class="tile-content">
-                    <i class="fas fa-parking icon"></i>
-                    <div class="label">PARCELS IN YARD</div>
-                    <div class="value">0</div>
+        <div id="admin-tools" class="hidden-section">
+            <div class="tool-card">
+                <h2>🛠️ Admin Tools (Developer Mode)</h2>
+                <div class="tool-split">
+                    <div class="generator-box">
+                        <h3>Batch Barcode Generator</h3>
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <div style="flex: 1;"><label style="font-size: 12px; color: #aaa;">Bar Width</label><input type="number" id="bar-width" value="2" min="1" max="4" style="width: 100%; padding: 5px; background: #222; border: 1px solid #444; color: white;"></div>
+                            <div style="flex: 1;"><label style="font-size: 12px; color: #aaa;">Height</label><input type="number" id="bar-height" value="50" min="10" max="150" style="width: 100%; padding: 5px; background: #222; border: 1px solid #444; color: white;"></div>
+                            <div style="flex: 1;"><label style="font-size: 12px; color: #aaa;">Font Size</label><input type="number" id="bar-font" value="14" min="8" max="30" style="width: 100%; padding: 5px; background: #222; border: 1px solid #444; color: white;"></div>
+                        </div>
+                        <p>Paste Pallet IDs (one per line):</p>
+                        <textarea id="admin-input" placeholder="TS12345..."></textarea>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button id="btn-generate-only" class="btn-warning" style="background: #2196F3;">Generate</button>
+                            <button id="btn-start-scan" class="btn-warning" disabled style="background: #555; cursor: not-allowed;">Start Scan Mode</button>
+                            <button id="btn-print-only" class="btn-warning" disabled style="background: #555; cursor: not-allowed;">Print</button>
+                        </div>
+                    </div>
+                    <div class="decoder-box">
+                        <h3>🔍 Barcode Spy / Decoder</h3>
+                        <p>Scan a barcode here to see its hidden characters:</p>
+                        <input type="text" id="admin-decoder" placeholder="Click here & scan..." autocomplete="off">
+                        <div id="decoded-output" class="output-display">Waiting for scan...</div>
+                    </div>
                 </div>
+                <div id="printable-area"></div>
             </div>
-            <div class="metric-tile" id="transshipYard" data-category="Operations">
-                <div class="tile-content">
-                    <i class="fas fa-exchange-alt icon"></i>
-                    <div class="label">TRANSSHIP IN YARD</div>
-                    <div class="value">0</div>
-                </div>
-            </div>
-            <div class="metric-tile" id="azngOver72" data-category="Critical">
-                <div class="tile-content">
-                    <i class="fas fa-clock icon"></i>
-                    <div class="label">AZNG > 72H</div>
-                    <div class="value">0</div>
-                </div>
-            </div>
-            <div class="metric-tile" id="researchQueue" data-category="Critical">
-                <div class="tile-content">
-                    <i class="fas fa-search-plus icon"></i>
-                    <div class="label">RESEARCH QUEUE</div>
-                    <div class="value">0</div>
-                </div>
-            </div>
-            <div class="metric-tile" id="livesHanded" data-category="Operations">
-                <div class="tile-content">
-                    <i class="fas fa-handshake icon"></i>
-                    <div class="label">LIVES HANDED OVER</div>
-                    <div class="value">0</div>
-                </div>
-            </div>
+        </div>
 
-            <div class="metric-tile" id="volumeDoors" data-category="Volume">
-                <div class="tile-content">
-                    <i class="fas fa-door-open icon"></i>
-                    <div class="label">VOLUME ON DOORS</div>
-                    <div class="value">0</div>
+        <div id="scan-overlay" style="display: none;">
+            <div class="scan-content">
+                <button id="btn-close-scan" class="close-overlay">Exit Mode</button>
+                <h2 style="color: #444; margin-bottom: 10px;">SCAN TO ADVANCE</h2>
+                <div class="giant-barcode-wrapper"><svg id="giant-barcode"></svg></div>
+                <div class="scan-controls">
+                    <button id="btn-prev-slide" class="nav-btn">Prev</button>
+                    <span id="scan-progress" style="font-size: 20px; font-weight: bold; color: #333;">1 / 50</span>
+                    <button id="btn-next-slide" class="nav-btn">Next</button>
                 </div>
-            </div>
-            <div class="metric-tile" id="volumeYard" data-category="Volume">
-                <div class="tile-content">
-                    <i class="fas fa-ruler-combined icon"></i>
-                    <div class="label">VOLUME IN YARD</div>
-                    <div class="value">0</div>
-                </div>
+                <p style="color: #666; margin-top: 10px; font-size: 14px;">Scan the barcode on screen to auto-advance.</p>
             </div>
         </div>
     </main>
@@ -137,16 +130,62 @@
             <h2 id="modal-title">Trailer Details</h2>
             <div class="table-container">
                 <table id="detail-table">
-                    <thead>
-                        <tr>
-                            <th>ISA</th>
-                            <th>VRID</th>
-                        </tr>
-                    </thead>
-                    <tbody id="detail-table-body">
-                    </tbody>
+                    <thead><tr><th>ISA</th><th>VRID</th><th>LOC</th><th>ACTION</th></tr></thead>
+                    <tbody id="detail-table-body"></tbody>
                 </table>
             </div>
+        </div>
+    </div>
+
+    <div id="research-hub-modal" class="modal" style="display:none; z-index: 2000;">
+        <div class="modal-content" style="max-width: 950px; background: #1e1e1e; border: 1px solid #444;">
+            
+            <div id="hub-step-1">
+                <h2 style="color: #3498db; border-bottom: 1px solid #444; padding-bottom: 10px;">
+                    <i class="fas fa-truck-loading"></i> Step 1: Vendor Loads
+                </h2>
+                <p style="font-size: 14px; color: #aaa; margin-bottom: 15px;">
+                    Copy the table from the legacy tool (Ctrl+C) and paste below. The app will detect Parcels (Carrier) & Lives (Phone #).
+                </p>
+                <div style="display: flex; gap: 20px;">
+                    <div style="flex: 1;">
+                        <label style="color: #fff;">Vendor <b>ON DOCK (DD)</b></label>
+                        <textarea id="paste-vendor-dock" placeholder="Paste Vendor on DD table here..." style="width:100%; height:250px; background:#222; color:#0f0; border:1px solid #555; padding:10px; font-family:monospace;"></textarea>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="color: #fff;">Vendor <b>IN YARD (PS)</b></label>
+                        <textarea id="paste-vendor-yard" placeholder="Paste Vendor in Yard table here..." style="width:100%; height:250px; background:#222; color:#0f0; border:1px solid #555; padding:10px; font-family:monospace;"></textarea>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; text-align: right;">
+                    <button onclick="document.getElementById('research-hub-modal').style.display='none'" class="browse-btn" style="background:#555;">Cancel</button>
+                    <button onclick="window.switchHubStep(2)" class="browse-btn" style="background:#3498db;">Next: Transships <i class="fas fa-arrow-right"></i></button>
+                </div>
+            </div>
+
+            <div id="hub-step-2" style="display:none;">
+                <h2 style="color: #e67e22; border-bottom: 1px solid #444; padding-bottom: 10px;">
+                    <i class="fas fa-exchange-alt"></i> Step 2: Transship Loads
+                </h2>
+                <p style="font-size: 14px; color: #aaa; margin-bottom: 15px;">
+                    Copy the Transship tables. <b>Note:</b> Transship on DD uses VRID matching automatically.
+                </p>
+                <div style="display: flex; gap: 20px;">
+                    <div style="flex: 1;">
+                        <label style="color: #fff;">Transship <b>ON DOCK (DD)</b></label>
+                        <textarea id="paste-trans-dock" placeholder="Paste Transship on DD table here (VRID)..." style="width:100%; height:250px; background:#222; color:#f39c12; border:1px solid #555; padding:10px; font-family:monospace;"></textarea>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="color: #fff;">Transship <b>IN YARD (PS)</b></label>
+                        <textarea id="paste-trans-yard" placeholder="Paste Transship in Yard table here..." style="width:100%; height:250px; background:#222; color:#f39c12; border:1px solid #555; padding:10px; font-family:monospace;"></textarea>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; text-align: right;">
+                    <button onclick="window.switchHubStep(1)" class="browse-btn" style="background:#555;"><i class="fas fa-arrow-left"></i> Back</button>
+                    <button onclick="window.processHubData()" class="browse-btn" style="background:#27ae60;">SYNC & FINISH <i class="fas fa-check-circle"></i></button>
+                </div>
+            </div>
+
         </div>
     </div>
     
@@ -154,6 +193,7 @@
         <span id="eos-version">Version: 1.0.0</span>
     </footer>
 
+    <script src="database.js"></script> 
     <script src="renderer.js"></script>
 </body>
 </html>
