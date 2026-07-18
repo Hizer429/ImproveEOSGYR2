@@ -6,6 +6,67 @@ let dockdashFilePath = null;
 let ymsData = []; 
 let dockdashData = []; 
 
+// =========================================================================
+// 0. Monitor-Aware UI Scaling
+// =========================================================================
+const BASE_DISPLAY_SIZE = { width: 1440, height: 900 };
+const MEMORY_BYPASS_KEY = 'gyr2_memory_bypass_testing';
+let currentDisplayMetrics = null;
+
+function clampNumber(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+}
+
+function applyResponsiveScale(metrics = currentDisplayMetrics) {
+    const root = document.documentElement;
+    const displaySize = metrics?.workAreaSize || {
+        width: window.innerWidth,
+        height: window.innerHeight,
+    };
+
+    const displayScale = Math.min(
+        displaySize.width / BASE_DISPLAY_SIZE.width,
+        displaySize.height / BASE_DISPLAY_SIZE.height
+    );
+    const viewportScale = Math.min(window.innerWidth / 1280, window.innerHeight / 760);
+    const appScale = clampNumber(Math.min(displayScale, viewportScale), 0.82, 1.16);
+    const layoutWidth = clampNumber(Math.round(displaySize.width * 0.94), 1040, 1720);
+
+    root.style.setProperty('--app-scale', appScale.toFixed(3));
+    root.style.setProperty('--app-max-width', `${layoutWidth}px`);
+    root.classList.toggle('compact-display', appScale < 0.92);
+    root.classList.toggle('wide-display', appScale > 1.06);
+}
+
+function setupMonitorAwareScaling() {
+    applyResponsiveScale();
+    window.addEventListener('resize', () => applyResponsiveScale());
+
+    if (!window.api?.getDisplayMetrics) return;
+
+    window.api.getDisplayMetrics()
+        .then(metrics => {
+            currentDisplayMetrics = metrics;
+            applyResponsiveScale(metrics);
+        })
+        .catch(() => applyResponsiveScale());
+
+    if (window.api.onDisplayMetricsChanged) {
+        window.api.onDisplayMetricsChanged(metrics => {
+            currentDisplayMetrics = metrics;
+            applyResponsiveScale(metrics);
+        });
+    }
+}
+
+function isMemoryBypassEnabled() {
+    return localStorage.getItem(MEMORY_BYPASS_KEY) === 'true';
+}
+
+function setMemoryBypassEnabled(enabled) {
+    localStorage.setItem(MEMORY_BYPASS_KEY, enabled ? 'true' : 'false');
+}
+
 // --- NEW: HUB DATA STORAGE ---
 let hubData = {
     vendorDock: {},
@@ -13,8 +74,17 @@ let hubData = {
     transshipDock: {},
     transshipYard: {}
 };
+let pendingOculusUploads = {
+    vendor: null,
+    transship: null
+};
 let gapFillerData = { byIsa: {}, byVrid: {} }; 
 let lastProcessedStats = {}; 
+let fcApiTrailerLookup = {};
+
+const FC_API_ENDPOINT_KEY = 'gyr2_fc_ids_api_endpoint';
+const FC_API_WAREHOUSE_KEY = 'gyr2_fc_ids_warehouse_id';
+const FC_API_AUTH_SESSION_KEY = 'gyr2_fc_ids_auth_token';
 
 // Helper to normalize strings
 function normalize(val) { 
@@ -34,6 +104,14 @@ function getField(record, keyName) {
     const normalizedKey = keyName.toUpperCase().trim();
     const actualKey = Object.keys(record).find(k => k.trim().toUpperCase() === normalizedKey);
     return actualKey ? record[actualKey] : undefined;
+}
+
+function escapeHtmlAttr(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
 }
 
 const PARCEL_CARRIERS = ['UPSS', 'UPSN', 'FDEG', 'FED EX', 'FEDEX', 'DHLC'];
@@ -57,6 +135,10 @@ function isLiveDropCarrier(carrier) {
     return normalizedCarrier === "ATSB" || compactCarrier.includes("ATSB");
 }
 
+function isClampLoadNote(notes) {
+    return normalize(notes).includes("CLAMP");
+}
+
 function isDoorLocation(location) {
     return normalize(location).startsWith("DD");
 }
@@ -75,6 +157,133 @@ function categoryAllowsLocation(category, location) {
     }
 
     return true;
+}
+
+const DISRUPTION_NOTE_TERMS = [
+    "REJECTED",
+    "DAMAGED",
+    "DAMAGE",
+    "RED TAG",
+    "RED TAGGED",
+    "REDTAG",
+    "BAD TRAILER",
+    "BAD ORDER",
+    "UNUSABLE",
+    "DO NOT USE",
+    "DONT USE",
+    "OUT OF SERVICE",
+    "OOS",
+    "BROKEN",
+    "NOT USABLE",
+    "CAN'T USE",
+    "CANNOT USE",
+    "CAN NOT USE",
+    "UNSAFE",
+    "UNSAFE TO UNLOAD",
+    "UNSAFE TO LOAD",
+    "DO NOT LOAD",
+    "DONT LOAD",
+    "DO NOT UNLOAD",
+    "DONT UNLOAD",
+    "CANNOT UNLOAD",
+    "CAN NOT UNLOAD",
+    "CAN'T UNLOAD",
+    "CANNOT LOAD",
+    "CAN NOT LOAD",
+    "CAN'T LOAD",
+    "NEEDS REPAIR",
+    "NEED REPAIR",
+    "REPAIR NEEDED",
+    "TRAILER REPAIR",
+    "MECHANICAL ISSUE",
+    "MECHANICAL",
+    "FLAT TIRE",
+    "TIRE ISSUE",
+    "NO BRAKES",
+    "BRAKE ISSUE",
+    "AIR LEAK",
+    "LEAKING",
+    "HOLE IN",
+    "DOOR BROKEN",
+    "DOOR ISSUE"
+];
+
+const DISRUPTION_NOTE_PATTERNS = [
+    /\bCASE\s*(#|:)?\s*\d{6,}\b/,
+    /\bUNSAFE\b.*\b(LOAD|UNLOAD|USE|TRAILER)\b/,
+    /\b(DO NOT|DONT|DON'T|CANNOT|CAN NOT|CAN'T)\b.*\b(LOAD|UNLOAD|USE)\b/,
+    /\b(LOAD|UNLOAD|USE)\b.*\b(UNSAFE|REJECTED|DAMAGED|BROKEN)\b/,
+    /\b(NEED|NEEDS|REQUIRES?)\b.*\b(REPAIR|FIX|MAINTENANCE)\b/,
+    /\b(RED|ORANGE)\b.*\bTAG(GED)?\b/,
+    /\bOUT\b.*\bSERVICE\b/
+];
+
+const PROBLEM_SOLVE_NOTE_PATTERNS = [
+    /\bPROBLEM\s*SOLVE\b/,
+    /\bPROBLEM\s*SOLV(E|ING)\b/,
+    /\bPS\s*TRAILER\b/
+];
+
+function isParcelCategory(category) {
+    return category === 'parcelsDock' || category === 'parcelsYard';
+}
+
+function isProblemSolveNote(normalizedNotes) {
+    return PROBLEM_SOLVE_NOTE_PATTERNS.some(pattern => pattern.test(normalizedNotes));
+}
+
+function isDisruptionNote(notes, category = "") {
+    const normalizedNotes = normalize(notes);
+    const hasDisruptionSignal = DISRUPTION_NOTE_TERMS.some(term => normalizedNotes.includes(term)) ||
+        DISRUPTION_NOTE_PATTERNS.some(pattern => pattern.test(normalizedNotes));
+
+    if (hasDisruptionSignal) return true;
+
+    return isProblemSolveNote(normalizedNotes) && !isParcelCategory(category);
+}
+
+function createDisruptionBuckets() {
+    return {
+        dropPallets: [],
+        dropFloor: [],
+        parcelsDock: [],
+        parcelsYard: [],
+        transshipYard: [],
+        azngOver72: [],
+        livesHanded: []
+    };
+}
+
+function getDisruptionCount(stats, category) {
+    return stats.disruptions?.[category]?.length || 0;
+}
+
+function formatCountWithDisruptions(count, disruptions) {
+    return disruptions > 0 ? `${count} + ${disruptions} DISRUPTIONS` : count;
+}
+
+function formatMetricWithDisruptions(stats, category) {
+    return formatCountWithDisruptions(stats[category].length, getDisruptionCount(stats, category));
+}
+
+function addCategorizedRecord(stats, category, record) {
+    if (!Array.isArray(stats[category])) return;
+
+    if (isDisruptionNote(record.notes, category)) {
+        stats.disruptions[category].push(record);
+    } else {
+        stats[category].push(record);
+    }
+}
+
+function formatLivesValue(stats) {
+    const liveDropCount = stats.liveDrops ? stats.liveDrops.length : 0;
+    const trueLiveCount = Math.max(stats.livesHanded.length - liveDropCount, 0);
+    const liveValue = liveDropCount > 0 ?
+        `${trueLiveCount} (${liveDropCount} live/drops)` :
+        String(stats.livesHanded.length);
+
+    return formatCountWithDisruptions(liveValue, getDisruptionCount(stats, 'livesHanded'));
 }
 
 function inferYmsOnlyCategory(ymsInfo) {
@@ -99,6 +308,77 @@ function inferYmsOnlyCategory(ymsInfo) {
             return { category: 'parcelsYard', confidence: 'MEDIUM', reason: 'PARCEL in notes, PS location' };
         }
     }
+
+    return null;
+}
+
+function resolveOculusCategory(oculusRecord, ymsInfo) {
+    const loc = normalize(ymsInfo.location);
+    const sourceType = normalize(oculusRecord.sourceType);
+    const isParcel = isParcelCarrier(ymsInfo.carrier);
+    const isLive = normalize(ymsInfo.loadType) === "LIVE";
+
+    if (sourceType === "TRANSSHIP") {
+        if (isYardLocation(loc)) return 'transshipYard';
+        if (isDoorLocation(loc)) return 'volumeDoors';
+        return null;
+    }
+
+    if (isParcel) {
+        if (isDoorLocation(loc)) return 'parcelsDock';
+        if (isYardLocation(loc)) return 'parcelsYard';
+        return null;
+    }
+
+    if (isLive && isDoorLocation(loc)) return 'livesHanded';
+    if (isDoorLocation(loc)) return 'volumeDoors';
+    if (isYardLocation(loc)) return (oculusRecord.pallets > 0 || isClampLoadNote(ymsInfo.notes)) ? 'dropPallets' : 'dropFloor';
+
+    return null;
+}
+
+function normalizeFcApiTrailer(record) {
+    const isa = normalize(record?.isa || record?.ISA);
+    if (!isa) return null;
+
+    return {
+        isa,
+        warehouseId: normalize(record.warehouseId),
+        location: normalize(record.locationCode || record.location || record.LOCATION),
+        updatedAt: record.updatedAt || "",
+        priorityLastUpdatedAt: record.priorityLastUpdatedAt || "",
+        appointmentType: normalize(record.appointmentType || record["APPOINTMENT TYPE"]),
+        carrierLoadType: normalize(record.carrierLoadType || record["CARRIER LOAD TYPE"]),
+        dockArrivalTime: record.dockArrivalTime || "",
+        priorityScore: Number(record.priorityScore || 0),
+        pallets: Number(record.pallets || 0),
+        cartons: Number(record.cartons || 0),
+        units: Number(record.units || 0),
+        empty: Boolean(record.empty),
+        raw: record
+    };
+}
+
+function resolveFcApiCategory(apiTrailer) {
+    if (!apiTrailer) return null;
+
+    const loc = normalize(apiTrailer.location);
+    const appt = normalize(apiTrailer.appointmentType);
+    const loadType = normalize(apiTrailer.carrierLoadType);
+
+    if (appt === "TRANSSHIP") {
+        if (isYardLocation(loc)) return 'transshipYard';
+        if (isDoorLocation(loc)) return 'volOnlyDoors';
+    }
+
+    if (appt === "SMALL_PARCEL") {
+        if (isDoorLocation(loc)) return 'parcelsDock';
+        if (isYardLocation(loc)) return 'parcelsYard';
+    }
+
+    if (loadType === "LIVE" && isDoorLocation(loc)) return 'livesHanded';
+    if (isDoorLocation(loc)) return 'volOnlyDoors';
+    if (isYardLocation(loc)) return apiTrailer.pallets > 0 ? 'dropPallets' : 'dropFloor';
 
     return null;
 }
@@ -179,34 +459,32 @@ function copyStatsToClipboard(stats) {
     if (!stats || !stats.dropPallets) return;
     
     const totalParcels = stats.parcelsDock.length + stats.parcelsYard.length;
-    const liveDropCount = stats.liveDrops ? stats.liveDrops.length : 0;
-    const trueLiveCount = Math.max(stats.livesHanded.length - liveDropCount, 0);
-    const livesClipboardValue = liveDropCount > 0 ?
-        `${trueLiveCount} (${liveDropCount} live/drops)` :
-        String(stats.livesHanded.length);
+    const parcelDisruptions = getDisruptionCount(stats, 'parcelsDock') + getDisruptionCount(stats, 'parcelsYard');
+    const livesClipboardValue = formatLivesValue(stats);
     
     const oldestSpdIsa = stats.oldestSpd ? stats.oldestSpd.isa : "";
     const oldestSpdDate = stats.oldestSpd ? stats.oldestSpd.date : "";
     const oldestTrailerIsa = stats.oldestTrailer ? stats.oldestTrailer.isa : "";
+    const formatVolume = value => Math.round(value || 0).toLocaleString();
 
     const clipboardString = [
         oldestSpdIsa,                   // Oldest SPD ISA
         oldestSpdDate,                  // Oldest SPD Date
         oldestTrailerIsa,               // Oldest Trailer In Yard ISA
         "",
-        stats.dropPallets.length,       // 1. Drop PL
-        stats.dropFloor.length,         // 2. Drop FL
-        stats.parcelsDock.length,       // 3. Parcels Dock
-        stats.parcelsYard.length,       // 4. Parcels Yard
-        totalParcels,                   // 5. Total Parcels
-        stats.transshipYard.length,     // 6. Transship Yard
-        stats.azngOver72.length,        // 7. AZNG > 72h
+        formatMetricWithDisruptions(stats, 'dropPallets'), // 1. Drop PL
+        formatMetricWithDisruptions(stats, 'dropFloor'),   // 2. Drop FL
+        formatMetricWithDisruptions(stats, 'parcelsDock'), // 3. Parcels Dock
+        formatMetricWithDisruptions(stats, 'parcelsYard'), // 4. Parcels Yard
+        formatCountWithDisruptions(totalParcels, parcelDisruptions), // 5. Total Parcels
+        formatMetricWithDisruptions(stats, 'transshipYard'), // 6. Transship Yard
+        formatMetricWithDisruptions(stats, 'azngOver72'),    // 7. AZNG > 72h
         "",                             // 8. Space
         livesClipboardValue,            // 9. Lives Handed
         "",                             // 10. Space
         "",                             // 11. Space
-        Math.round(stats.volumeDoors),  // 12. Volume Doors
-        Math.round(stats.volumeYard)    // 13. Volume Yard
+        formatVolume(stats.volumeDoors), // 12. Volume Doors
+        formatVolume(stats.volumeYard)   // 13. Volume Yard
     ].join('\n');
 
     window.api.writeToClipboard(clipboardString);
@@ -220,20 +498,32 @@ function updateMetricsUI(stats) {
         const element = document.getElementById(id);
         if (element) {
             const valueElement = element.querySelector('.value'); 
-            if (valueElement) valueElement.textContent = value.toLocaleString();
-            if (isCritical && value > 0) element.classList.add('critical-active');
+            if (valueElement) {
+                const formattedValue = value.toLocaleString();
+                valueElement.textContent = formattedValue;
+                valueElement.title = formattedValue;
+                valueElement.classList.toggle('long-value', formattedValue.length >= 6);
+                valueElement.classList.toggle('extra-long-value', formattedValue.length >= 8);
+            }
+            const numericValue = typeof value === 'number' ?
+                value :
+                (String(value).match(/\d+/g) || []).reduce((sum, part) => sum + Number(part), 0);
+            if (isCritical && numericValue > 0) element.classList.add('critical-active');
             else element.classList.remove('critical-active');
         }
     };
 
-    updateTile('dropPallets', stats.dropPallets.length);
-    updateTile('dropFloor', stats.dropFloor.length);
-    updateTile('totalParcels', stats.parcelsDock.length + stats.parcelsYard.length);
-    updateTile('parcelsDock', stats.parcelsDock.length);
-    updateTile('parcelsYard', stats.parcelsYard.length);
-    updateTile('transshipYard', stats.transshipYard.length);
-    updateTile('livesHanded', stats.livesHanded.length);
-    updateTile('azngOver72', stats.azngOver72.length, true);
+    const totalParcels = stats.parcelsDock.length + stats.parcelsYard.length;
+    const parcelDisruptions = getDisruptionCount(stats, 'parcelsDock') + getDisruptionCount(stats, 'parcelsYard');
+
+    updateTile('dropPallets', formatMetricWithDisruptions(stats, 'dropPallets'));
+    updateTile('dropFloor', formatMetricWithDisruptions(stats, 'dropFloor'));
+    updateTile('totalParcels', formatCountWithDisruptions(totalParcels, parcelDisruptions));
+    updateTile('parcelsDock', formatMetricWithDisruptions(stats, 'parcelsDock'));
+    updateTile('parcelsYard', formatMetricWithDisruptions(stats, 'parcelsYard'));
+    updateTile('transshipYard', formatMetricWithDisruptions(stats, 'transshipYard'));
+    updateTile('livesHanded', formatLivesValue(stats));
+    updateTile('azngOver72', formatMetricWithDisruptions(stats, 'azngOver72'), true);
     updateTile('researchQueue', stats.researchQueue, true); 
     
     updateTile('volumeDoors', Math.round(stats.volumeDoors));
@@ -286,75 +576,360 @@ function updateCardStatus(type, text, success) {
     if (status) status.textContent = text;
 }
 
+function updateFcApiStatus(message, state = null) {
+    const status = document.getElementById('fc-api-status');
+    const card = document.querySelector('.api-test-card');
+    if (status) status.textContent = message;
+    if (card) {
+        card.classList.remove('success', 'error');
+        if (state) card.classList.add(state);
+    }
+}
+
+function getFcApiConfig() {
+    const savedEndpoint = localStorage.getItem(FC_API_ENDPOINT_KEY) || '';
+    const savedWarehouse = localStorage.getItem(FC_API_WAREHOUSE_KEY) || 'GYR2';
+    const savedAuthToken = sessionStorage.getItem(FC_API_AUTH_SESSION_KEY) || '';
+
+    return new Promise(resolve => {
+        const modal = document.getElementById('fc-api-modal');
+        const endpointInput = document.getElementById('fc-api-endpoint-input');
+        const warehouseInput = document.getElementById('fc-api-warehouse-input');
+        const tokenInput = document.getElementById('fc-api-token-input');
+        const submitBtn = document.getElementById('fc-api-submit-btn');
+        const cancelBtn = document.getElementById('fc-api-cancel-btn');
+
+        if (!modal || !endpointInput || !warehouseInput || !tokenInput || !submitBtn || !cancelBtn) {
+            resolve(null);
+            return;
+        }
+
+        endpointInput.value = savedEndpoint;
+        warehouseInput.value = savedWarehouse;
+        tokenInput.value = savedAuthToken;
+        modal.style.display = 'block';
+        endpointInput.focus();
+
+        const cleanup = () => {
+            modal.style.display = 'none';
+            submitBtn.removeEventListener('click', handleSubmit);
+            cancelBtn.removeEventListener('click', handleCancel);
+            modal.removeEventListener('click', handleBackdrop);
+            document.removeEventListener('keydown', handleKeydown);
+        };
+
+        const handleCancel = () => {
+            cleanup();
+            resolve(null);
+        };
+
+        const handleSubmit = () => {
+            const endpoint = endpointInput.value.trim();
+            const warehouseId = warehouseInput.value.trim().toUpperCase();
+            const authToken = tokenInput.value.trim();
+
+            if (!endpoint || !warehouseId) {
+                updateFcApiStatus('Endpoint and warehouse are required.', 'error');
+                return;
+            }
+
+            localStorage.setItem(FC_API_ENDPOINT_KEY, endpoint);
+            localStorage.setItem(FC_API_WAREHOUSE_KEY, warehouseId);
+            sessionStorage.setItem(FC_API_AUTH_SESSION_KEY, authToken);
+
+            cleanup();
+            resolve({ endpoint, warehouseId, authToken });
+        };
+
+        const handleBackdrop = event => {
+            if (event.target === modal) handleCancel();
+        };
+
+        const handleKeydown = event => {
+            if (event.key === 'Escape') handleCancel();
+            if (event.key === 'Enter' && document.activeElement !== tokenInput) handleSubmit();
+        };
+
+        submitBtn.addEventListener('click', handleSubmit);
+        cancelBtn.addEventListener('click', handleCancel);
+        modal.addEventListener('click', handleBackdrop);
+        document.addEventListener('keydown', handleKeydown);
+    });
+}
+
+async function testFcApiForResearchQueue() {
+    if (!window.api?.getTrailersByFC) {
+        alert('FC API bridge is not available.');
+        return;
+    }
+
+    const config = await getFcApiConfig();
+    if (!config) return;
+
+    updateFcApiStatus('Calling FCInboundDockService...', null);
+
+    try {
+        const result = await window.api.getTrailersByFC(config);
+        const trailers = (result.trailers || [])
+            .map(normalizeFcApiTrailer)
+            .filter(Boolean);
+
+        fcApiTrailerLookup = trailers.reduce((lookup, trailer) => {
+            lookup[trailer.isa] = trailer;
+            return lookup;
+        }, {});
+
+        const researchRecords = lastProcessedStats.researchQueueRecords || [];
+        let matched = 0;
+        let enriched = 0;
+
+        researchRecords.forEach(record => {
+            const apiTrailer = fcApiTrailerLookup[normalize(record.isa)];
+            if (!apiTrailer) return;
+
+            matched += 1;
+            const suggestedCategory = resolveFcApiCategory(apiTrailer);
+            if (suggestedCategory) {
+                record.suggestedCategory = suggestedCategory;
+                record.confidence = 'API';
+            }
+            if (apiTrailer.units > 0) record.suggestedUnits = apiTrailer.units;
+            if (apiTrailer.location) record.location = apiTrailer.location;
+            record.apiMatch = {
+                units: apiTrailer.units,
+                cartons: apiTrailer.cartons,
+                pallets: apiTrailer.pallets,
+                appointmentType: apiTrailer.appointmentType,
+                carrierLoadType: apiTrailer.carrierLoadType,
+                priorityScore: apiTrailer.priorityScore,
+                updatedAt: apiTrailer.updatedAt
+            };
+            record.notes = `FC-IDS ${apiTrailer.appointmentType || 'UNKNOWN'} ${apiTrailer.carrierLoadType || ''} ${record.notes || ''}`.trim();
+            enriched += 1;
+        });
+
+        updateFcApiStatus(`API OK: ${trailers.length} trailers returned, ${matched} Research Queue matches.`, 'success');
+
+        if (researchRecords.length) {
+            lastProcessedStats.researchQueue = researchRecords.length;
+            showDetailModal('researchQueue');
+        }
+
+        if (!enriched) {
+            alert(`API worked and returned ${trailers.length} trailers, but none matched the current Research Queue.`);
+        }
+    } catch (error) {
+        console.error('FC API test failed:', error);
+        updateFcApiStatus(`API failed: ${error.message}`, 'error');
+        alert(`FC API test failed:\n${error.message}`);
+    }
+}
+
 // =========================================================================
 // 4. Modal & Research Logic
 // =========================================================================
 
-// --- NEW: HUB NAVIGATION ---
-window.switchHubStep = function(step) {
-    document.getElementById('hub-step-1').style.display = (step === 1) ? 'block' : 'none';
-    document.getElementById('hub-step-2').style.display = (step === 2) ? 'block' : 'none';
-};
-
-// --- NEW: REGEX PARSER (Bulletproof Copy/Paste) ---
-function parsePastedTable(text) {
-    const results = [];
-    const rows = text.split(/\r\n|\n|\r/);
-
-    rows.forEach(line => {
-        if (line.trim().length < 5) return;
-
-        const isaMatch = line.match(/\b(2\d{11})\b/);
-        const normalizedLine = line.toUpperCase();
-        const idTokens = normalizedLine.match(/\b[A-Z0-9]{8,12}\b/g) || [];
-        const vrid = idTokens.find(token => token !== isaMatch?.[1] && !/^2\d{11}$/.test(token)) || null;
-        const unitsMatch = line.match(/(\d{1,3}(,\d{3})*|\d+)(?=\s*(Cases|Units|Pending|Total))/i) || line.match(/(\d{1,3}(,\d{3})*)/);
-        const isPalletized = normalizedLine.includes("PALLET") || normalizedLine.includes("SKID");
-
-        const record = {
-            isa: isaMatch ? isaMatch[1] : null,
-            vrid,
-            units: unitsMatch ? parseFloat(unitsMatch[1].replace(/,/g, '')) : 0,
-            isPalletized,
-            raw: line
-        };
-
-        if (record.isa || record.vrid) results.push(record);
-    });
-
-    return results;
+function parseOculusNumber(value) {
+    return parseFloat(String(value || "0").replace(/,/g, "")) || 0;
 }
 
-// --- NEW: PROCESS HUB DATA ---
-window.processHubData = function() {
-    // Reset Data
-    hubData = { vendorDock: {}, vendorYard: {}, transshipDock: {}, transshipYard: {} };
+function cleanOculusText(value) {
+    return String(value || "").trim();
+}
 
-    // 1. Vendor Dock
-    const vd = parsePastedTable(document.getElementById('paste-vendor-dock').value);
-    vd.forEach(r => { if(r.isa) hubData.vendorDock[r.isa] = r; });
+function getFlexibleField(record, candidates) {
+    const keys = Object.keys(record || {});
+    for (const candidate of candidates) {
+        const normalizedCandidate = normalize(candidate);
+        const exactKey = keys.find(key => normalize(key) === normalizedCandidate);
+        if (exactKey) return record[exactKey];
+    }
 
-    // 2. Vendor Yard
-    const vy = parsePastedTable(document.getElementById('paste-vendor-yard').value);
-    vy.forEach(r => { if(r.isa) hubData.vendorYard[r.isa] = r; });
+    for (const candidate of candidates) {
+        const normalizedCandidate = normalize(candidate);
+        const fuzzyKey = keys.find(key => normalize(key).includes(normalizedCandidate));
+        if (fuzzyKey) return record[fuzzyKey];
+    }
 
-    // 3. Transship Dock (Key by VRID)
-    const td = parsePastedTable(document.getElementById('paste-trans-dock').value);
-    td.forEach(r => { if(r.vrid) hubData.transshipDock[r.vrid] = r; });
+    return "";
+}
 
-    // 4. Transship Yard (Key by ISA or VRID)
-    const ty = parsePastedTable(document.getElementById('paste-trans-yard').value);
-    ty.forEach(r => { 
-        if(r.isa) hubData.transshipYard[r.isa] = r; 
-        else if(r.vrid) hubData.transshipYard[r.vrid] = r;
+function extractOculusIsa(record) {
+    const directIsa = getFlexibleField(record, [
+        "ISA",
+        "ISA ID",
+        "INBOUND SHIPMENT APPOINTMENT",
+        "INBOUND SHIPMENT APPOINTMENT ID",
+        "APPOINTMENT ID",
+        "LOAD ID",
+        "LOAD IDENTIFIER"
+    ]);
+    const directMatch = String(directIsa || "").match(/\b(2\d{11})\b/);
+    if (directMatch) return normalize(directMatch[1]);
+
+    const joinedValues = Object.values(record || {}).join(" ");
+    const fallbackMatch = joinedValues.match(/\b(2\d{11})\b/);
+    return fallbackMatch ? normalize(fallbackMatch[1]) : "";
+}
+
+function extractOculusVrid(record) {
+    return normalize(getFlexibleField(record, [
+        "VRID",
+        "TRAILER VRID",
+        "TRIP ID",
+        "TOUR ID"
+    ]));
+}
+
+function parseOculusCsvRows(rows, sourceType) {
+    const records = {};
+    let count = 0;
+
+    rows.forEach(row => {
+        const isa = extractOculusIsa(row);
+        if (!isa) return;
+
+        const cartons = parseOculusNumber(getFlexibleField(row, [
+            "CARTONS/TOTES",
+            "CARTONS / TOTES",
+            "CARTON/TOTE",
+            "CARTON / TOTE",
+            "CARTONS",
+            "CARTON COUNT",
+            "CARTON QTY",
+            "TOTES",
+            "TOTE COUNT",
+            "TOTE QTY",
+            "CASES",
+            "CASE COUNT"
+        ]));
+        const units = parseOculusNumber(getFlexibleField(row, ["UNITS", "UNIT COUNT", "UNIT QTY", "TOTAL UNITS", "PENDING UNITS", "EXPECTED UNITS", "EACHES", "EACH QTY", "QUANTITY", "QTY"]));
+        const pallets = parseOculusNumber(getFlexibleField(row, ["PALLETS", "PALLET COUNT", "PALLET QTY", "NUMBER OF PALLETS"]));
+        const cut = cleanOculusText(getFlexibleField(row, ["CRITICAL UNLOAD TIME", "CUT"]));
+        const trailerNumber = cleanOculusText(getFlexibleField(row, ["TRAILER NUMBER", "TRAILER NUM", "TRAILER"]));
+        const trailerLocation = cleanOculusText(getFlexibleField(row, ["TRAILER LOCATION", "LOCATION"]));
+        const status = cleanOculusText(getFlexibleField(row, ["STATUS", "APPT. STATUS", "TRANSLOAD STATUS", "TRANSSHIP STATUS"]));
+        const loadConfig = cleanOculusText(getFlexibleField(row, ["LOAD CONFIG", "FL TYPE"]));
+        const scac = cleanOculusText(getFlexibleField(row, ["SCAC", "CARRIER"]));
+        const apptType = cleanOculusText(getFlexibleField(row, ["APPT. TYPE", "APPOINTMENT TYPE"]));
+        const liveVsDrop = cleanOculusText(getFlexibleField(row, ["LIVE VS DROP", "LOAD TYPE"]));
+
+        records[isa] = {
+            isa,
+            vrid: extractOculusVrid(row),
+            sourceType,
+            cartons,
+            units,
+            pallets,
+            cut,
+            trailerNumber,
+            trailerLocation,
+            status,
+            loadConfig,
+            scac,
+            apptType,
+            liveVsDrop,
+            isPalletized: pallets > 0,
+            timestamp: Date.now()
+        };
+        count++;
     });
 
-    const total = vd.length + vy.length + td.length + ty.length;
+    return { records, count };
+}
+
+function updateOculusUploadStatus(type, text, success) {
+    const status = document.getElementById(`oculus-${type}-status`);
+    const card = document.getElementById(`oculus-${type}-card`);
+
+    if (status) status.textContent = text;
+    if (card) {
+        card.classList.remove('success', 'error');
+        if (success === true) card.classList.add('success');
+        if (success === false) card.classList.add('error');
+    }
+}
+
+function updateOculusSyncButton() {
+    const button = document.getElementById('sync-oculus-memory-btn');
+    const summary = document.getElementById('oculus-sync-summary');
+    const vendorCount = pendingOculusUploads.vendor?.count || 0;
+    const transshipCount = pendingOculusUploads.transship?.count || 0;
+
+    if (button) button.disabled = !(vendorCount > 0 && transshipCount > 0);
+    if (summary) {
+        summary.textContent = vendorCount || transshipCount ?
+            `Ready: ${vendorCount} vendor records and ${transshipCount} transship records selected.` :
+            "No Oculus files selected.";
+    }
+}
+
+function refreshOculusMemoryCard() {
+    if (typeof loadOculusMemory !== 'function') {
+        updateCardStatus('gap-filler', 'Sync Oculus memory', null);
+        return;
+    }
+
+    const saved = loadOculusMemory();
+    const total = Object.keys(saved.byIsa || {}).length;
+    if (!total) {
+        updateCardStatus('gap-filler', 'Sync Oculus memory', null);
+        return;
+    }
+
+    const uploadedDate = saved.uploadedAt ? new Date(saved.uploadedAt).toLocaleDateString() : 'saved';
+    updateCardStatus('gap-filler', `Oculus Memory: ${total} records (${uploadedDate})`, true);
+}
+
+async function handleOculusFileSelection(type) {
+    const filePath = await window.api.openFile();
+    if (!filePath) return;
+
+    updateOculusUploadStatus(type, "Reading...", null);
+
+    try {
+        const rawData = await window.api.readCsvFile(filePath);
+        const rows = parseCSV(rawData, []);
+        const parsed = parseOculusCsvRows(rows, type);
+        const fileName = filePath.split(/[/\\]/).pop();
+
+        pendingOculusUploads[type] = parsed;
+        updateOculusUploadStatus(type, `Loaded: ${fileName} (${parsed.count} ISA records)`, parsed.count > 0);
+    } catch (error) {
+        console.error(`Failed to read Oculus ${type} file:`, error);
+        pendingOculusUploads[type] = null;
+        updateOculusUploadStatus(type, "Failed to load file.", false);
+    }
+
+    updateOculusSyncButton();
+    updateFileClearButtons();
+}
+
+window.processHubData = function() {
+    const vendorUpload = pendingOculusUploads.vendor;
+    const transshipUpload = pendingOculusUploads.transship;
+
+    if (!vendorUpload?.count || !transshipUpload?.count) {
+        alert("Please load both the Oculus Vendor CSV and Transship CSV before syncing.");
+        return;
+    }
+
+    const records = {
+        ...vendorUpload.records,
+        ...transshipUpload.records
+    };
+    const total = Object.keys(records).length;
+
+    if (typeof saveOculusMemory === 'function') {
+        saveOculusMemory(records, {
+            vendor: vendorUpload.count,
+            transship: transshipUpload.count
+        });
+    }
+
     document.getElementById('research-hub-modal').style.display = 'none';
-    
-    updateCardStatus('gap-filler', `Hub Synced: ${total} records`, true);
-    
-    // Enable Reconcile
+    refreshOculusMemoryCard();
+
     const reconcileBtn = document.getElementById('reconcile-btn');
     if (ymsFilePath && dockdashFilePath && reconcileBtn) reconcileBtn.disabled = false;
 };
@@ -380,7 +955,7 @@ window.moveResearchItem = function(index) {
     if (!targetCategory) { alert("Please select a category."); return; }
 
     // 1. SAVE TO MEMORY
-    if (typeof rememberTrailer === 'function') {
+    if (!isMemoryBypassEnabled() && typeof rememberTrailer === 'function') {
         rememberTrailer(record.isa, record.vrid, targetCategory, manualUnits, record.notes);
     }
 
@@ -435,9 +1010,22 @@ function showDetailModal(metricId) {
     let records = lastProcessedStats[metricId];
     let modalTitle = metricId.toUpperCase().replace(/([A-Z])/g, ' $1');
     const isResearchQueue = (metricId === 'researchQueue');
+    const hasDisruptionDetails = Array.isArray(lastProcessedStats.disruptions?.[metricId]);
     
     if (isResearchQueue) records = lastProcessedStats.researchQueueRecords;
     if (metricId === 'excluded') records = lastProcessedStats.excluded;
+    if (hasDisruptionDetails) {
+        const usableRecords = (lastProcessedStats[metricId] || []).map(record => ({
+            ...record,
+            detailStatus: 'USABLE'
+        }));
+        const disruptions = (lastProcessedStats.disruptions[metricId] || []).map(record => ({
+            ...record,
+            detailStatus: 'DISRUPTION'
+        }));
+
+        records = [...usableRecords, ...disruptions];
+    }
 
     if (!Array.isArray(records) || records.length === 0) { 
         return; 
@@ -455,6 +1043,8 @@ function showDetailModal(metricId) {
         ['ISA', 'VRID', 'LOC', 'NOTES', 'CATEGORY', 'UNITS', 'ACTION'] : 
         (metricId === 'excluded' ? ['ISA', 'VRID', 'LOCATION'] : ['ISA', 'VRID', 'LOCATION', 'DWELL', 'PALLETS']);
 
+    if (hasDisruptionDetails) headers = ['ISA', 'VRID', 'LOCATION', 'DWELL', 'PALLETS', 'STATUS', 'NOTES'];
+
     headers.forEach(h => { const th = document.createElement('th'); th.textContent = h; thead.appendChild(th); });
     
     tbody.innerHTML = ''; 
@@ -471,11 +1061,12 @@ function showDetailModal(metricId) {
 
             // Auto-Select Logic
             const defaultCat = record.suggestedCategory || ""; 
+            const defaultUnits = record.suggestedUnits ? String(record.suggestedUnits) : "";
             const cellAssign = row.insertCell();
             cellAssign.innerHTML = `
-                <div style="display:flex; gap:5px; flex-direction:column;">
-                <button onclick="window.editResearchItem(${index})" style="background:#f39c12; color:white; border:none; padding:2px; cursor:pointer;">EDIT LOC</button>
-                <select id="assign-select-${index}" style="width:100%; color:black;">
+                <div class="research-assignment-controls">
+                <button onclick="window.editResearchItem(${index})" class="research-edit-btn">EDIT LOC</button>
+                <select id="assign-select-${index}" class="research-select">
                     <option value="" disabled ${!defaultCat ? 'selected' : ''}>Select...</option>
                     <optgroup label="Volume Only">
                         <option value="volOnlyDoors" ${defaultCat === 'volOnlyDoors' ? 'selected' : ''}>Volume on Doors</option>
@@ -490,9 +1081,14 @@ function showDetailModal(metricId) {
                         <option value="livesHanded" ${defaultCat === 'livesHanded' ? 'selected' : ''}>Lives Handed Over</option>
                     </optgroup>
                 </select>
-                <input type="text" inputmode="numeric" id="assign-units-${index}" placeholder="Units" style="width:60px; color:black;">
-                <button onclick="window.moveResearchItem(${index})" style="background:#2ecc71; color:white; border:none; padding:5px; cursor:pointer;">MOVE</button>
+                <input type="text" inputmode="decimal" id="assign-units-${index}" class="research-units-input" placeholder="Units" value="${escapeHtmlAttr(defaultUnits)}">
+                <button onclick="window.moveResearchItem(${index})" class="research-move-btn">MOVE</button>
                 </div>`;
+        } else if (hasDisruptionDetails) {
+            row.insertCell().textContent = record.dwell || 'N/A';
+            row.insertCell().textContent = record.pallets || '0';
+            row.insertCell().textContent = record.detailStatus || 'USABLE';
+            row.insertCell().textContent = record.notes || '';
         } else if (metricId !== 'excluded') {
             row.insertCell().textContent = record.dwell || 'N/A';
             row.insertCell().textContent = record.pallets || '0';
@@ -581,6 +1177,72 @@ async function handleFileSelection(type) {
     
     if (type === 'yms' && dockdashBtn) dockdashBtn.disabled = false;
     if (ymsFilePath && dockdashFilePath && reconcileBtn) reconcileBtn.disabled = false;
+    updateFileClearButtons();
+}
+
+function updateFileClearButtons() {
+    const clearYmsBtn = document.getElementById('clear-yms-btn');
+    const clearDockdashBtn = document.getElementById('clear-dockdash-btn');
+    const clearVendorBtn = document.getElementById('clear-oculus-vendor-btn');
+    const clearTransshipBtn = document.getElementById('clear-oculus-transship-btn');
+
+    if (clearYmsBtn) clearYmsBtn.disabled = !ymsFilePath;
+    if (clearDockdashBtn) clearDockdashBtn.disabled = !dockdashFilePath;
+    if (clearVendorBtn) clearVendorBtn.disabled = !(pendingOculusUploads.vendor?.count > 0);
+    if (clearTransshipBtn) clearTransshipBtn.disabled = !(pendingOculusUploads.transship?.count > 0);
+}
+
+function updateRequiredFileControls() {
+    const reconcileBtn = document.getElementById('reconcile-btn');
+    const exportBtn = document.getElementById('export-btn');
+    const dockdashBtn = document.getElementById('browse-dockdash-btn');
+
+    if (dockdashBtn) dockdashBtn.disabled = !ymsFilePath;
+    if (reconcileBtn) reconcileBtn.disabled = !(ymsFilePath && dockdashFilePath);
+    if (exportBtn && !(ymsFilePath && dockdashFilePath)) exportBtn.disabled = true;
+    updateFileClearButtons();
+}
+
+function clearLoadedFile(type) {
+    if (type === 'yms') {
+        ymsFilePath = null;
+        ymsData = [];
+        dockdashFilePath = null;
+        dockdashData = [];
+        lastProcessedStats = {};
+        updateCardStatus('yms', 'Select YMS File', null);
+        updateCardStatus('dockdash', 'Select Dock Dash File', null);
+    } else if (type === 'dockdash') {
+        dockdashFilePath = null;
+        dockdashData = [];
+        lastProcessedStats = {};
+        updateCardStatus('dockdash', 'Select Dock Dash File', null);
+    }
+
+    updateRequiredFileControls();
+    updateActionPanel({ reconciled: false, message: 'Awaiting file selections...' });
+}
+
+function clearOculusUpload(type) {
+    pendingOculusUploads[type] = null;
+    updateOculusUploadStatus(type, type === 'vendor' ? 'Drops and AF lives/live-drops.' : 'Transship trailers and unit counts.', null);
+    updateOculusSyncButton();
+    updateFileClearButtons();
+}
+
+function clearSavedOculusMemory() {
+    if (typeof clearOculusMemory === 'function') clearOculusMemory();
+    pendingOculusUploads = { vendor: null, transship: null };
+    updateOculusUploadStatus('vendor', 'Drops and AF lives/live-drops.', null);
+    updateOculusUploadStatus('transship', 'Transship trailers and unit counts.', null);
+    refreshOculusMemoryCard();
+    updateOculusSyncButton();
+    updateFileClearButtons();
+
+    const status = document.getElementById('oculus-memory-admin-status');
+    if (status) status.textContent = 'Oculus memory cleared.';
+
+    if (typeof cutBuildRows === 'function') cutBuildRows();
 }
 
 // Backup Gap Filler Selection
@@ -631,7 +1293,7 @@ function calculateMetrics(data, excluded) {
     let stats = {
         dropPallets: [], dropFloor: [], parcelsDock: [], parcelsYard: [],
         transshipYard: [], azngOver72: [], livesHanded: [], liveDrops: [], researchQueue: 0,
-        volumeDoors: 0, volumeYard: 0, excluded: excluded
+        volumeDoors: 0, volumeYard: 0, excluded: excluded, disruptions: createDisruptionBuckets()
     };
     
     data.forEach(record => {
@@ -650,25 +1312,26 @@ function calculateMetrics(data, excluded) {
             dwell: getField(record, "YARD DWELL"), 
             pallets: getField(record, "PALLETS"),
             carrier,
-            loadType: type
+            loadType: type,
+            notes: getField(record, "__YMS_NOTES") || getField(record, "NOTES") || ""
         };
         
         if (isDoorLocation(loc)) stats.volumeDoors += units;
         else if (isYardLocation(loc)) stats.volumeYard += units;
 
         if (type === "DROP" && appt === "CARP" && isYardLocation(loc)) {
-            if (parseFloat(getField(record, "PALLETS")) > 0) stats.dropPallets.push(info);
-            else stats.dropFloor.push(info);
+            const dropCategory = (parseFloat(getField(record, "PALLETS")) > 0 || isClampLoadNote(info.notes)) ? 'dropPallets' : 'dropFloor';
+            addCategorizedRecord(stats, dropCategory, info);
         }
         if (isParcel) {
-            if (isDoorLocation(loc)) stats.parcelsDock.push(info);
-            if (isYardLocation(loc)) stats.parcelsYard.push(info);
+            if (isDoorLocation(loc)) addCategorizedRecord(stats, 'parcelsDock', info);
+            if (isYardLocation(loc)) addCategorizedRecord(stats, 'parcelsYard', info);
         }
-        if (appt === "TRANSSHIP" && isYardLocation(loc)) stats.transshipYard.push(info);
-        if (carrier.startsWith("AZNG") && dwell >= 72 && isYardLocation(loc)) stats.azngOver72.push(info);
+        if (appt === "TRANSSHIP" && isYardLocation(loc)) addCategorizedRecord(stats, 'transshipYard', info);
+        if (carrier.startsWith("AZNG") && dwell >= 72 && isYardLocation(loc)) addCategorizedRecord(stats, 'azngOver72', info);
         if (type === "LIVE" && isDoorLocation(loc)) {
-            stats.livesHanded.push(info);
-            if (isLiveDropCarrier(carrier)) stats.liveDrops.push(info);
+            addCategorizedRecord(stats, 'livesHanded', info);
+            if (!isDisruptionNote(info.notes, 'livesHanded') && isLiveDropCarrier(carrier)) stats.liveDrops.push(info);
         }
     });
     return stats;
@@ -709,7 +1372,10 @@ async function reconcileAndDisplay() {
             dockdashIsaSet.add(isa);
             
             if (ymsIsaSet.has(isa)) {
-                finalMetricsData.push(r);
+                finalMetricsData.push({
+                    ...r,
+                    __YMS_NOTES: ymsLookup[isa]?.notes || ""
+                });
             } else {
                 excludedRecords.push({ isa, vrid: normalize(getField(r, "VRID")), location: getField(r, "LOCATION") });
             }
@@ -729,54 +1395,42 @@ async function reconcileAndDisplay() {
                     if (match) vrid = normalize(match[1]);
                 }
 
-                let hubMatch = null;
+                let oculusMatch = null;
                 let finalCategory = null;
-                
-                // --- CATEGORIZATION LOGIC ---
-                // 1. Is it a Parcel? (Carrier Check - Soft Match)
-                const isParcel = isParcelCarrier(ymsInfo.carrier);
-                
-                // 2. Is it a Live? (Phone Check - Regex for numbers)
-                const hasPhone = /\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/.test(ymsInfo.notes);
 
-                // --- CHECK HUB BUCKETS ---
-                if (hubData.vendorDock[isa]) {
-                    hubMatch = hubData.vendorDock[isa];
-                    if (isParcel) finalCategory = 'parcelsDock';
-                    else if (hasPhone) finalCategory = 'livesHanded';
-                    else finalCategory = 'volumeDoors'; 
-                } 
-                else if (hubData.vendorYard[isa]) {
-                    hubMatch = hubData.vendorYard[isa];
-                    if (isParcel) finalCategory = 'parcelsYard';
-                    else {
-                        // Check Details for FL vs PL
-                        if (hubMatch.isPalletized) finalCategory = 'dropPallets';
-                        else finalCategory = 'dropFloor';
-                    }
-                }
-                else if (hubData.transshipDock[vrid]) {
-                    hubMatch = hubData.transshipDock[vrid];
-                    finalCategory = 'volumeDoors'; 
-                }
-                else if (hubData.transshipYard[isa] || hubData.transshipYard[vrid]) {
-                    hubMatch = hubData.transshipYard[isa] || hubData.transshipYard[vrid];
-                    finalCategory = 'transshipYard';
+                if (typeof recallOculusTrailer === 'function') {
+                    oculusMatch = recallOculusTrailer(isa);
+                    if (oculusMatch) finalCategory = resolveOculusCategory(oculusMatch, ymsInfo);
                 }
 
                 // --- MEMORY CHECK ---
                 let memory = null;
-                if (!hubMatch && typeof recallTrailer === 'function') {
+                if ((!oculusMatch || !finalCategory) && !isMemoryBypassEnabled() && typeof recallTrailer === 'function') {
                     memory = recallTrailer(isa, vrid);
                 }
 
-                if (hubMatch) {
+                if (oculusMatch && finalCategory && !(oculusMatch.units > 0)) {
+                    researchQueueRecords.push({
+                        isa,
+                        vrid,
+                        location: ymsInfo.location,
+                        dwell: ymsInfo.dwell,
+                        notes: `OCULUS ${normalize(oculusMatch.sourceType)} matched but units were missing: ${ymsInfo.notes}`,
+                        owner: ymsInfo.owner,
+                        suggestedCategory: finalCategory,
+                        confidence: 'MEDIUM'
+                    });
+                } else if (oculusMatch && finalCategory) {
                     autoAssignedGhosts.push({
-                        isa, vrid: hubMatch.vrid || vrid,
+                        isa, vrid: oculusMatch.vrid || vrid,
                         location: ymsInfo.location, dwell: ymsInfo.dwell,
-                        category: finalCategory, units: hubMatch.units,
+                        category: finalCategory,
+                        units: oculusMatch.units,
+                        cartons: oculusMatch.cartons,
+                        pallets: oculusMatch.pallets,
                         carrier: ymsInfo.carrier, loadType: ymsInfo.loadType,
-                        isMemory: true, notes: `HUB: ${ymsInfo.notes}`
+                        isMemory: true,
+                        notes: `OCULUS ${normalize(oculusMatch.sourceType)}: ${ymsInfo.notes}`
                     });
                 } else if (memory) {
                     autoAssignedGhosts.push({
@@ -832,10 +1486,11 @@ async function reconcileAndDisplay() {
                 Array.isArray(lastProcessedStats[ghost.category]) &&
                 categoryAllowsLocation(ghost.category, ghost.location)
             ) {
-                lastProcessedStats[ghost.category].push(ghost);
+                addCategorizedRecord(lastProcessedStats, ghost.category, ghost);
                 if (
                     ghost.category === 'livesHanded' &&
                     ghost.loadType === "LIVE" &&
+                    !isDisruptionNote(ghost.notes, 'livesHanded') &&
                     isLiveDropCarrier(ghost.carrier)
                 ) {
                     lastProcessedStats.liveDrops.push(ghost);
@@ -994,8 +1649,6 @@ function setAdminButtonsEnabled(enabled) {
     [startBtn, printBtn].forEach(btn => {
         if (!btn) return;
         btn.disabled = !enabled;
-        btn.style.background = enabled ? '#2196F3' : '#555';
-        btn.style.cursor = enabled ? 'pointer' : 'not-allowed';
     });
 }
 
@@ -1142,6 +1795,8 @@ function setupAdminTools() {
     const prevBtn = document.getElementById('btn-prev-slide');
     const nextBtn = document.getElementById('btn-next-slide');
     const decoder = document.getElementById('admin-decoder');
+    const memoryBypassToggle = document.getElementById('memory-bypass-toggle');
+    const clearOculusMemoryBtn = document.getElementById('clear-oculus-memory-btn');
 
     if (generateBtn) generateBtn.addEventListener('click', generateAdminBarcodes);
     if (startScanBtn) startScanBtn.addEventListener('click', showScanMode);
@@ -1158,6 +1813,15 @@ function setupAdminTools() {
             }
         });
     }
+    if (memoryBypassToggle) {
+        memoryBypassToggle.checked = isMemoryBypassEnabled();
+        memoryBypassToggle.addEventListener('change', (event) => {
+            setMemoryBypassEnabled(event.target.checked);
+        });
+    }
+    if (clearOculusMemoryBtn) {
+        clearOculusMemoryBtn.addEventListener('click', clearSavedOculusMemory);
+    }
 
     document.addEventListener('keydown', (event) => {
         if (event.ctrlKey && event.shiftKey && event.key.toUpperCase() === 'A') {
@@ -1173,6 +1837,7 @@ function setupAdminTools() {
 window.addEventListener('DOMContentLoaded', () => {
     console.log("App started: DOM content loaded");
 
+    setupMonitorAwareScaling();
     setupCosmicBackground();
     setupAdminTools();
     
@@ -1190,10 +1855,20 @@ window.addEventListener('DOMContentLoaded', () => {
         console.log("YMS button connected");
     }
 
+    const clearYmsBtn = document.getElementById('clear-yms-btn');
+    if (clearYmsBtn) {
+        clearYmsBtn.addEventListener('click', () => clearLoadedFile('yms'));
+    }
+
     const ddBtn = document.getElementById('browse-dockdash-btn');
     if (ddBtn) {
         ddBtn.addEventListener('click', () => handleFileSelection('dockdash'));
         console.log("Dock Dash button connected");
+    }
+
+    const clearDockdashBtn = document.getElementById('clear-dockdash-btn');
+    if (clearDockdashBtn) {
+        clearDockdashBtn.addEventListener('click', () => clearLoadedFile('dockdash'));
     }
     
     // --- UPDATED: HUB BUTTON LISTENER ---
@@ -1201,9 +1876,29 @@ window.addEventListener('DOMContentLoaded', () => {
     if (hubBtn) {
         hubBtn.addEventListener('click', () => {
             document.getElementById('research-hub-modal').style.display = 'block';
-            window.switchHubStep(1);
+            updateOculusSyncButton();
         });
         console.log("Hub button connected");
+    }
+
+    const oculusVendorBtn = document.getElementById('browse-oculus-vendor-btn');
+    if (oculusVendorBtn) {
+        oculusVendorBtn.addEventListener('click', () => handleOculusFileSelection('vendor'));
+    }
+
+    const clearOculusVendorBtn = document.getElementById('clear-oculus-vendor-btn');
+    if (clearOculusVendorBtn) {
+        clearOculusVendorBtn.addEventListener('click', () => clearOculusUpload('vendor'));
+    }
+
+    const oculusTransshipBtn = document.getElementById('browse-oculus-transship-btn');
+    if (oculusTransshipBtn) {
+        oculusTransshipBtn.addEventListener('click', () => handleOculusFileSelection('transship'));
+    }
+
+    const clearOculusTransshipBtn = document.getElementById('clear-oculus-transship-btn');
+    if (clearOculusTransshipBtn) {
+        clearOculusTransshipBtn.addEventListener('click', () => clearOculusUpload('transship'));
     }
     
     const recBtn = document.getElementById('reconcile-btn');
@@ -1216,6 +1911,12 @@ window.addEventListener('DOMContentLoaded', () => {
     if (expBtn) {
         expBtn.addEventListener('click', exportVerifiedCsv);
         console.log("Export button connected");
+    }
+
+    const fcApiBtn = document.getElementById('test-fc-api-btn');
+    if (fcApiBtn) {
+        fcApiBtn.addEventListener('click', testFcApiForResearchQueue);
+        console.log("FC API test button connected");
     }
 
     // 3. Tile Listeners
@@ -1245,6 +1946,9 @@ window.addEventListener('DOMContentLoaded', () => {
     // 4. Initial Status
     updateCardStatus('yms', 'Select YMS File', null); 
     updateCardStatus('dockdash', 'Select Dock Dash File', null); 
+    refreshOculusMemoryCard();
+    updateOculusSyncButton();
+    updateRequiredFileControls();
 });
 
 

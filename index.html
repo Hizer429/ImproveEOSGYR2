@@ -10,123 +10,479 @@
 </head>
 <body>
     <div id="starfield"></div>
-    
-    <header class="app-header" style="position: relative; justify-content: center;">
-        <h1>Ansancw</h1>
 
-        <div class="user-info" style="position: absolute; right: 20px;">
-            <span class="badge badge-vto">VTO</span>
-            <span class="badge badge-clerk">CLERK</span>
+    <header class="app-header">
+        <div>
+            <p class="eyebrow">Ansancw</p>
+            <h1>EOS Operations Console</h1>
+        </div>
+
+        <div class="user-info">
+            <span class="badge badge-vto"><i class="fas fa-user-clock"></i> VTO</span>
+            <span class="badge badge-clerk"><i class="fas fa-id-badge"></i> CLERK</span>
+            <span class="version-badge" id="eos-version">Version: 1.0.0</span>
         </div>
     </header>
 
     <main>
-        <div class="upload-container dual-upload-container">
-            
-            <div class="upload-card" id="yms-card">
-                <i class="fas fa-database main-icon fa-5x"></i>
-                <h2>1. Load YMS File</h2>
-                <p id="yms-status">Select the **MOST UP-TO-DATE** manifest.</p>
-                <button id="browse-yms-btn" class="browse-btn">
-                    <i class="fas fa-search"></i> Select YMS File
+        <section id="action-panel" class="status-neutral">
+            <div class="status-copy">
+                <i id="action-icon" class="fas fa-info-circle"></i>
+                <span id="action-message">Awaiting file selections...</span>
+            </div>
+            <div class="status-actions">
+                <button id="reconcile-btn" class="browse-btn process-btn" disabled>
+                    <i class="fas fa-sync-alt"></i> Generate EOS
+                </button>
+                <button id="export-btn" class="browse-btn export-btn" disabled>
+                    <i class="fas fa-file-export"></i> Export CSV
+                </button>
+                <button id="open-cut-view-btn" class="browse-btn secondary-btn">
+                    <i class="fas fa-calculator"></i> CUT Helper
                 </button>
             </div>
+        </section>
 
-            <div class="upload-card" id="dockdash-card">
-                <i class="fas fa-file-csv main-icon fa-5x"></i>
-                <h2>2. Load Dock Dash File</h2>
-                <p id="dockdash-status">Select the **Dock Dash CSV**.</p>
-                <button id="browse-dockdash-btn" class="browse-btn" disabled>
-                    <i class="fas fa-search"></i> Select Dock Dash File
+        <section class="console-grid" id="eos-dashboard-view">
+            <aside class="side-panel inputs-panel">
+                <div class="panel-heading">
+                    <div>
+                        <p class="eyebrow">Workflow Inputs</p>
+                        <h2>Files and Hub</h2>
+                    </div>
+                </div>
+
+                <div class="upload-container dual-upload-container">
+                    <div class="upload-card" id="yms-card">
+                        <i class="fas fa-database main-icon fa-5x"></i>
+                        <div>
+                            <h2>Load YMS File</h2>
+                            <p id="yms-status">Select the most up-to-date manifest.</p>
+                        </div>
+                        <div class="file-card-actions">
+                            <button id="browse-yms-btn" class="browse-btn">
+                                <i class="fas fa-search"></i> Select
+                            </button>
+                            <button id="clear-yms-btn" class="browse-btn danger-btn" disabled>
+                                <i class="fas fa-trash"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="upload-card" id="dockdash-card">
+                        <i class="fas fa-file-csv main-icon fa-5x"></i>
+                        <div>
+                            <h2>Load Dock Dash</h2>
+                            <p id="dockdash-status">Select the Dock Dash CSV.</p>
+                        </div>
+                        <div class="file-card-actions">
+                            <button id="browse-dockdash-btn" class="browse-btn" disabled>
+                                <i class="fas fa-search"></i> Select
+                            </button>
+                            <button id="clear-dockdash-btn" class="browse-btn danger-btn" disabled>
+                                <i class="fas fa-trash"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="upload-card" id="gap-filler-card">
+                        <i class="fas fa-network-wired main-icon fa-5x"></i>
+                        <div>
+                            <h2>Research Hub</h2>
+                            <p id="gap-filler-status">Paste data to clear ghosts.</p>
+                        </div>
+                        <div class="file-card-actions">
+                            <button id="open-hub-btn" class="browse-btn hub-btn">
+                                <i class="fas fa-laptop-code"></i> Open
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <section class="dashboard-panel">
+                <div class="panel-heading">
+                    <div>
+                        <p class="eyebrow">Live Summary</p>
+                        <h2>EOS Metrics</h2>
+                    </div>
+                    <span class="hint-pill"><i class="far fa-hand-pointer"></i> Click a tile for details</span>
+                </div>
+
+                <div class="metric-section">
+                    <h3>Operations</h3>
+                    <div class="metrics-grid operations-grid">
+                        <div class="metric-tile" id="dropPallets" data-category="Operations"><div class="tile-content"><i class="fas fa-pallet icon"></i><div class="label">Drop Pallets</div><div class="value">0</div></div></div>
+                        <div class="metric-tile" id="dropFloor" data-category="Operations"><div class="tile-content"><i class="fas fa-box-open icon"></i><div class="label">Drop Floor</div><div class="value">0</div></div></div>
+                        <div class="metric-tile" id="transshipYard" data-category="Operations"><div class="tile-content"><i class="fas fa-exchange-alt icon"></i><div class="label">Transship Yard</div><div class="value">0</div></div></div>
+                        <div class="metric-tile" id="livesHanded" data-category="Operations"><div class="tile-content"><i class="fas fa-handshake icon"></i><div class="label">Lives Handed Over</div><div class="value">0</div></div></div>
+                    </div>
+                </div>
+
+                <div class="metric-section">
+                    <h3>Parcels and Volume</h3>
+                    <div class="metrics-grid parcel-grid">
+                        <div class="metric-tile" id="totalParcels" data-category="Parcels"><div class="tile-content"><i class="fas fa-boxes icon"></i><div class="label">Total Parcels</div><div class="value">0</div></div></div>
+                        <div class="metric-tile" id="parcelsDock" data-category="Critical"><div class="tile-content"><i class="fas fa-shipping-fast icon"></i><div class="label">Parcels On Dock</div><div class="value">0</div></div></div>
+                        <div class="metric-tile" id="parcelsYard" data-category="Parcels"><div class="tile-content"><i class="fas fa-parking icon"></i><div class="label">Parcels In Yard</div><div class="value">0</div></div></div>
+                        <div class="metric-tile" id="volumeDoors" data-category="Volume"><div class="tile-content"><i class="fas fa-door-open icon"></i><div class="label">Volume On Doors</div><div class="value">0</div></div></div>
+                        <div class="metric-tile" id="volumeYard" data-category="Volume"><div class="tile-content"><i class="fas fa-ruler-combined icon"></i><div class="label">Volume In Yard</div><div class="value">0</div></div></div>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="side-panel priority-panel">
+                <div class="panel-heading compact">
+                    <div>
+                        <p class="eyebrow">Exception Work</p>
+                        <h2>Priority Queue</h2>
+                    </div>
+                </div>
+
+                <div class="priority-stack">
+                    <div class="metric-tile priority-tile" id="azngOver72" data-category="Critical"><div class="tile-content"><i class="fas fa-clock icon"></i><div class="label">AZNG &gt; 72H</div><div class="value">0</div></div></div>
+                    <div class="metric-tile priority-tile" id="researchQueue" data-category="Critical"><div class="tile-content"><i class="fas fa-search-plus icon"></i><div class="label">Research Queue</div><div class="value">0</div></div></div>
+                </div>
+
+                <div class="api-test-card hidden-feature">
+                    <button id="test-fc-api-btn" class="browse-btn secondary-btn" type="button">
+                        <i class="fas fa-plug-circle-bolt"></i> Test FC API
+                    </button>
+                    <p id="fc-api-status">Use FCInboundDockService to enrich Research Queue ISAs.</p>
+                </div>
+
+                <div class="queue-note">
+                    <i class="fas fa-circle-info"></i>
+                    <span>Priority tiles open their detail list after EOS is generated.</span>
+                </div>
+            </aside>
+        </section>
+
+        <section id="cut-board-view" class="cut-board-view hidden-section">
+            <div class="cut-viewbar">
+                <button id="back-to-eos-btn" class="browse-btn secondary-btn">
+                    <i class="fas fa-arrow-left"></i> Back To EOS
                 </button>
+                <div class="cut-viewbar-copy">
+                    <p class="eyebrow">CUT Compliance Helper</p>
+                    <h2>Forecast compliance with YMS truth, CUT details, and manual trailer counts</h2>
+                </div>
+                <div class="cut-viewbar-actions">
+                    <button id="refresh-cut-board-btn" class="browse-btn secondary-btn">
+                        <i class="fas fa-rotate"></i> Refresh
+                    </button>
+                    <button id="copy-cut-list-btn" class="browse-btn">
+                        <i class="fas fa-copy"></i> Copy Priority List
+                    </button>
+                </div>
             </div>
 
-            <div class="upload-card" id="gap-filler-card">
-                <i class="fas fa-network-wired main-icon fa-5x"></i>
-                <h2>3. Research Hub</h2>
-                <p id="gap-filler-status">Paste data to clear ghosts.</p>
-                <button id="open-hub-btn" class="browse-btn" style="background-color: #8e44ad;">
-                    <i class="fas fa-laptop-code"></i> OPEN HUB
-                </button>
+            <div class="cut-shell">
+                <aside class="side-panel inputs-panel">
+                    <div class="panel-heading compact">
+                        <div>
+                            <p class="eyebrow">Source Truth</p>
+                            <h2>Loaded Reports</h2>
+                        </div>
+                    </div>
+
+                    <div class="cut-source-card" id="cut-yms-source">
+                        <i class="fas fa-database"></i>
+                        <div>
+                            <strong>Yard / YMS CSV</strong>
+                            <span>Required for actual PS/DD trailers.</span>
+                        </div>
+                    </div>
+                    <div class="cut-source-card" id="cut-oculus-source">
+                        <i class="fas fa-truck-loading"></i>
+                        <div>
+                            <strong>Oculus Memory</strong>
+                            <span>Vendor and transship CUT details.</span>
+                        </div>
+                    </div>
+                    <div class="cut-source-card" id="cut-dockdash-source">
+                        <i class="fas fa-file-csv"></i>
+                        <div>
+                            <strong>Dock Dash</strong>
+                            <span>Fallback trailer details only.</span>
+                        </div>
+                    </div>
+
+                    <div class="cut-filter-stack">
+                        <div class="cut-filter-heading">
+                            <span>View</span>
+                            <strong id="cut-active-view-label">All Active Trailers</strong>
+                        </div>
+                        <button class="cut-filter selected" data-cut-location-filter="all"><i class="fas fa-list"></i> All PS/DD</button>
+                        <button class="cut-filter" data-cut-location-filter="doors"><i class="fas fa-door-open"></i> Doors Only</button>
+                        <button class="cut-filter" data-cut-location-filter="yard"><i class="fas fa-parking"></i> Yard Only</button>
+                        <button class="cut-filter" data-cut-location-filter="missing"><i class="fas fa-triangle-exclamation"></i> Missing CUT</button>
+                    </div>
+                </aside>
+
+                <section class="dashboard-panel cut-panel">
+                    <div class="panel-heading">
+                        <div>
+                            <p class="eyebrow">Priority</p>
+                            <h2>Earliest Critical Unload Time First</h2>
+                        </div>
+                        <div class="cut-segmented" aria-label="CUT type filter">
+                            <button class="selected" data-cut-type-filter="all">All</button>
+                            <button data-cut-type-filter="vendor">Vendor</button>
+                            <button data-cut-type-filter="transship">Transship</button>
+                            <button data-cut-type-filter="parcel">Parcel</button>
+                        </div>
+                    </div>
+
+                    <section class="cut-calculator">
+                        <div class="cut-calculator-header">
+                            <div>
+                                <p class="eyebrow">Compliance Forecast</p>
+                                <h3>CUT Calculator</h3>
+                            </div>
+                            <div class="cut-calculator-actions">
+                                <button id="cut-explain-btn" class="cut-help-btn" type="button" aria-label="Explain CUT forecast">
+                                    <i class="fas fa-question"></i>
+                                </button>
+                                <button id="cut-use-board-counts-btn" class="browse-btn secondary-btn" type="button">
+                                    <i class="fas fa-wand-magic-sparkles"></i> Use Board Counts
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="cut-calc-grid">
+                            <label>Shift
+                                <select id="cut-shift-type-input">
+                                    <option value="day">Day Shift 07:00-17:30</option>
+                                    <option value="night">Night Shift 19:00-05:30</option>
+                                </select>
+                            </label>
+                            <label>Shift Date
+                                <input id="cut-shift-date-input" type="date">
+                            </label>
+                            <label>Target %
+                                <input id="cut-target-input" type="number" min="1" max="100" step="0.1" value="85">
+                            </label>
+                        </div>
+
+                        <div class="cut-calc-grid count-grid">
+                            <label>Current Due
+                                <input id="cut-outstanding-current-input" type="number" min="0" step="1" value="0">
+                            </label>
+                            <label>Past Due
+                                <input id="cut-outstanding-past-input" type="number" min="0" step="1" value="0">
+                            </label>
+                            <label>Current Processed
+                                <input id="cut-processed-current-input" type="number" min="0" step="1" value="0">
+                            </label>
+                            <label>Past Processed
+                                <input id="cut-processed-past-input" type="number" min="0" step="1" value="0">
+                            </label>
+                            <label>Future Processed
+                                <input id="cut-processed-future-input" type="number" min="0" step="1" value="0">
+                            </label>
+                        </div>
+
+                        <div class="cut-forecast-grid">
+                            <article class="cut-forecast-card">
+                                <span>Forecast CUT</span>
+                                <strong id="cut-compliance-percent">--</strong>
+                            </article>
+                            <article class="cut-forecast-card">
+                                <span>Compliant</span>
+                                <strong id="cut-compliant-count">--</strong>
+                            </article>
+                            <article class="cut-forecast-card warning">
+                                <span>Missed Current</span>
+                                <strong id="cut-missed-current-count">--</strong>
+                            </article>
+                            <article class="cut-forecast-card warning">
+                                <span>Missed Past</span>
+                                <strong id="cut-missed-past-count">--</strong>
+                            </article>
+                            <article class="cut-forecast-card safe">
+                                <span>Safe Future Adds</span>
+                                <strong id="cut-safe-future-count">--</strong>
+                            </article>
+                        </div>
+
+                        <div id="cut-next-action" class="cut-next-action">
+                            Enter processed counts to forecast CUT compliance.
+                        </div>
+
+                        <div id="cut-explanation-panel" class="cut-explanation-panel" hidden>
+                            <div class="cut-explanation-heading">
+                                <strong>Why This Forecast?</strong>
+                                <button id="cut-close-explanation-btn" class="cut-help-close" type="button" aria-label="Close explanation">
+                                    <i class="fas fa-xmark"></i>
+                                </button>
+                            </div>
+                            <div id="cut-explanation-body"></div>
+                        </div>
+                    </section>
+
+                    <div class="cut-metric-grid">
+                        <article class="cut-metric-card red">
+                            <i class="fas fa-fire"></i>
+                            <span>Past CUT</span>
+                            <strong id="cut-past-count">0</strong>
+                        </article>
+                        <article class="cut-metric-card orange">
+                            <i class="fas fa-hourglass-half"></i>
+                            <span>Next 4 Hours</span>
+                            <strong id="cut-soon-count">0</strong>
+                        </article>
+                        <article class="cut-metric-card cyan">
+                            <i class="fas fa-truck-ramp-box"></i>
+                            <span>In Yard</span>
+                            <strong id="cut-yard-count">0</strong>
+                        </article>
+                        <article class="cut-metric-card green">
+                            <i class="fas fa-door-open"></i>
+                            <span>On Doors</span>
+                            <strong id="cut-door-count">0</strong>
+                        </article>
+                    </div>
+
+                    <div class="cut-toolbar">
+                        <label class="cut-search-box">
+                            <i class="fas fa-search"></i>
+                            <input id="cut-search-input" type="search" placeholder="Search ISA, VRID, location, carrier, notes">
+                        </label>
+                        <span class="hint-pill"><i class="fas fa-sort"></i> Sorted by CUT</span>
+                        <span class="hint-pill"><i class="fas fa-circle-info"></i> Missing data stays visible</span>
+                    </div>
+
+                    <div class="cut-table-wrap">
+                        <table class="cut-table">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>ISA / VRID</th>
+                                    <th>Loc</th>
+                                    <th>Type</th>
+                                    <th>CUT</th>
+                                    <th>Units</th>
+                                    <th>Cartons</th>
+                                    <th>PL</th>
+                                    <th>Source</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cut-table-body">
+                                <tr><td colspan="10">Load YMS and sync Oculus memory to build the CUT board.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <aside class="side-panel priority-panel">
+                    <div class="panel-heading compact">
+                        <div>
+                            <p class="eyebrow">Handoff</p>
+                            <h2>Action Queue</h2>
+                        </div>
+                        <span class="count-badge" id="cut-visible-count">0</span>
+                    </div>
+
+                    <div class="cut-action-card urgent">
+                        <i class="fas fa-triangle-exclamation"></i>
+                        <div>
+                            <strong id="cut-past-summary">0 trailers past CUT</strong>
+                            <span>Review first while keeping current-hour work visible.</span>
+                        </div>
+                    </div>
+
+                    <div class="cut-action-card">
+                        <i class="fas fa-door-open"></i>
+                        <div>
+                            <strong id="cut-yard-summary">0 yard trailers need review</strong>
+                            <span>PS rows with upcoming CUT and units confirmed.</span>
+                        </div>
+                    </div>
+
+                    <div class="cut-action-card">
+                        <i class="fas fa-circle-question"></i>
+                        <div>
+                            <strong id="cut-missing-summary">0 missing CUT or units</strong>
+                            <span>Visible in the table so they do not disappear.</span>
+                        </div>
+                    </div>
+
+                </aside>
             </div>
+        </section>
 
-        </div>
-
-        <button id="reconcile-btn" class="browse-btn process-btn" disabled>
-            <i class="fas fa-sync-alt"></i> 4. Generate EOS
-        </button>
-
-        <button id="export-btn" class="browse-btn" style="background-color: #27ae60; margin-top: 10px;" disabled>
-            <i class="fas fa-file-export"></i> Export Verified CSV
-        </button>
-        
-        <div id="action-panel" class="status-neutral">
-            <i id="action-icon" class="fas fa-info-circle"></i>
-            <span id="action-message">Awaiting file selections...</span>
-        </div>
-        
-        <div class="metrics-grid">
-            <div class="metric-tile" id="dropPallets" data-category="Operations"><div class="tile-content"><i class="fas fa-pallet icon"></i><div class="label">DROP PALLETS</div><div class="value">0</div></div></div>
-            <div class="metric-tile" id="dropFloor" data-category="Operations"><div class="tile-content"><i class="fas fa-box-open icon"></i><div class="label">DROP FLOOR</div><div class="value">0</div></div></div>
-            <div class="metric-tile" id="totalParcels" data-category="Parcels"><div class="tile-content"><i class="fas fa-boxes icon"></i><div class="label">TOTAL PARCELS</div><div class="value">0</div></div></div>
-            <div class="metric-tile" id="parcelsDock" data-category="Critical"><div class="tile-content"><i class="fas fa-shipping-fast icon"></i><div class="label">PARCELS ON DOCK</div><div class="value">0</div></div></div>
-            <div class="metric-tile" id="parcelsYard" data-category="Parcels"><div class="tile-content"><i class="fas fa-parking icon"></i><div class="label">PARCELS IN YARD</div><div class="value">0</div></div></div>
-            <div class="metric-tile" id="transshipYard" data-category="Operations"><div class="tile-content"><i class="fas fa-exchange-alt icon"></i><div class="label">TRANSSHIP IN YARD</div><div class="value">0</div></div></div>
-            <div class="metric-tile" id="azngOver72" data-category="Critical"><div class="tile-content"><i class="fas fa-clock icon"></i><div class="label">AZNG > 72H</div><div class="value">0</div></div></div>
-            <div class="metric-tile" id="researchQueue" data-category="Critical"><div class="tile-content"><i class="fas fa-search-plus icon"></i><div class="label">RESEARCH QUEUE</div><div class="value">0</div></div></div>
-            <div class="metric-tile" id="livesHanded" data-category="Operations"><div class="tile-content"><i class="fas fa-handshake icon"></i><div class="label">LIVES HANDED OVER</div><div class="value">0</div></div></div>
-            <div class="metric-tile" id="volumeDoors" data-category="Volume"><div class="tile-content"><i class="fas fa-door-open icon"></i><div class="label">VOLUME ON DOORS</div><div class="value">0</div></div></div>
-            <div class="metric-tile" id="volumeYard" data-category="Volume"><div class="tile-content"><i class="fas fa-ruler-combined icon"></i><div class="label">VOLUME IN YARD</div><div class="value">0</div></div></div>
-        </div> 
-
-        <div id="admin-tools" class="hidden-section">
+        <section id="admin-tools" class="hidden-section">
             <div class="tool-card">
-                <h2>🛠️ Admin Tools (Developer Mode)</h2>
+                <div class="panel-heading">
+                    <div>
+                        <p class="eyebrow">Admin Tools</p>
+                        <h2>Barcode Console</h2>
+                    </div>
+                    <span class="hint-pill"><i class="fas fa-keyboard"></i> Ctrl+Shift+A</span>
+                </div>
+
                 <div class="tool-split">
                     <div class="generator-box">
                         <h3>Batch Barcode Generator</h3>
-                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                            <div style="flex: 1;"><label style="font-size: 12px; color: #aaa;">Bar Width</label><input type="number" id="bar-width" value="2" min="1" max="4" style="width: 100%; padding: 5px; background: #222; border: 1px solid #444; color: white;"></div>
-                            <div style="flex: 1;"><label style="font-size: 12px; color: #aaa;">Height</label><input type="number" id="bar-height" value="50" min="10" max="150" style="width: 100%; padding: 5px; background: #222; border: 1px solid #444; color: white;"></div>
-                            <div style="flex: 1;"><label style="font-size: 12px; color: #aaa;">Font Size</label><input type="number" id="bar-font" value="14" min="8" max="30" style="width: 100%; padding: 5px; background: #222; border: 1px solid #444; color: white;"></div>
+                        <div class="barcode-controls">
+                            <label>Bar Width<input type="number" id="bar-width" value="2" min="1" max="4"></label>
+                            <label>Height<input type="number" id="bar-height" value="50" min="10" max="150"></label>
+                            <label>Font Size<input type="number" id="bar-font" value="14" min="8" max="30"></label>
                         </div>
-                        <p>Paste Pallet IDs (one per line):</p>
+                        <label class="field-label" for="admin-input">Pallet IDs</label>
                         <textarea id="admin-input" placeholder="TS12345..."></textarea>
-                        <div style="display: flex; gap: 10px; margin-top: 10px;">
-                            <button id="btn-generate-only" class="btn-warning" style="background: #2196F3;">Generate</button>
-                            <button id="btn-start-scan" class="btn-warning" disabled style="background: #555; cursor: not-allowed;">Start Scan Mode</button>
-                            <button id="btn-print-only" class="btn-warning" disabled style="background: #555; cursor: not-allowed;">Print</button>
+                        <div class="tool-actions">
+                            <button id="btn-generate-only" class="btn-warning"><i class="fas fa-barcode"></i> Generate</button>
+                            <button id="btn-start-scan" class="btn-warning" disabled><i class="fas fa-expand"></i> Scan Mode</button>
+                            <button id="btn-print-only" class="btn-warning" disabled><i class="fas fa-print"></i> Print</button>
                         </div>
                     </div>
+
                     <div class="decoder-box">
-                        <h3>🔍 Barcode Spy / Decoder</h3>
-                        <p>Scan a barcode here to see its hidden characters:</p>
-                        <input type="text" id="admin-decoder" placeholder="Click here & scan..." autocomplete="off">
+                        <h3>Barcode Decoder</h3>
+                        <label class="field-label" for="admin-decoder">Scan input</label>
+                        <input type="text" id="admin-decoder" placeholder="Click here and scan..." autocomplete="off">
                         <div id="decoded-output" class="output-display">Waiting for scan...</div>
+
+                        <div class="memory-test-toggle">
+                            <label for="memory-bypass-toggle">
+                                <input type="checkbox" id="memory-bypass-toggle">
+                                <span>Bypass trailer memory for testing</span>
+                            </label>
+                        </div>
+
+                        <div class="memory-admin-actions">
+                            <button id="clear-oculus-memory-btn" class="btn-warning danger-btn">
+                                <i class="fas fa-trash"></i> Clear Oculus Memory
+                            </button>
+                            <p id="oculus-memory-admin-status">Removes saved Vendor/Transship Oculus records.</p>
+                        </div>
                     </div>
                 </div>
                 <div id="printable-area"></div>
             </div>
-        </div>
+        </section>
 
         <div id="scan-overlay" style="display: none;">
             <div class="scan-content">
-                <button id="btn-close-scan" class="close-overlay">Exit Mode</button>
-                <h2 style="color: #444; margin-bottom: 10px;">SCAN TO ADVANCE</h2>
+                <button id="btn-close-scan" class="close-overlay"><i class="fas fa-xmark"></i> Exit Mode</button>
+                <h2>Scan To Advance</h2>
                 <div class="giant-barcode-wrapper"><svg id="giant-barcode"></svg></div>
                 <div class="scan-controls">
-                    <button id="btn-prev-slide" class="nav-btn">Prev</button>
-                    <span id="scan-progress" style="font-size: 20px; font-weight: bold; color: #333;">1 / 50</span>
-                    <button id="btn-next-slide" class="nav-btn">Next</button>
+                    <button id="btn-prev-slide" class="nav-btn"><i class="fas fa-chevron-left"></i> Prev</button>
+                    <span id="scan-progress">1 / 50</span>
+                    <button id="btn-next-slide" class="nav-btn">Next <i class="fas fa-chevron-right"></i></button>
                 </div>
-                <p style="color: #666; margin-top: 10px; font-size: 14px;">Scan the barcode on screen to auto-advance.</p>
+                <p>Scan the barcode on screen to auto-advance.</p>
             </div>
         </div>
     </main>
 
     <div id="detail-modal" class="modal">
         <div class="modal-content">
-            <span class="close-button" id="close-modal-btn">&times;</span>
+            <button class="close-button" id="close-modal-btn" aria-label="Close details">&times;</button>
             <h2 id="modal-title">Trailer Details</h2>
             <div class="table-container">
                 <table id="detail-table">
@@ -138,62 +494,80 @@
     </div>
 
     <div id="research-hub-modal" class="modal" style="display:none; z-index: 2000;">
-        <div class="modal-content" style="max-width: 950px; background: #1e1e1e; border: 1px solid #444;">
-            
+        <div class="modal-content hub-modal-content">
             <div id="hub-step-1">
-                <h2 style="color: #3498db; border-bottom: 1px solid #444; padding-bottom: 10px;">
-                    <i class="fas fa-truck-loading"></i> Step 1: Vendor Loads
-                </h2>
-                <p style="font-size: 14px; color: #aaa; margin-bottom: 15px;">
-                    Copy the table from the legacy tool (Ctrl+C) and paste below. The app will detect Parcels (Carrier) & Lives (Phone #).
-                </p>
-                <div style="display: flex; gap: 20px;">
-                    <div style="flex: 1;">
-                        <label style="color: #fff;">Vendor <b>ON DOCK (DD)</b></label>
-                        <textarea id="paste-vendor-dock" placeholder="Paste Vendor on DD table here..." style="width:100%; height:250px; background:#222; color:#0f0; border:1px solid #555; padding:10px; font-family:monospace;"></textarea>
+                <h2><i class="fas fa-database"></i> Oculus Memory</h2>
+                <p class="modal-intro">Upload the latest Oculus Vendor and Transship CSVs. The app will store ISA, cartons, units, and pallets until the next Oculus sync.</p>
+                <div class="hub-grid oculus-upload-grid">
+                    <div class="oculus-upload-card" id="oculus-vendor-card">
+                        <i class="fas fa-truck-loading"></i>
+                        <div>
+                            <h3>Vendor CSV</h3>
+                            <p id="oculus-vendor-status">Drops and AF lives/live-drops.</p>
+                        </div>
+                        <div class="file-card-actions">
+                            <button id="browse-oculus-vendor-btn" class="browse-btn" type="button">
+                                <i class="fas fa-file-csv"></i> Select
+                            </button>
+                            <button id="clear-oculus-vendor-btn" class="browse-btn danger-btn" type="button" disabled>
+                                <i class="fas fa-trash"></i> Remove
+                            </button>
+                        </div>
                     </div>
-                    <div style="flex: 1;">
-                        <label style="color: #fff;">Vendor <b>IN YARD (PS)</b></label>
-                        <textarea id="paste-vendor-yard" placeholder="Paste Vendor in Yard table here..." style="width:100%; height:250px; background:#222; color:#0f0; border:1px solid #555; padding:10px; font-family:monospace;"></textarea>
-                    </div>
-                </div>
-                <div style="margin-top: 20px; text-align: right;">
-                    <button onclick="document.getElementById('research-hub-modal').style.display='none'" class="browse-btn" style="background:#555;">Cancel</button>
-                    <button onclick="window.switchHubStep(2)" class="browse-btn" style="background:#3498db;">Next: Transships <i class="fas fa-arrow-right"></i></button>
-                </div>
-            </div>
-
-            <div id="hub-step-2" style="display:none;">
-                <h2 style="color: #e67e22; border-bottom: 1px solid #444; padding-bottom: 10px;">
-                    <i class="fas fa-exchange-alt"></i> Step 2: Transship Loads
-                </h2>
-                <p style="font-size: 14px; color: #aaa; margin-bottom: 15px;">
-                    Copy the Transship tables. <b>Note:</b> Transship on DD uses VRID matching automatically.
-                </p>
-                <div style="display: flex; gap: 20px;">
-                    <div style="flex: 1;">
-                        <label style="color: #fff;">Transship <b>ON DOCK (DD)</b></label>
-                        <textarea id="paste-trans-dock" placeholder="Paste Transship on DD table here (VRID)..." style="width:100%; height:250px; background:#222; color:#f39c12; border:1px solid #555; padding:10px; font-family:monospace;"></textarea>
-                    </div>
-                    <div style="flex: 1;">
-                        <label style="color: #fff;">Transship <b>IN YARD (PS)</b></label>
-                        <textarea id="paste-trans-yard" placeholder="Paste Transship in Yard table here..." style="width:100%; height:250px; background:#222; color:#f39c12; border:1px solid #555; padding:10px; font-family:monospace;"></textarea>
+                    <div class="oculus-upload-card" id="oculus-transship-card">
+                        <i class="fas fa-exchange-alt"></i>
+                        <div>
+                            <h3>Transship CSV</h3>
+                            <p id="oculus-transship-status">Transship trailers and unit counts.</p>
+                        </div>
+                        <div class="file-card-actions">
+                            <button id="browse-oculus-transship-btn" class="browse-btn" type="button">
+                                <i class="fas fa-file-csv"></i> Select
+                            </button>
+                            <button id="clear-oculus-transship-btn" class="browse-btn danger-btn" type="button" disabled>
+                                <i class="fas fa-trash"></i> Remove
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div style="margin-top: 20px; text-align: right;">
-                    <button onclick="window.switchHubStep(1)" class="browse-btn" style="background:#555;"><i class="fas fa-arrow-left"></i> Back</button>
-                    <button onclick="window.processHubData()" class="browse-btn" style="background:#27ae60;">SYNC & FINISH <i class="fas fa-check-circle"></i></button>
+                <p class="oculus-sync-summary" id="oculus-sync-summary">No Oculus files selected.</p>
+                <div class="modal-actions">
+                    <button onclick="document.getElementById('research-hub-modal').style.display='none'" class="browse-btn secondary-btn">Cancel</button>
+                    <button id="sync-oculus-memory-btn" onclick="window.processHubData()" class="browse-btn success-btn" disabled>Sync Oculus Memory <i class="fas fa-check-circle"></i></button>
                 </div>
             </div>
-
         </div>
     </div>
-    
+
+    <div id="fc-api-modal" class="modal" style="display:none; z-index: 2100;">
+        <div class="modal-content api-modal-content">
+            <h2><i class="fas fa-plug-circle-bolt"></i> FC API Test</h2>
+            <p class="modal-intro">Enter the FCInboundDockService API Gateway details to test Research Queue enrichment.</p>
+            <div class="api-config-grid">
+                <label class="field-label" for="fc-api-endpoint-input">API Gateway Endpoint</label>
+                <input id="fc-api-endpoint-input" type="text" placeholder="https://...">
+
+                <label class="field-label" for="fc-api-warehouse-input">Warehouse ID</label>
+                <input id="fc-api-warehouse-input" type="text" value="GYR2">
+
+                <label class="field-label" for="fc-api-token-input">Authorization Token Optional</label>
+                <input id="fc-api-token-input" type="password" placeholder="Bearer token or raw token">
+            </div>
+            <div class="modal-actions">
+                <button id="fc-api-cancel-btn" class="browse-btn secondary-btn" type="button">Cancel</button>
+                <button id="fc-api-submit-btn" class="browse-btn" type="button">
+                    <i class="fas fa-plug-circle-bolt"></i> Test API
+                </button>
+            </div>
+        </div>
+    </div>
+
     <footer>
-        <span id="eos-version">Version: 1.0.0</span>
+        <span>EOS dashboard ready</span>
     </footer>
 
-    <script src="database.js"></script> 
+    <script src="database.js"></script>
     <script src="renderer.js"></script>
+    <script src="cut-view.js"></script>
 </body>
 </html>

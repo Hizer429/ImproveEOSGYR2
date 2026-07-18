@@ -1,6 +1,6 @@
 {
   "name": "gyr2-eos-dashboard",
-  "version": "3.2.1",
+  "version": "3.4.2",
   "description": "GYR2 End-of-Shift Dashboard with Dual CSV Reconciliation",
   "main": "main.js",
   "scripts": {
@@ -49,6 +49,7 @@
       "main.js",
       "preload.js",
       "renderer.js",
+      "cut-view.js",
       "index.html",
       "styles.css",
       "database.js",

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EOS CUT View Concept</title>
+    <link rel="stylesheet" href="concept-preview.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="starfield"></div>
+
+    <header class="app-header">
+        <div>
+            <p class="eyebrow">Ansancw</p>
+            <h1>EOS Operations Console</h1>
+        </div>
+
+        <div class="user-info">
+            <span class="badge badge-vto"><i class="fas fa-user-clock"></i> VTO</span>
+            <span class="badge badge-clerk"><i class="fas fa-id-badge"></i> CLERK</span>
+            <span class="version-badge">CUT preview</span>
+        </div>
+    </header>
+
+    <main>
+        <section class="viewbar">
+            <button class="browse-btn secondary-btn"><i class="fas fa-arrow-left"></i> Back To EOS</button>
+            <div class="viewbar-copy">
+                <p class="eyebrow">Trailer CUT Board</p>
+                <h2>YMS PS/DD trailers enriched with Oculus and Dock Dash</h2>
+            </div>
+            <div class="viewbar-actions">
+                <button class="browse-btn secondary-btn"><i class="fas fa-filter"></i> Filters</button>
+                <button class="browse-btn"><i class="fas fa-copy"></i> Copy Priority List</button>
+            </div>
+        </section>
+
+        <section class="cut-shell">
+            <aside class="side-panel inputs-panel">
+                <div class="panel-heading compact">
+                    <div>
+                        <p class="eyebrow">Source Truth</p>
+                        <h2>Loaded Reports</h2>
+                    </div>
+                </div>
+
+                <div class="source-card good">
+                    <i class="fas fa-database"></i>
+                    <div>
+                        <strong>Yard / YMS CSV</strong>
+                        <span>147 PS/DD trailers shown</span>
+                    </div>
+                </div>
+                <div class="source-card good">
+                    <i class="fas fa-truck-loading"></i>
+                    <div>
+                        <strong>Oculus Vendor</strong>
+                        <span>Units, cartons, pallets, CUT</span>
+                    </div>
+                </div>
+                <div class="source-card good">
+                    <i class="fas fa-exchange-alt"></i>
+                    <div>
+                        <strong>Oculus Transship</strong>
+                        <span>Total units and totes/cases</span>
+                    </div>
+                </div>
+                <div class="source-card caution">
+                    <i class="fas fa-file-csv"></i>
+                    <div>
+                        <strong>Dock Dash</strong>
+                        <span>Used only to fill missing details</span>
+                    </div>
+                </div>
+
+                <div class="filter-stack">
+                    <div class="filter-heading">
+                        <span>View</span>
+                        <strong>All Active Trailers</strong>
+                    </div>
+                    <button class="filter selected"><i class="fas fa-list"></i> All PS/DD</button>
+                    <button class="filter"><i class="fas fa-door-open"></i> Doors Only</button>
+                    <button class="filter"><i class="fas fa-parking"></i> Yard Only</button>
+                    <button class="filter"><i class="fas fa-triangle-exclamation"></i> Missing CUT</button>
+                </div>
+            </aside>
+
+            <section class="dashboard-panel cut-panel">
+                <div class="panel-heading">
+                    <div>
+                        <p class="eyebrow">Priority</p>
+                        <h2>Earliest Critical Unload Time First</h2>
+                    </div>
+                    <div class="segmented">
+                        <button class="selected">All</button>
+                        <button>Vendor</button>
+                        <button>Transship</button>
+                        <button>Parcel</button>
+                    </div>
+                </div>
+
+                <div class="metric-grid">
+                    <article class="metric-card red">
+                        <i class="fas fa-fire"></i>
+                        <span>Past CUT</span>
+                        <strong>4</strong>
+                    </article>
+                    <article class="metric-card orange">
+                        <i class="fas fa-hourglass-half"></i>
+                        <span>Next 4 Hours</span>
+                        <strong>12</strong>
+                    </article>
+                    <article class="metric-card cyan">
+                        <i class="fas fa-truck-ramp-box"></i>
+                        <span>In Yard</span>
+                        <strong>96</strong>
+                    </article>
+                    <article class="metric-card green">
+                        <i class="fas fa-door-open"></i>
+                        <span>On Doors</span>
+                        <strong>51</strong>
+                    </article>
+                </div>
+
+                <div class="toolbar">
+                    <label class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input value="" placeholder="Search ISA, VRID, location, carrier, notes">
+                    </label>
+                    <span class="hint-pill"><i class="fas fa-sort"></i> Sorted by CUT</span>
+                    <span class="hint-pill"><i class="fas fa-circle-info"></i> Missing data stays visible</span>
+                </div>
+
+                <div class="cut-table-wrap">
+                    <table class="cut-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>ISA / VRID</th>
+                                <th>Loc</th>
+                                <th>Type</th>
+                                <th>CUT</th>
+                                <th>Units</th>
+                                <th>Cartons</th>
+                                <th>PL</th>
+                                <th>Source</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="risk-high">
+                                <td><span class="rank">1</span></td>
+                                <td><strong>275966008993</strong><span>113DL42JP</span></td>
+                                <td>PS529</td>
+                                <td><span class="type-pill transship">Transship</span></td>
+                                <td><strong>07/02 17:00</strong><span class="late">Due now</span></td>
+                                <td>2,849</td>
+                                <td>115</td>
+                                <td>8</td>
+                                <td><span class="source good">YMS + Oculus</span></td>
+                                <td>Inbound palletized freight</td>
+                            </tr>
+                            <tr class="risk-soon">
+                                <td><span class="rank">2</span></td>
+                                <td><strong>275076008993</strong><span>529256</span></td>
+                                <td>PS743</td>
+                                <td><span class="type-pill vendor">Vendor Drop</span></td>
+                                <td><strong>07/03 17:00</strong><span>Next wave</span></td>
+                                <td>27,536</td>
+                                <td>1,752</td>
+                                <td>28</td>
+                                <td><span class="source good">YMS + Oculus</span></td>
+                                <td>Normal CARP drop</td>
+                            </tr>
+                            <tr>
+                                <td><span class="rank">3</span></td>
+                                <td><strong>276031008993</strong><span>PTLZ244455</span></td>
+                                <td>PS535</td>
+                                <td><span class="type-pill vendor">Vendor Drop</span></td>
+                                <td><strong>07/05 17:00</strong><span>Future</span></td>
+                                <td>35,429</td>
+                                <td>0</td>
+                                <td>97</td>
+                                <td><span class="source good">YMS + Oculus</span></td>
+                                <td>AZNG palletized</td>
+                            </tr>
+                            <tr>
+                                <td><span class="rank">4</span></td>
+                                <td><strong>275995008993</strong><span>PRTZ180898</span></td>
+                                <td>DD042</td>
+                                <td><span class="type-pill parcel">Parcel</span></td>
+                                <td><strong>--</strong><span>Missing CUT</span></td>
+                                <td>51,159</td>
+                                <td>1,046</td>
+                                <td>0</td>
+                                <td><span class="source warn">YMS + Oculus</span></td>
+                                <td>Small parcel on door</td>
+                            </tr>
+                            <tr>
+                                <td><span class="rank">5</span></td>
+                                <td><strong>254118008993</strong><span>111B8FD2Y</span></td>
+                                <td>PS421</td>
+                                <td><span class="type-pill issue">Disruption</span></td>
+                                <td><strong>--</strong><span>No Oculus match</span></td>
+                                <td>--</td>
+                                <td>--</td>
+                                <td>0</td>
+                                <td><span class="source warn">YMS Only</span></td>
+                                <td>IBREJECTION CASE # unsafe to unload</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <aside class="side-panel priority-panel">
+                <div class="panel-heading compact">
+                    <div>
+                        <p class="eyebrow">Handoff</p>
+                        <h2>Action Queue</h2>
+                    </div>
+                    <span class="count-badge">16</span>
+                </div>
+
+                <div class="action-card urgent">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <div>
+                        <strong>4 trailers past CUT</strong>
+                        <span>Review first, but do not hide current-hour work.</span>
+                    </div>
+                </div>
+
+                <div class="action-card">
+                    <i class="fas fa-door-open"></i>
+                    <div>
+                        <strong>9 yard trailers need doors</strong>
+                        <span>PS rows with upcoming CUT and units confirmed.</span>
+                    </div>
+                </div>
+
+                <div class="action-card">
+                    <i class="fas fa-circle-question"></i>
+                    <div>
+                        <strong>6 missing CUT or units</strong>
+                        <span>Visible in table so they do not disappear.</span>
+                    </div>
+                </div>
+
+                <div class="copy-card">
+                    <p class="eyebrow">Copied List Preview</p>
+                    <pre>1. 275966008993 PS529 CUT 07/02 17:00
+2. 275076008993 PS743 CUT 07/03 17:00
+3. 276031008993 PS535 CUT 07/05 17:00</pre>
+                </div>
+            </aside>
+        </section>
+    </main>
+</body>
+</html>
