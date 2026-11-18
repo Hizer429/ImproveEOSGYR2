@@ -1,89 +1,2251 @@
 // ==UserScript==
 // @name         GYR2 EOS Browser Test
 // @namespace    gyr2.operations.eos
-// @version      0.1.2
-// @description  Current EOS CSV workflow packaged for browser testing; desktop version 3.4.2.
-// @match        https://oculus.qubit.amazon.dev/*
-// @match        https://example.com/*
+// @version      0.1.5
+// @description  EOS CSV workflow in Slack web with bundled icons; desktop version 3.4.2.
+// @match        https://app.slack.com/*
+// @match        https://*.slack.com/*
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_setClipboard
 // @grant        GM_info
+// @sandbox      DOM
 // @noframes
 // @run-at       document-end
 // ==/UserScript==
+// Bundled icons: Font Awesome Free 6.5.1, https://fontawesome.com, CC BY 4.0.
 (function () {
     'use strict';
-    const appHtml = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Amazon EOS</title>\n    <style>:root {\n    --bg: #0b1016;\n    --panel: #121a23;\n    --panel-2: #172230;\n    --panel-3: #0f1720;\n    --line: #283544;\n    --line-strong: #344657;\n    --text-color: #eef4f8;\n    --muted: #8fa2b4;\n    --primary-color: #ff9900;\n    --primary-2: #ffb84d;\n    --cyan: #22d3ee;\n    --teal: #2dd4bf;\n    --green: #4ade80;\n    --violet: #a78bfa;\n    --red: #fb7185;\n    --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);\n    --app-scale: 1;\n    --app-max-width: 1460px;\n    --app-gutter: clamp(14px, calc(28px * var(--app-scale)), 34px);\n    --panel-pad: clamp(12px, calc(16px * var(--app-scale)), 20px);\n    --grid-gap: clamp(10px, calc(16px * var(--app-scale)), 20px);\n    --tile-pad: clamp(11px, calc(14px * var(--app-scale)), 18px);\n    --tile-height: clamp(112px, calc(132px * var(--app-scale)), 158px);\n    --side-column: clamp(250px, calc(280px * var(--app-scale)), 310px);\n    --priority-column: clamp(230px, calc(260px * var(--app-scale)), 290px);\n}\n\n* {\n    box-sizing: border-box;\n}\n\nhtml {\n    font-size: clamp(13px, calc(15px * var(--app-scale)), 17px);\n}\n\nbody {\n    min-height: 100vh;\n    margin: 0;\n    background: var(--bg);\n    color: var(--text-color);\n    font-family: \"Segoe UI\", Tahoma, Geneva, Verdana, sans-serif;\n    overflow-x: hidden;\n}\n\nbutton,\ninput,\ntextarea,\nselect {\n    font: inherit;\n}\n\nbutton:disabled {\n    cursor: not-allowed;\n    filter: saturate(0.35);\n    opacity: 0.58;\n}\n\n#starfield {\n    position: fixed;\n    inset: 0;\n    z-index: -1;\n    overflow: hidden;\n    background:\n        radial-gradient(circle at 20% 0%, rgba(56, 189, 248, 0.12), transparent 32rem),\n        linear-gradient(135deg, #0b1016 0%, #111827 100%);\n    pointer-events: none;\n}\n\n.star {\n    position: absolute;\n    width: 2px;\n    height: 2px;\n    border-radius: 50%;\n    background: rgba(255, 255, 255, 0.72);\n    animation: twinkle 3s infinite ease-in-out;\n}\n\n@keyframes twinkle {\n    0%, 100% { opacity: 0.72; transform: scale(1); }\n    50% { opacity: 0.2; transform: scale(0.8); }\n}\n\n.app-header {\n    position: sticky;\n    top: 0;\n    z-index: 100;\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: calc(24px * var(--app-scale));\n    padding: clamp(14px, calc(18px * var(--app-scale)), 22px) var(--app-gutter);\n    border-bottom: 1px solid var(--line);\n    background: rgba(11, 16, 22, 0.9);\n    backdrop-filter: blur(16px);\n}\n\n.eyebrow {\n    margin: 0 0 4px;\n    color: var(--primary-2);\n    font-size: 0.72rem;\n    font-weight: 800;\n    letter-spacing: 0.08em;\n    text-transform: uppercase;\n}\n\nh1,\nh2,\nh3,\np {\n    margin-top: 0;\n}\n\nh1 {\n    margin-bottom: 0;\n    font-size: 1.45rem;\n    line-height: 1.15;\n}\n\nh2 {\n    margin-bottom: 0;\n    font-size: 1.1rem;\n    line-height: 1.2;\n}\n\nh3 {\n    margin-bottom: 12px;\n    color: #c9d6e2;\n    font-size: 0.82rem;\n    letter-spacing: 0.05em;\n    text-transform: uppercase;\n}\n\n.user-info {\n    display: flex;\n    align-items: center;\n    gap: 10px;\n}\n\n.badge,\n.version-badge,\n.hint-pill {\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    gap: 7px;\n    min-height: 32px;\n    padding: 6px 10px;\n    border: 1px solid var(--line);\n    border-radius: 999px;\n    color: var(--muted);\n    font-size: 0.8rem;\n    font-weight: 700;\n    white-space: nowrap;\n}\n\n.badge-vto {\n    border-color: rgba(255, 153, 0, 0.35);\n    color: var(--primary-2);\n}\n\n.badge-clerk {\n    border-color: rgba(74, 222, 128, 0.35);\n    color: var(--green);\n}\n\nmain {\n    width: min(var(--app-max-width), 100%);\n    margin: 0 auto;\n    padding: clamp(14px, calc(18px * var(--app-scale)), 24px) var(--app-gutter) clamp(16px, calc(22px * var(--app-scale)), 30px);\n}\n\n#action-panel {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: calc(18px * var(--app-scale));\n    margin-bottom: var(--grid-gap);\n    padding: var(--panel-pad);\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: rgba(18, 26, 35, 0.92);\n    box-shadow: var(--shadow);\n}\n\n#action-panel.status-neutral {\n    border-color: var(--line);\n    background: rgba(18, 26, 35, 0.92);\n}\n\n#action-panel.status-success {\n    border-color: rgba(74, 222, 128, 0.34);\n    background: linear-gradient(90deg, rgba(74, 222, 128, 0.14), rgba(18, 26, 35, 0.92));\n}\n\n#action-panel.status-critical {\n    border-color: rgba(251, 113, 133, 0.34);\n    background: linear-gradient(90deg, rgba(251, 113, 133, 0.16), rgba(255, 153, 0, 0.08));\n}\n\n#action-panel.cut-hidden {\n    display: none;\n}\n\n.status-copy {\n    display: flex;\n    align-items: center;\n    min-width: 0;\n    gap: 14px;\n    font-weight: 800;\n}\n\n#action-icon {\n    display: grid;\n    flex: 0 0 auto;\n    place-items: center;\n    width: 42px;\n    height: 42px;\n    border-radius: 8px;\n    background: #223041;\n    color: var(--primary-color);\n    font-size: 1.2rem;\n}\n\n.status-critical #action-icon {\n    background: rgba(251, 113, 133, 0.18);\n    color: var(--red);\n}\n\n.status-success #action-icon {\n    background: rgba(74, 222, 128, 0.16);\n    color: var(--green);\n}\n\n#action-message {\n    min-width: 0;\n    overflow-wrap: anywhere;\n}\n\n.status-actions {\n    display: flex;\n    flex: 0 0 auto;\n    gap: 10px;\n}\n\n.browse-btn,\n.btn-warning,\n.nav-btn,\n.close-overlay {\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    gap: 8px;\n    min-height: 40px;\n    padding: 0 14px;\n    border: 0;\n    border-radius: 8px;\n    background: linear-gradient(135deg, var(--primary-color), #f97316);\n    color: #16100a;\n    font-size: 0.88rem;\n    font-weight: 900;\n    cursor: pointer;\n    text-decoration: none;\n    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);\n    transition: border-color 0.18s, box-shadow 0.18s, filter 0.18s, transform 0.18s;\n}\n\n.browse-btn:hover:not(:disabled),\n.btn-warning:hover:not(:disabled),\n.nav-btn:hover:not(:disabled),\n.close-overlay:hover:not(:disabled) {\n    filter: brightness(1.08);\n    transform: translateY(-1px);\n    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.24);\n}\n\n.browse-btn:active:not(:disabled),\n.btn-warning:active:not(:disabled),\n.nav-btn:active:not(:disabled),\n.close-overlay:active:not(:disabled) {\n    transform: translateY(0);\n    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);\n}\n\n.browse-btn:focus-visible,\n.btn-warning:focus-visible,\n.nav-btn:focus-visible,\n.close-overlay:focus-visible {\n    outline: 2px solid rgba(255, 184, 77, 0.85);\n    outline-offset: 3px;\n}\n\n.export-btn,\n.success-btn {\n    background: linear-gradient(135deg, var(--green), #22c55e);\n}\n\n.hub-btn {\n    background: linear-gradient(135deg, var(--violet), #7c3aed);\n    color: #f8f5ff;\n}\n\n.secondary-btn {\n    border: 1px solid var(--line);\n    background: linear-gradient(180deg, #243347, #1b2735);\n    color: var(--text-color);\n}\n\n.console-grid {\n    display: grid;\n    grid-template-columns: var(--side-column) minmax(0, 1fr) var(--priority-column);\n    gap: var(--grid-gap);\n    align-items: start;\n}\n\n.side-panel,\n.dashboard-panel,\n.tool-card {\n    min-width: 0;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: rgba(18, 26, 35, 0.92);\n    box-shadow: var(--shadow);\n}\n\n.side-panel,\n.dashboard-panel {\n    padding: var(--panel-pad);\n}\n\n.panel-heading {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: calc(14px * var(--app-scale));\n    margin-bottom: calc(18px * var(--app-scale));\n}\n\n.panel-heading.compact {\n    margin-bottom: 14px;\n}\n\n.upload-container {\n    display: grid;\n    gap: clamp(8px, calc(10px * var(--app-scale)), 13px);\n}\n\n.upload-card {\n    display: grid;\n    grid-template-columns: 34px minmax(0, 1fr);\n    align-items: start;\n    gap: calc(12px * var(--app-scale));\n    min-height: clamp(64px, calc(72px * var(--app-scale)), 84px);\n    padding: clamp(10px, calc(12px * var(--app-scale)), 15px);\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-2);\n}\n\n.upload-card.success {\n    border-color: rgba(74, 222, 128, 0.42);\n}\n\n.upload-card.error {\n    border-color: rgba(251, 113, 133, 0.42);\n}\n\n.main-icon {\n    color: var(--primary-color);\n    font-size: 1.25rem !important;\n}\n\n.upload-card.success .main-icon {\n    color: var(--green);\n}\n\n.upload-card.error .main-icon {\n    color: var(--red);\n}\n\n.file-card-actions {\n    display: flex;\n    grid-column: 1 / -1;\n    flex-wrap: nowrap;\n    gap: 10px;\n}\n\n.file-card-actions .browse-btn {\n    flex: 1 1 0;\n    min-width: 0;\n    padding-inline: 10px;\n    white-space: nowrap;\n}\n\n.danger-btn {\n    background: linear-gradient(135deg, #fb7185, #ef4444);\n    color: #210b0f;\n}\n\n.danger-btn:disabled {\n    cursor: not-allowed;\n    opacity: 0.45;\n    filter: grayscale(0.35);\n}\n\n.upload-card h2 {\n    margin-bottom: 3px;\n    font-size: 0.95rem;\n    line-height: 1.2;\n}\n\n.upload-card p {\n    margin: 0;\n    color: var(--muted);\n    font-size: 0.78rem;\n    line-height: 1.35;\n}\n\n.queue-note {\n    margin-top: 16px;\n    padding: 12px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-3);\n}\n\n.queue-note {\n    color: var(--muted);\n    font-size: 0.82rem;\n    line-height: 1.4;\n}\n\n.queue-note {\n    display: flex;\n    gap: 10px;\n}\n\n.queue-note i {\n    margin-top: 2px;\n    color: var(--primary-2);\n}\n\n.api-test-card {\n    display: grid;\n    gap: 9px;\n    margin-top: 16px;\n    padding: 12px;\n    border: 1px solid rgba(34, 211, 238, 0.28);\n    border-radius: 8px;\n    background: rgba(34, 211, 238, 0.06);\n}\n\n.api-test-card .browse-btn {\n    width: 100%;\n}\n\n.api-test-card p {\n    margin: 0;\n    color: var(--muted);\n    font-size: 0.78rem;\n    font-weight: 800;\n    line-height: 1.35;\n}\n\n.api-test-card.success {\n    border-color: rgba(74, 222, 128, 0.36);\n    background: rgba(74, 222, 128, 0.07);\n}\n\n.api-test-card.error {\n    border-color: rgba(251, 113, 133, 0.38);\n    background: rgba(251, 113, 133, 0.08);\n}\n\n.metric-section + .metric-section {\n    margin-top: calc(18px * var(--app-scale));\n}\n\n.metrics-grid {\n    display: grid;\n    grid-template-columns: repeat(4, minmax(0, 1fr));\n    gap: clamp(9px, calc(12px * var(--app-scale)), 16px);\n}\n\n.parcel-grid {\n    grid-template-columns: repeat(5, minmax(0, 1fr));\n}\n\n.priority-stack {\n    display: grid;\n    gap: clamp(9px, calc(12px * var(--app-scale)), 16px);\n}\n\n.metric-tile {\n    container-type: inline-size;\n    min-height: var(--tile-height);\n    padding: var(--tile-pad);\n    border: 1px solid var(--line);\n    border-left-width: 4px;\n    border-radius: 8px;\n    background: linear-gradient(180deg, #182331, #121a23);\n    cursor: pointer;\n    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;\n}\n\n.metric-tile:hover {\n    border-color: var(--line-strong);\n    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);\n    transform: translateY(-2px);\n}\n\n.priority-tile {\n    min-height: clamp(126px, calc(150px * var(--app-scale)), 178px);\n}\n\n.tile-content {\n    min-width: 0;\n}\n\n.icon {\n    margin-bottom: clamp(12px, calc(18px * var(--app-scale)), 22px);\n    font-size: 1.25rem;\n}\n\n.label {\n    min-height: 32px;\n    color: var(--muted);\n    font-size: 0.76rem;\n    font-weight: 800;\n    letter-spacing: 0.04em;\n    line-height: 1.25;\n    text-transform: uppercase;\n}\n\n.value {\n    margin-top: clamp(6px, calc(8px * var(--app-scale)), 10px);\n    max-width: 100%;\n    overflow: hidden;\n    font-size: clamp(1.55rem, 23cqw, 2rem);\n    font-weight: 900;\n    line-height: 1;\n    letter-spacing: 0;\n    white-space: nowrap;\n    font-variant-numeric: tabular-nums;\n}\n\n.metric-tile[data-category=\"Volume\"] .value {\n    font-size: clamp(1.35rem, 20cqw, 1.85rem);\n}\n\n.value.long-value {\n    font-size: clamp(1.35rem, 19cqw, 1.75rem);\n}\n\n.value.extra-long-value {\n    font-size: clamp(1.15rem, 17cqw, 1.55rem);\n}\n\n.metric-tile[data-category=\"Operations\"] {\n    border-left-color: var(--cyan);\n}\n\n.metric-tile[data-category=\"Operations\"] .icon,\n.metric-tile[data-category=\"Operations\"] .value {\n    color: var(--cyan);\n}\n\n.metric-tile[data-category=\"Parcels\"] {\n    border-left-color: var(--violet);\n}\n\n.metric-tile[data-category=\"Parcels\"] .icon,\n.metric-tile[data-category=\"Parcels\"] .value {\n    color: var(--violet);\n}\n\n.metric-tile[data-category=\"Critical\"] {\n    border-left-color: var(--red);\n}\n\n.metric-tile[data-category=\"Critical\"] .icon,\n.metric-tile[data-category=\"Critical\"] .value {\n    color: var(--red);\n}\n\n.metric-tile[data-category=\"Volume\"] {\n    border-left-color: var(--green);\n}\n\n.metric-tile[data-category=\"Volume\"] .icon,\n.metric-tile[data-category=\"Volume\"] .value {\n    color: var(--green);\n}\n\n.metric-tile.critical-active {\n    border-color: rgba(251, 113, 133, 0.55);\n    box-shadow: 0 0 0 1px rgba(251, 113, 133, 0.25), 0 18px 42px rgba(251, 113, 133, 0.13);\n}\n\n.compact-display .hint-pill {\n    display: none;\n}\n\n.compact-display .metric-tile {\n    min-height: 108px;\n}\n\n.compact-display .priority-tile {\n    min-height: 118px;\n}\n\n.compact-display .icon {\n    margin-bottom: 10px;\n}\n\n.wide-display .metric-tile {\n    min-height: 152px;\n}\n\n.hidden-section {\n    display: none;\n    margin-top: 16px;\n    animation: slideDown 0.25s ease-out;\n}\n\n.hidden-feature {\n    display: none !important;\n}\n\n.hidden-section.visible {\n    display: block;\n}\n\n@keyframes slideDown {\n    from { opacity: 0; transform: translateY(-10px); }\n    to { opacity: 1; transform: translateY(0); }\n}\n\n.tool-card {\n    padding: var(--panel-pad);\n}\n\n.tool-split {\n    display: grid;\n    grid-template-columns: 1.25fr 0.75fr;\n    gap: var(--grid-gap);\n}\n\n.generator-box,\n.decoder-box {\n    min-width: 0;\n    padding: 14px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-2);\n}\n\n.barcode-controls {\n    display: grid;\n    grid-template-columns: repeat(3, 1fr);\n    gap: 10px;\n    margin-bottom: 12px;\n}\n\n.barcode-controls label,\n.field-label,\n.hub-grid label {\n    display: grid;\n    gap: 6px;\n    color: #c9d6e2;\n    font-size: 0.78rem;\n    font-weight: 800;\n    text-transform: uppercase;\n}\n\ninput,\ntextarea,\nselect {\n    width: 100%;\n    border: 1px solid var(--line-strong);\n    border-radius: 8px;\n    background: #0b121a;\n    color: var(--text-color);\n    outline: none;\n}\n\ninput:focus,\ntextarea:focus,\nselect:focus {\n    border-color: rgba(255, 153, 0, 0.62);\n    box-shadow: 0 0 0 3px rgba(255, 153, 0, 0.1);\n}\n\n.barcode-controls input {\n    min-height: 38px;\n    padding: 8px;\n}\n\ntextarea#admin-input,\ninput#admin-decoder {\n    font-family: Consolas, \"Courier New\", monospace;\n}\n\ntextarea#admin-input {\n    min-height: 150px;\n    padding: 10px;\n    resize: vertical;\n}\n\ninput#admin-decoder {\n    min-height: 42px;\n    padding: 10px;\n}\n\n.tool-actions {\n    display: flex;\n    gap: 10px;\n    margin-top: 10px;\n}\n\n.tool-actions .btn-warning {\n    flex: 1;\n}\n\n.output-display {\n    min-height: 92px;\n    margin-top: 10px;\n    padding: 10px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-3);\n    color: var(--primary-2);\n    font-family: Consolas, \"Courier New\", monospace;\n    font-size: 0.82rem;\n    white-space: pre-wrap;\n}\n\n.memory-test-toggle {\n    margin-top: 12px;\n    padding: 10px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-3);\n}\n\n.memory-test-toggle label {\n    display: flex;\n    align-items: center;\n    gap: 10px;\n    color: var(--muted);\n    font-size: 0.82rem;\n    font-weight: 800;\n}\n\n.memory-test-toggle input {\n    width: 18px;\n    height: 18px;\n    accent-color: var(--primary-color);\n}\n\n.memory-admin-actions {\n    margin-top: 12px;\n    padding: 10px;\n    border: 1px solid rgba(251, 113, 133, 0.36);\n    border-radius: 8px;\n    background: rgba(251, 113, 133, 0.08);\n}\n\n.memory-admin-actions .btn-warning {\n    width: 100%;\n}\n\n.memory-admin-actions p {\n    margin: 8px 0 0;\n    color: var(--muted);\n    font-size: 0.78rem;\n    line-height: 1.35;\n}\n\n#printable-area {\n    margin-top: 14px;\n}\n\n.barcode-wrapper {\n    display: inline-block;\n    margin: 0 12px 16px 0;\n    padding: 12px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: #ffffff;\n}\n\n.modal {\n    display: none;\n    position: fixed;\n    inset: 0;\n    z-index: 200;\n    overflow: auto;\n    padding: 32px 18px;\n    background-color: rgba(0, 0, 0, 0.76);\n    backdrop-filter: blur(8px);\n}\n\n.modal-content {\n    width: min(980px, 100%);\n    max-height: calc(100vh - 64px);\n    margin: 0 auto;\n    overflow-y: auto;\n    padding: 24px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel);\n    box-shadow: var(--shadow);\n}\n\n.close-button {\n    float: right;\n    width: 36px;\n    min-height: 36px;\n    padding: 0;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-2);\n    color: var(--text-color);\n    font-size: 1.5rem;\n    cursor: pointer;\n}\n\n.close-button:hover {\n    border-color: rgba(255, 153, 0, 0.62);\n    color: var(--primary-color);\n}\n\n.table-container {\n    width: 100%;\n    overflow: auto;\n}\n\n#detail-table {\n    width: 100%;\n    min-width: 660px;\n    margin-top: 15px;\n    border-collapse: collapse;\n    color: var(--text-color);\n}\n\n#detail-table th,\n#detail-table td {\n    padding: 12px 15px;\n    border-bottom: 1px solid var(--line);\n    text-align: left;\n}\n\n#detail-table th {\n    background-color: rgba(255, 153, 0, 0.1);\n    color: var(--primary-2);\n    font-size: 0.78rem;\n    text-transform: uppercase;\n}\n\n#detail-table tbody tr:hover {\n    background-color: rgba(255, 255, 255, 0.04);\n}\n\n.research-assignment-controls {\n    display: grid;\n    min-width: 150px;\n    gap: 8px;\n}\n\n.research-select,\n.research-units-input {\n    min-height: 36px;\n    padding: 7px 9px;\n    border: 1px solid var(--line-strong);\n    border-radius: 8px;\n    background: #0b121a;\n    color: var(--text-color);\n}\n\n.research-select option,\n.research-select optgroup {\n    background: #0b121a;\n    color: var(--text-color);\n}\n\n.research-units-input {\n    width: 100%;\n    color: var(--green);\n    font-weight: 900;\n}\n\n.research-units-input::placeholder {\n    color: var(--muted);\n    font-weight: 700;\n}\n\n.research-edit-btn,\n.research-move-btn {\n    min-height: 32px;\n    border: 0;\n    border-radius: 8px;\n    color: #121a23;\n    font-weight: 900;\n    cursor: pointer;\n}\n\n.research-edit-btn {\n    background: linear-gradient(135deg, #fbbf24, #f97316);\n}\n\n.research-move-btn {\n    background: linear-gradient(135deg, var(--green), #22c55e);\n}\n\n.hub-modal-content h2 {\n    margin-bottom: 10px;\n    color: var(--primary-2);\n}\n\n.modal-intro {\n    margin-bottom: 16px;\n    color: var(--muted);\n}\n\n.hub-grid {\n    display: grid;\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n    gap: 16px;\n}\n\n.oculus-upload-grid {\n    align-items: stretch;\n}\n\n.oculus-upload-card {\n    display: grid;\n    grid-template-columns: auto 1fr;\n    align-items: center;\n    gap: 14px;\n    min-height: 156px;\n    padding: 18px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: rgba(255, 255, 255, 0.035);\n}\n\n.oculus-upload-card > i {\n    color: var(--primary-2);\n    font-size: 2rem;\n}\n\n.oculus-upload-card h3 {\n    margin: 0 0 6px;\n    color: var(--text-color);\n    font-size: 0.98rem;\n}\n\n.oculus-upload-card p {\n    margin: 0;\n    color: var(--muted);\n    font-size: 0.84rem;\n}\n\n.oculus-upload-card > .browse-btn,\n.oculus-upload-card > .file-card-actions {\n    grid-column: 1 / -1;\n}\n\n.oculus-upload-card > .browse-btn {\n    justify-content: center;\n}\n\n.oculus-upload-card.success {\n    border-color: rgba(34, 197, 94, 0.55);\n}\n\n.oculus-upload-card.error {\n    border-color: rgba(239, 68, 68, 0.65);\n}\n\n.oculus-sync-summary {\n    margin: 16px 0 0;\n    color: var(--muted);\n    font-weight: 800;\n}\n\n.api-modal-content {\n    width: min(720px, 100%);\n}\n\n.api-modal-content h2 {\n    margin-bottom: 10px;\n    color: var(--primary-2);\n}\n\n.api-config-grid {\n    display: grid;\n    gap: 8px;\n}\n\n.api-config-grid input {\n    min-height: 42px;\n    padding: 10px;\n    margin-bottom: 8px;\n}\n\n.cut-board-view {\n    margin-top: 0;\n}\n\n.cut-viewbar {\n    display: grid;\n    grid-template-columns: auto 1fr auto;\n    align-items: center;\n    gap: 16px;\n    margin-bottom: 16px;\n    padding: 16px;\n    border: 1px solid rgba(255, 153, 0, 0.36);\n    border-radius: 8px;\n    background: linear-gradient(90deg, rgba(255, 153, 0, 0.14), rgba(34, 211, 238, 0.07));\n    box-shadow: var(--shadow);\n}\n\n.cut-viewbar-copy h2 {\n    margin-bottom: 0;\n    color: #f8fafc;\n    font-size: 1.08rem;\n}\n\n.cut-viewbar-actions {\n    display: flex;\n    align-items: center;\n    gap: 10px;\n}\n\n.cut-shell {\n    display: grid;\n    grid-template-columns: 310px minmax(0, 1fr) 320px;\n    gap: var(--grid-gap);\n    align-items: start;\n}\n\n.cut-source-card {\n    display: grid;\n    grid-template-columns: 36px 1fr;\n    align-items: center;\n    gap: 12px;\n    min-height: 64px;\n    margin-top: 10px;\n    padding: 12px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-2);\n}\n\n.cut-source-card i {\n    color: var(--primary-2);\n    font-size: 1.1rem;\n}\n\n.cut-source-card strong,\n.cut-source-card span {\n    display: block;\n}\n\n.cut-source-card span {\n    margin-top: 3px;\n    color: var(--muted);\n    font-size: 0.78rem;\n}\n\n.cut-source-card.ready {\n    border-color: rgba(34, 197, 94, 0.36);\n}\n\n.cut-source-card.ready i {\n    color: var(--green);\n}\n\n.cut-filter-stack {\n    display: grid;\n    gap: 8px;\n    margin-top: 18px;\n}\n\n.cut-filter-heading {\n    padding: 12px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-3);\n}\n\n.cut-filter-heading span,\n.cut-metric-card span,\n.cut-action-card span {\n    display: block;\n    color: var(--muted);\n    font-size: 0.78rem;\n}\n\n.cut-filter-heading strong {\n    display: block;\n    margin-top: 5px;\n    color: var(--text-color);\n}\n\n.cut-filter {\n    display: inline-flex;\n    align-items: center;\n    justify-content: flex-start;\n    gap: 8px;\n    min-height: 40px;\n    padding: 0 14px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: #202c3a;\n    color: var(--text-color);\n    font: inherit;\n    font-size: 0.88rem;\n    font-weight: 900;\n    cursor: pointer;\n}\n\n.cut-filter.selected {\n    border-color: rgba(255, 153, 0, 0.5);\n    color: var(--primary-2);\n}\n\n.cut-panel {\n    display: flex;\n    flex-direction: column;\n    min-width: 0;\n    overflow: visible;\n}\n\n.cut-segmented {\n    display: inline-flex;\n    padding: 4px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-3);\n}\n\n.cut-segmented button {\n    min-height: 30px;\n    padding: 0 10px;\n    border: 0;\n    border-radius: 6px;\n    background: transparent;\n    color: var(--muted);\n    font: inherit;\n    font-size: 0.78rem;\n    font-weight: 900;\n    cursor: pointer;\n}\n\n.cut-segmented button.selected {\n    background: #263444;\n    color: var(--text-color);\n}\n\n.cut-calculator {\n    margin-bottom: 16px;\n    padding: 14px;\n    border: 1px solid rgba(255, 153, 0, 0.34);\n    border-radius: 8px;\n    background: linear-gradient(180deg, rgba(255, 153, 0, 0.08), rgba(15, 23, 32, 0.9));\n}\n\n.cut-calculator-header {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 12px;\n    margin-bottom: 12px;\n}\n\n.cut-calculator-actions {\n    display: flex;\n    align-items: center;\n    gap: 10px;\n}\n\n.cut-calculator-actions .browse-btn {\n    min-height: 44px;\n    padding-inline: 16px;\n    border-color: rgba(56, 189, 248, 0.2);\n    background: linear-gradient(180deg, #27384d, #1b2735);\n}\n\n.cut-calculator-header h3 {\n    margin-bottom: 0;\n    color: var(--text-color);\n    font-size: 0.98rem;\n}\n\n.cut-help-btn,\n.cut-help-close {\n    display: inline-grid;\n    place-items: center;\n    width: 44px;\n    min-width: 44px;\n    height: 44px;\n    border: 1px solid var(--line);\n    border-radius: 999px;\n    background: linear-gradient(180deg, #26384c, #1b2838);\n    color: var(--primary-2);\n    cursor: pointer;\n    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);\n    transition: border-color 0.18s, box-shadow 0.18s, color 0.18s, transform 0.18s;\n}\n\n.cut-help-btn:hover,\n.cut-help-close:hover {\n    border-color: rgba(255, 153, 0, 0.54);\n    color: #ffd38a;\n    transform: translateY(-1px);\n    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.24);\n}\n\n.cut-help-btn:active,\n.cut-help-close:active {\n    transform: translateY(0);\n}\n\n.cut-help-btn:focus-visible,\n.cut-help-close:focus-visible {\n    outline: 2px solid rgba(255, 184, 77, 0.85);\n    outline-offset: 3px;\n}\n\n.cut-help-close {\n    width: 32px;\n    min-width: 32px;\n    height: 32px;\n    color: var(--muted);\n}\n\n.cut-calc-grid {\n    display: grid;\n    grid-template-columns: repeat(3, minmax(0, 1fr));\n    gap: 10px;\n    margin-bottom: 10px;\n}\n\n.cut-calc-grid.count-grid {\n    grid-template-columns: repeat(5, minmax(0, 1fr));\n}\n\n.cut-calc-grid label,\n.cut-calc-grid label {\n    display: grid;\n    gap: 6px;\n    color: #c9d6e2;\n    font-size: 0.72rem;\n    font-weight: 900;\n    letter-spacing: 0.04em;\n    text-transform: uppercase;\n}\n\n.cut-calc-grid input {\n    min-height: 38px;\n    padding: 8px 9px;\n}\n\n.cut-calc-grid select {\n    min-height: 38px;\n    padding: 8px 9px;\n}\n\n.cut-calc-grid select option {\n    background: #0b121a;\n    color: var(--text-color);\n}\n\n.cut-forecast-grid {\n    display: grid;\n    grid-template-columns: repeat(5, minmax(0, 1fr));\n    gap: 10px;\n}\n\n.cut-forecast-card {\n    min-height: 76px;\n    padding: 10px;\n    border: 1px solid var(--line);\n    border-left: 4px solid var(--cyan);\n    border-radius: 8px;\n    background: var(--panel-3);\n}\n\n.cut-forecast-card span,\n.cut-next-action {\n    color: var(--muted);\n    font-size: 0.76rem;\n    font-weight: 800;\n}\n\n.cut-forecast-card strong {\n    display: block;\n    margin-top: 8px;\n    color: var(--cyan);\n    font-size: 1.45rem;\n    line-height: 1;\n}\n\n.cut-forecast-card.warning {\n    border-left-color: var(--red);\n}\n\n.cut-forecast-card.warning strong {\n    color: var(--red);\n}\n\n.cut-forecast-card.safe {\n    border-left-color: var(--green);\n}\n\n.cut-forecast-card.safe strong {\n    color: var(--green);\n}\n\n.cut-next-action {\n    margin-top: 10px;\n    padding: 10px 12px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-3);\n    line-height: 1.35;\n}\n\n.cut-next-action.good {\n    border-color: rgba(74, 222, 128, 0.36);\n    color: var(--green);\n}\n\n.cut-next-action.warning {\n    border-color: rgba(255, 153, 0, 0.4);\n    color: var(--primary-2);\n}\n\n.cut-next-action.danger {\n    border-color: rgba(251, 113, 133, 0.42);\n    color: var(--red);\n}\n\n.cut-explanation-panel {\n    margin-top: 10px;\n    max-height: 460px;\n    overflow-y: auto;\n    padding: 14px;\n    border: 1px solid rgba(34, 211, 238, 0.3);\n    border-radius: 8px;\n    background: rgba(15, 23, 32, 0.92);\n}\n\n.cut-explanation-heading {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 10px;\n    margin-bottom: 8px;\n}\n\n.cut-explanation-heading strong {\n    color: var(--cyan);\n}\n\n#cut-explanation-body p {\n    margin: 10px 0 0;\n    color: #c9d6e2;\n    font-size: 0.84rem;\n    line-height: 1.5;\n}\n\n.cut-explanation-grid {\n    display: grid;\n    grid-template-columns: repeat(4, minmax(0, 1fr));\n    gap: 8px;\n    margin: 10px 0;\n}\n\n.cut-explanation-grid div {\n    padding: 9px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: #0b121a;\n}\n\n.cut-explanation-grid span,\n.cut-explanation-grid strong {\n    display: block;\n}\n\n.cut-explanation-grid span {\n    color: var(--muted);\n    font-size: 0.7rem;\n    font-weight: 900;\n    text-transform: uppercase;\n}\n\n.cut-explanation-grid strong {\n    margin-top: 5px;\n    color: var(--cyan);\n    font-size: 1.1rem;\n}\n\n.cut-metric-grid {\n    display: grid;\n    grid-template-columns: repeat(4, minmax(0, 1fr));\n    gap: 12px;\n}\n\n.cut-metric-card {\n    min-height: 116px;\n    padding: 14px;\n    border: 1px solid var(--line);\n    border-left-width: 4px;\n    border-radius: 8px;\n    background: linear-gradient(180deg, #182331, #121a23);\n}\n\n.cut-metric-card i {\n    margin-bottom: 14px;\n    font-size: 1.2rem;\n}\n\n.cut-metric-card strong {\n    display: block;\n    margin-top: 8px;\n    font-size: 1.9rem;\n    line-height: 1;\n}\n\n.cut-metric-card.red {\n    border-left-color: var(--red);\n}\n\n.cut-metric-card.red i,\n.cut-metric-card.red strong {\n    color: var(--red);\n}\n\n.cut-metric-card.orange {\n    border-left-color: var(--primary-color);\n}\n\n.cut-metric-card.orange i,\n.cut-metric-card.orange strong {\n    color: var(--primary-2);\n}\n\n.cut-metric-card.cyan {\n    border-left-color: var(--cyan);\n}\n\n.cut-metric-card.cyan i,\n.cut-metric-card.cyan strong {\n    color: var(--cyan);\n}\n\n.cut-metric-card.green {\n    border-left-color: var(--green);\n}\n\n.cut-metric-card.green i,\n.cut-metric-card.green strong {\n    color: var(--green);\n}\n\n.cut-toolbar {\n    display: grid;\n    grid-template-columns: minmax(280px, 1fr) auto auto;\n    align-items: center;\n    gap: 10px;\n    margin: 16px 0 12px;\n}\n\n.cut-search-box {\n    display: flex;\n    align-items: center;\n    gap: 10px;\n    min-height: 42px;\n    padding: 0 12px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-3);\n    color: var(--muted);\n}\n\n.cut-search-box input {\n    width: 100%;\n    border: 0;\n    outline: 0;\n    background: transparent;\n    color: var(--text-color);\n}\n\n.cut-table-wrap {\n    overflow: auto;\n    flex: 1 1 auto;\n    min-height: 260px;\n    max-height: calc(100vh - 430px);\n    border: 1px solid var(--line);\n    border-radius: 8px;\n}\n\n.cut-table {\n    width: 100%;\n    min-width: 1120px;\n    border-collapse: collapse;\n}\n\n.cut-table th,\n.cut-table td {\n    padding: 12px 13px;\n    border-bottom: 1px solid var(--line);\n    text-align: left;\n    vertical-align: middle;\n}\n\n.cut-table th {\n    position: sticky;\n    top: 0;\n    z-index: 2;\n    background: #1d2a38;\n    color: var(--primary-2);\n    font-size: 0.74rem;\n    font-weight: 900;\n    letter-spacing: 0.05em;\n    text-transform: uppercase;\n}\n\n.cut-table tbody tr {\n    background: rgba(15, 23, 32, 0.72);\n}\n\n.cut-table tbody tr:hover {\n    background: rgba(255, 255, 255, 0.04);\n}\n\n.cut-table td strong,\n.cut-table td span {\n    display: block;\n}\n\n.cut-table td span {\n    margin-top: 3px;\n    color: var(--muted);\n    font-size: 0.76rem;\n}\n\n.cut-rank {\n    display: inline-grid !important;\n    place-items: center;\n    width: 30px;\n    height: 30px;\n    border-radius: 999px;\n    background: #263444;\n    color: var(--text-color) !important;\n    font-weight: 900;\n}\n\n.cut-table tr.risk-high {\n    box-shadow: inset 4px 0 0 var(--red);\n}\n\n.cut-table tr.risk-soon {\n    box-shadow: inset 4px 0 0 var(--primary-color);\n}\n\n.cut-type-pill,\n.cut-source {\n    display: inline-flex !important;\n    align-items: center;\n    justify-content: center;\n    width: fit-content;\n    min-height: 26px;\n    padding: 4px 8px;\n    border-radius: 999px;\n    font-size: 0.72rem !important;\n    font-weight: 900;\n}\n\n.cut-type-pill.vendor,\n.cut-type-pill.live {\n    background: rgba(255, 153, 0, 0.14);\n    color: var(--primary-2) !important;\n}\n\n.cut-type-pill.transship {\n    background: rgba(34, 211, 238, 0.12);\n    color: var(--cyan) !important;\n}\n\n.cut-type-pill.parcel {\n    background: rgba(167, 139, 250, 0.15);\n    color: var(--violet) !important;\n}\n\n.cut-type-pill.other {\n    background: rgba(148, 163, 184, 0.14);\n    color: var(--muted) !important;\n}\n\n.cut-source.good {\n    background: rgba(34, 197, 94, 0.13);\n    color: var(--green) !important;\n}\n\n.cut-source.warn {\n    background: rgba(255, 153, 0, 0.13);\n    color: var(--primary-2) !important;\n}\n\n.cut-action-card {\n    display: flex;\n    gap: 12px;\n    margin-bottom: 12px;\n    padding: 12px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-2);\n}\n\n.cut-action-card i {\n    margin-top: 2px;\n    color: var(--cyan);\n}\n\n.cut-action-card strong,\n.cut-action-card span {\n    display: block;\n}\n\n.cut-action-card span {\n    margin-top: 4px;\n}\n\n.cut-action-card.urgent {\n    border-color: rgba(251, 113, 133, 0.38);\n    background: rgba(251, 113, 133, 0.1);\n}\n\n.cut-action-card.urgent i {\n    color: var(--red);\n}\n\n.hub-grid textarea {\n    min-height: 250px;\n    padding: 10px;\n    font-family: Consolas, \"Courier New\", monospace;\n    resize: vertical;\n}\n\n.modal-actions {\n    display: flex;\n    justify-content: flex-end;\n    gap: 10px;\n    margin-top: 20px;\n}\n\n#scan-overlay {\n    position: fixed;\n    inset: 0;\n    z-index: 9999;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    padding: 28px;\n    background: rgba(245, 247, 250, 0.98);\n}\n\n.scan-content {\n    width: min(900px, 100%);\n    color: #1f2937;\n    text-align: center;\n}\n\n.scan-content h2 {\n    margin-bottom: 10px;\n    font-size: 1.35rem;\n}\n\n.scan-content p {\n    color: #5b6572;\n}\n\n.giant-barcode-wrapper {\n    margin: 30px auto;\n    padding: 20px;\n    border: 2px dashed #cbd5e1;\n    border-radius: 8px;\n    background: #ffffff;\n    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);\n}\n\n#giant-barcode {\n    width: 100%;\n    height: auto;\n    max-height: 400px;\n}\n\n.scan-controls {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    gap: 24px;\n}\n\n#scan-progress {\n    min-width: 90px;\n    color: #1f2937;\n    font-size: 1.1rem;\n    font-weight: 900;\n}\n\n.nav-btn {\n    background: #1f2937;\n    color: #ffffff;\n}\n\n.close-overlay {\n    position: absolute;\n    top: 20px;\n    right: 20px;\n    background: #ef4444;\n    color: #ffffff;\n}\n\nfooter {\n    padding: 12px 18px 16px;\n    color: rgba(238, 244, 248, 0.42);\n    font-size: 0.78rem;\n    text-align: center;\n}\n\n@media print {\n    body * {\n        visibility: hidden;\n    }\n\n    #printable-area,\n    #printable-area * {\n        visibility: visible;\n    }\n\n    #printable-area {\n        position: absolute;\n        top: 0;\n        left: 0;\n        width: 100%;\n        margin: 0;\n        padding: 20px;\n        background: #ffffff !important;\n        color: #000000 !important;\n    }\n\n    .barcode-wrapper {\n        display: inline-block;\n        width: 30%;\n        margin-bottom: 30px;\n        border: 0;\n        text-align: center;\n        page-break-inside: avoid;\n    }\n}\n\n@media (max-width: 1240px) {\n    .console-grid {\n        grid-template-columns: minmax(260px, var(--side-column)) minmax(0, 1fr);\n    }\n\n    .cut-shell {\n        grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);\n    }\n\n    .priority-panel {\n        grid-column: 1 / -1;\n    }\n\n    .priority-stack {\n        grid-template-columns: repeat(2, minmax(0, 1fr));\n    }\n\n    .parcel-grid {\n        grid-template-columns: repeat(3, minmax(0, 1fr));\n    }\n}\n\n@media (max-width: 940px) {\n    .app-header,\n    #action-panel {\n        align-items: stretch;\n        flex-direction: column;\n    }\n\n    .user-info,\n    .status-actions {\n        flex-wrap: wrap;\n    }\n\n    .console-grid,\n    .tool-split,\n    .hub-grid,\n    .cut-shell,\n    .cut-viewbar,\n    .cut-toolbar,\n    .cut-calc-grid,\n    .cut-calc-grid.count-grid,\n    .cut-forecast-grid {\n        grid-template-columns: 1fr;\n    }\n\n    .cut-viewbar-actions,\n    .cut-calculator-header,\n    .cut-calculator-actions {\n        flex-wrap: wrap;\n    }\n\n    .cut-panel {\n        max-height: none;\n        overflow: visible;\n    }\n\n    .cut-table-wrap {\n        max-height: 62vh;\n    }\n\n    .metrics-grid,\n    .parcel-grid,\n    .priority-stack,\n    .cut-metric-grid {\n        grid-template-columns: repeat(2, minmax(0, 1fr));\n    }\n}\n\n@media (max-width: 620px) {\n    main {\n        padding-inline: 14px;\n    }\n\n    .app-header {\n        padding-inline: 14px;\n    }\n\n    .upload-card,\n    .metrics-grid,\n    .parcel-grid,\n    .priority-stack,\n    .barcode-controls,\n    .cut-metric-grid,\n    .cut-forecast-grid,\n    .cut-explanation-grid {\n        grid-template-columns: 1fr;\n    }\n\n    .file-card-actions {\n        flex-direction: column;\n    }\n\n    .status-actions,\n    .tool-actions,\n    .modal-actions,\n    .scan-controls,\n    .cut-viewbar-actions {\n        align-items: stretch;\n        flex-direction: column;\n    }\n\n    .browse-btn,\n    .btn-warning,\n    .nav-btn {\n        width: 100%;\n    }\n}\n</style>\n    <link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css\">\n    <script>\n/*! JsBarcode v3.12.1 | (c) Johan Lindell | MIT license */\n!function(t){var e={};function n(r){if(e[r])return e[r].exports;var o=e[r]={i:r,l:!1,exports:{}};return t[r].call(o.exports,o,o.exports,n),o.l=!0,o.exports}n.m=t,n.c=e,n.d=function(t,e,r){n.o(t,e)||Object.defineProperty(t,e,{enumerable:!0,get:r})},n.r=function(t){\"undefined\"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(t,Symbol.toStringTag,{value:\"Module\"}),Object.defineProperty(t,\"__esModule\",{value:!0})},n.t=function(t,e){if(1&e&&(t=n(t)),8&e)return t;if(4&e&&\"object\"==typeof t&&t&&t.__esModule)return t;var r=Object.create(null);if(n.r(r),Object.defineProperty(r,\"default\",{enumerable:!0,value:t}),2&e&&\"string\"!=typeof t)for(var o in t)n.d(r,o,function(e){return t[e]}.bind(null,o));return r},n.n=function(t){var e=t&&t.__esModule?function(){return t.default}:function(){return t};return n.d(e,\"a\",e),e},n.o=function(t,e){return Object.prototype.hasOwnProperty.call(t,e)},n.p=\"\",n(n.s=16)}([function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});e.default=function t(e,n){!function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,t),this.data=e,this.text=n.text||e,this.options=n}},function(t,e,n){\"use strict\";var r;function o(t,e,n){return e in t?Object.defineProperty(t,e,{value:n,enumerable:!0,configurable:!0,writable:!0}):t[e]=n,t}Object.defineProperty(e,\"__esModule\",{value:!0});var i=e.SET_A=0,a=e.SET_B=1,u=e.SET_C=2,f=(e.SHIFT=98,e.START_A=103),c=e.START_B=104,s=e.START_C=105;e.MODULO=103,e.STOP=106,e.FNC1=207,e.SET_BY_CODE=(o(r={},f,i),o(r,c,a),o(r,s,u),r),e.SWAP={101:i,100:a,99:u},e.A_START_CHAR=String.fromCharCode(208),e.B_START_CHAR=String.fromCharCode(209),e.C_START_CHAR=String.fromCharCode(210),e.A_CHARS=\"[\\0-_È-Ï]\",e.B_CHARS=\"[ -È-Ï]\",e.C_CHARS=\"(Ï*[0-9]{2}Ï*)\",e.BARS=[11011001100,11001101100,11001100110,10010011e3,10010001100,10001001100,10011001e3,10011000100,10001100100,11001001e3,11001000100,11000100100,10110011100,10011011100,10011001110,10111001100,10011101100,10011100110,11001110010,11001011100,11001001110,11011100100,11001110100,11101101110,11101001100,11100101100,11100100110,11101100100,11100110100,11100110010,11011011e3,11011000110,11000110110,10100011e3,10001011e3,10001000110,10110001e3,10001101e3,10001100010,11010001e3,11000101e3,11000100010,10110111e3,10110001110,10001101110,10111011e3,10111000110,10001110110,11101110110,11010001110,11000101110,11011101e3,11011100010,11011101110,11101011e3,11101000110,11100010110,11101101e3,11101100010,11100011010,11101111010,11001000010,11110001010,1010011e4,10100001100,1001011e4,10010000110,10000101100,10000100110,1011001e4,10110000100,1001101e4,10011000010,10000110100,10000110010,11000010010,1100101e4,11110111010,11000010100,10001111010,10100111100,10010111100,10010011110,10111100100,10011110100,10011110010,11110100100,11110010100,11110010010,11011011110,11011110110,11110110110,10101111e3,10100011110,10001011110,10111101e3,10111100010,11110101e3,11110100010,10111011110,10111101110,11101011110,11110101110,11010000100,1101001e4,11010011100,1100011101011]},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});e.SIDE_BIN=\"101\",e.MIDDLE_BIN=\"01010\",e.BINARIES={L:[\"0001101\",\"0011001\",\"0010011\",\"0111101\",\"0100011\",\"0110001\",\"0101111\",\"0111011\",\"0110111\",\"0001011\"],G:[\"0100111\",\"0110011\",\"0011011\",\"0100001\",\"0011101\",\"0111001\",\"0000101\",\"0010001\",\"0001001\",\"0010111\"],R:[\"1110010\",\"1100110\",\"1101100\",\"1000010\",\"1011100\",\"1001110\",\"1010000\",\"1000100\",\"1001000\",\"1110100\"],O:[\"0001101\",\"0011001\",\"0010011\",\"0111101\",\"0100011\",\"0110001\",\"0101111\",\"0111011\",\"0110111\",\"0001011\"],E:[\"0100111\",\"0110011\",\"0011011\",\"0100001\",\"0011101\",\"0111001\",\"0000101\",\"0010001\",\"0001001\",\"0010111\"]},e.EAN2_STRUCTURE=[\"LL\",\"LG\",\"GL\",\"GG\"],e.EAN5_STRUCTURE=[\"GGLLL\",\"GLGLL\",\"GLLGL\",\"GLLLG\",\"LGGLL\",\"LLGGL\",\"LLLGG\",\"LGLGL\",\"LGLLG\",\"LLGLG\"],e.EAN13_STRUCTURE=[\"LLLLLL\",\"LLGLGG\",\"LLGGLG\",\"LLGGGL\",\"LGLLGG\",\"LGGLLG\",\"LGGGLL\",\"LGLGLG\",\"LGLGGL\",\"LGGLGL\"]},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r=n(2);e.default=function(t,e,n){var o=t.split(\"\").map((function(t,n){return r.BINARIES[e[n]]})).map((function(e,n){return e?e[t[n]]:\"\"}));if(n){var i=t.length-1;o=o.map((function(t,e){return e<i?t+n:t}))}return o.join(\"\")}},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r,o=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}(),i=n(0);var a=function(t){function e(t,n){return function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e),function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,t,n))}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),o(e,[{key:\"encode\",value:function(){for(var t=\"110\",e=0;e<this.data.length;e++){var n=parseInt(this.data[e]).toString(2);n=u(n,4-n.length);for(var r=0;r<n.length;r++)t+=\"0\"==n[r]?\"100\":\"110\"}return{data:t+=\"1001\",text:this.text}}},{key:\"valid\",value:function(){return-1!==this.data.search(/^[0-9]+$/)}}]),e}(((r=i)&&r.__esModule?r:{default:r}).default);function u(t,e){for(var n=0;n<e;n++)t=\"0\"+t;return t}e.default=a},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r,o=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}(),i=n(0),a=(r=i)&&r.__esModule?r:{default:r},u=n(1);var f=function(t){function e(t,n){!function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e);var r=function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,t.substring(1),n));return r.bytes=t.split(\"\").map((function(t){return t.charCodeAt(0)})),r}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),o(e,[{key:\"valid\",value:function(){return/^[\\x00-\\x7F\\xC8-\\xD3]+$/.test(this.data)}},{key:\"encode\",value:function(){var t=this.bytes,n=t.shift()-105,r=u.SET_BY_CODE[n];if(void 0===r)throw new RangeError(\"The encoding does not start with a start character.\");!0===this.shouldEncodeAsEan128()&&t.unshift(u.FNC1);var o=e.next(t,1,r);return{text:this.text===this.data?this.text.replace(/[^\\x20-\\x7E]/g,\"\"):this.text,data:e.getBar(n)+o.result+e.getBar((o.checksum+n)%u.MODULO)+e.getBar(u.STOP)}}},{key:\"shouldEncodeAsEan128\",value:function(){var t=this.options.ean128||!1;return\"string\"==typeof t&&(t=\"true\"===t.toLowerCase()),t}}],[{key:\"getBar\",value:function(t){return u.BARS[t]?u.BARS[t].toString():\"\"}},{key:\"correctIndex\",value:function(t,e){if(e===u.SET_A){var n=t.shift();return n<32?n+64:n-32}return e===u.SET_B?t.shift()-32:10*(t.shift()-48)+t.shift()-48}},{key:\"next\",value:function(t,n,r){if(!t.length)return{result:\"\",checksum:0};var o=void 0,i=void 0;if(t[0]>=200){i=t.shift()-105;var a=u.SWAP[i];void 0!==a?o=e.next(t,n+1,a):(r!==u.SET_A&&r!==u.SET_B||i!==u.SHIFT||(t[0]=r===u.SET_A?t[0]>95?t[0]-96:t[0]:t[0]<32?t[0]+96:t[0]),o=e.next(t,n+1,r))}else i=e.correctIndex(t,r),o=e.next(t,n+1,r);var f=i*n;return{result:e.getBar(i)+o.result,checksum:f+o.checksum}}}]),e}(a.default);e.default=f},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0}),e.mod10=function(t){for(var e=0,n=0;n<t.length;n++){var r=parseInt(t[n]);(n+t.length)%2==0?e+=r:e+=2*r%10+Math.floor(2*r/10)}return(10-e%10)%10},e.mod11=function(t){for(var e=0,n=[2,3,4,5,6,7],r=0;r<t.length;r++){var o=parseInt(t[t.length-1-r]);e+=n[r%n.length]*o}return(11-e%11)%11}},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r=Object.assign||function(t){for(var e=1;e<arguments.length;e++){var n=arguments[e];for(var r in n)Object.prototype.hasOwnProperty.call(n,r)&&(t[r]=n[r])}return t};e.default=function(t,e){return r({},t,e)}},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}(),o=n(2),i=a(n(3));function a(t){return t&&t.__esModule?t:{default:t}}var u=function(t){function e(t,n){!function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e);var r=function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,t,n));return r.fontSize=!n.flat&&n.fontSize>10*n.width?10*n.width:n.fontSize,r.guardHeight=n.height+r.fontSize/2+n.textMargin,r}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),r(e,[{key:\"encode\",value:function(){return this.options.flat?this.encodeFlat():this.encodeGuarded()}},{key:\"leftText\",value:function(t,e){return this.text.substr(t,e)}},{key:\"leftEncode\",value:function(t,e){return(0,i.default)(t,e)}},{key:\"rightText\",value:function(t,e){return this.text.substr(t,e)}},{key:\"rightEncode\",value:function(t,e){return(0,i.default)(t,e)}},{key:\"encodeGuarded\",value:function(){var t={fontSize:this.fontSize},e={height:this.guardHeight};return[{data:o.SIDE_BIN,options:e},{data:this.leftEncode(),text:this.leftText(),options:t},{data:o.MIDDLE_BIN,options:e},{data:this.rightEncode(),text:this.rightText(),options:t},{data:o.SIDE_BIN,options:e}]}},{key:\"encodeFlat\",value:function(){return{data:[o.SIDE_BIN,this.leftEncode(),o.MIDDLE_BIN,this.rightEncode(),o.SIDE_BIN].join(\"\"),text:this.text}}}]),e}(a(n(0)).default);e.default=u},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}();e.checksum=u;var o=i(n(3));function i(t){return t&&t.__esModule?t:{default:t}}var a=function(t){function e(t,n){!function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e),-1!==t.search(/^[0-9]{11}$/)&&(t+=u(t));var r=function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,t,n));return r.displayValue=n.displayValue,n.fontSize>10*n.width?r.fontSize=10*n.width:r.fontSize=n.fontSize,r.guardHeight=n.height+r.fontSize/2+n.textMargin,r}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),r(e,[{key:\"valid\",value:function(){return-1!==this.data.search(/^[0-9]{12}$/)&&this.data[11]==u(this.data)}},{key:\"encode\",value:function(){return this.options.flat?this.flatEncoding():this.guardedEncoding()}},{key:\"flatEncoding\",value:function(){var t=\"\";return t+=\"101\",t+=(0,o.default)(this.data.substr(0,6),\"LLLLLL\"),t+=\"01010\",t+=(0,o.default)(this.data.substr(6,6),\"RRRRRR\"),{data:t+=\"101\",text:this.text}}},{key:\"guardedEncoding\",value:function(){var t=[];return this.displayValue&&t.push({data:\"00000000\",text:this.text.substr(0,1),options:{textAlign:\"left\",fontSize:this.fontSize}}),t.push({data:\"101\"+(0,o.default)(this.data[0],\"L\"),options:{height:this.guardHeight}}),t.push({data:(0,o.default)(this.data.substr(1,5),\"LLLLL\"),text:this.text.substr(1,5),options:{fontSize:this.fontSize}}),t.push({data:\"01010\",options:{height:this.guardHeight}}),t.push({data:(0,o.default)(this.data.substr(6,5),\"RRRRR\"),text:this.text.substr(6,5),options:{fontSize:this.fontSize}}),t.push({data:(0,o.default)(this.data[11],\"R\")+\"101\",options:{height:this.guardHeight}}),this.displayValue&&t.push({data:\"00000000\",text:this.text.substr(11,1),options:{textAlign:\"right\",fontSize:this.fontSize}}),t}}]),e}(i(n(0)).default);function u(t){var e,n=0;for(e=1;e<11;e+=2)n+=parseInt(t[e]);for(e=0;e<11;e+=2)n+=3*parseInt(t[e]);return(10-n%10)%10}e.default=a},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r,o=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}(),i=n(32),a=n(0);function u(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}function f(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}var c=function(t){function e(){return u(this,e),f(this,(e.__proto__||Object.getPrototypeOf(e)).apply(this,arguments))}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),o(e,[{key:\"valid\",value:function(){return-1!==this.data.search(/^([0-9]{2})+$/)}},{key:\"encode\",value:function(){var t=this,e=this.data.match(/.{2}/g).map((function(e){return t.encodePair(e)})).join(\"\");return{data:i.START_BIN+e+i.END_BIN,text:this.text}}},{key:\"encodePair\",value:function(t){var e=i.BINARIES[t[1]];return i.BINARIES[t[0]].split(\"\").map((function(t,n){return(\"1\"===t?\"111\":\"1\")+(\"1\"===e[n]?\"000\":\"0\")})).join(\"\")}}]),e}(((r=a)&&r.__esModule?r:{default:r}).default);e.default=c},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r,o=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}(),i=n(42),a=n(0);var u=function(t){function e(t,n){return function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e),function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,t,n))}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),o(e,[{key:\"valid\",value:function(){return/^[0-9A-Z\\-. $/+%]+$/.test(this.data)}},{key:\"encode\",value:function(){var t=this.data.split(\"\").flatMap((function(t){return i.MULTI_SYMBOLS[t]||t})),n=t.map((function(t){return e.getEncoding(t)})).join(\"\"),r=e.checksum(t,20),o=e.checksum(t.concat(r),15);return{text:this.text,data:e.getEncoding(\"ÿ\")+n+e.getEncoding(r)+e.getEncoding(o)+e.getEncoding(\"ÿ\")+\"1\"}}}],[{key:\"getEncoding\",value:function(t){return i.BINARIES[e.symbolValue(t)]}},{key:\"getSymbol\",value:function(t){return i.SYMBOLS[t]}},{key:\"symbolValue\",value:function(t){return i.SYMBOLS.indexOf(t)}},{key:\"checksum\",value:function(t,n){var r=t.slice().reverse().reduce((function(t,r,o){var i=o%n+1;return t+e.symbolValue(r)*i}),0);return e.getSymbol(r%47)}}]),e}(((r=a)&&r.__esModule?r:{default:r}).default);e.default=u},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0}),e.default=function(t){var e=[\"width\",\"height\",\"textMargin\",\"fontSize\",\"margin\",\"marginTop\",\"marginBottom\",\"marginLeft\",\"marginRight\"];for(var n in e)e.hasOwnProperty(n)&&(n=e[n],\"string\"==typeof t[n]&&(t[n]=parseInt(t[n],10)));\"string\"==typeof t.displayValue&&(t.displayValue=\"false\"!=t.displayValue);return t}},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r={width:2,height:100,format:\"auto\",displayValue:!0,fontOptions:\"\",font:\"monospace\",text:void 0,textAlign:\"center\",textPosition:\"bottom\",textMargin:2,fontSize:20,background:\"#ffffff\",lineColor:\"#000000\",margin:10,marginTop:void 0,marginBottom:void 0,marginLeft:void 0,marginRight:void 0,valid:function(){}};e.default=r},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0}),e.getTotalWidthOfEncodings=e.calculateEncodingAttributes=e.getBarcodePadding=e.getEncodingHeight=e.getMaximumHeightOfEncodings=void 0;var r,o=n(7),i=(r=o)&&r.__esModule?r:{default:r};function a(t,e){return e.height+(e.displayValue&&t.text.length>0?e.fontSize+e.textMargin:0)+e.marginTop+e.marginBottom}function u(t,e,n){if(n.displayValue&&e<t){if(\"center\"==n.textAlign)return Math.floor((t-e)/2);if(\"left\"==n.textAlign)return 0;if(\"right\"==n.textAlign)return Math.floor(t-e)}return 0}function f(t,e,n){var r;if(n)r=n;else{if(\"undefined\"==typeof document)return 0;r=document.createElement(\"canvas\").getContext(\"2d\")}r.font=e.fontOptions+\" \"+e.fontSize+\"px \"+e.font;var o=r.measureText(t);return o?o.width:0}e.getMaximumHeightOfEncodings=function(t){for(var e=0,n=0;n<t.length;n++)t[n].height>e&&(e=t[n].height);return e},e.getEncodingHeight=a,e.getBarcodePadding=u,e.calculateEncodingAttributes=function(t,e,n){for(var r=0;r<t.length;r++){var o,c=t[r],s=(0,i.default)(e,c.options);o=s.displayValue?f(c.text,s,n):0;var l=c.data.length*s.width;c.width=Math.ceil(Math.max(o,l)),c.height=a(c,s),c.barcodePadding=u(o,l,s)}},e.getTotalWidthOfEncodings=function(t){for(var e=0,n=0;n<t.length;n++)e+=t[n].width;return e}},function(t,e,n){\"use strict\";function r(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}function o(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}function i(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}Object.defineProperty(e,\"__esModule\",{value:!0});var a=function(t){function e(t,n){r(this,e);var i=o(this,(e.__proto__||Object.getPrototypeOf(e)).call(this));return i.name=\"InvalidInputException\",i.symbology=t,i.input=n,i.message='\"'+i.input+'\" is not a valid input for '+i.symbology,i}return i(e,Error),e}(),u=function(t){function e(){r(this,e);var t=o(this,(e.__proto__||Object.getPrototypeOf(e)).call(this));return t.name=\"InvalidElementException\",t.message=\"Not supported type to render on\",t}return i(e,Error),e}(),f=function(t){function e(){r(this,e);var t=o(this,(e.__proto__||Object.getPrototypeOf(e)).call(this));return t.name=\"NoElementException\",t.message=\"No element to render on.\",t}return i(e,Error),e}();e.InvalidInputException=a,e.InvalidElementException=u,e.NoElementException=f},function(t,e,n){\"use strict\";var r=p(n(17)),o=p(n(7)),i=p(n(45)),a=p(n(46)),u=p(n(47)),f=p(n(12)),c=p(n(53)),s=n(15),l=p(n(13));function p(t){return t&&t.__esModule?t:{default:t}}var d=function(){},h=function(t,e,n){var r=new d;if(void 0===t)throw Error(\"No element to render on was provided.\");return r._renderProperties=(0,u.default)(t),r._encodings=[],r._options=l.default,r._errorHandler=new c.default(r),void 0!==e&&((n=n||{}).format||(n.format=_()),r.options(n)[n.format](e,n).render()),r};for(var y in h.getModule=function(t){return r.default[t]},r.default)r.default.hasOwnProperty(y)&&b(r.default,y);function b(t,e){d.prototype[e]=d.prototype[e.toUpperCase()]=d.prototype[e.toLowerCase()]=function(n,r){var i=this;return i._errorHandler.wrapBarcodeCall((function(){r.text=void 0===r.text?void 0:\"\"+r.text;var a=(0,o.default)(i._options,r);a=(0,f.default)(a);var u=t[e],c=v(n,u,a);return i._encodings.push(c),i}))}}function v(t,e,n){var r=new e(t=\"\"+t,n);if(!r.valid())throw new s.InvalidInputException(r.constructor.name,t);var a=r.encode();a=(0,i.default)(a);for(var u=0;u<a.length;u++)a[u].options=(0,o.default)(n,a[u].options);return a}function _(){return r.default.CODE128?\"CODE128\":Object.keys(r.default)[0]}function g(t,e,n){e=(0,i.default)(e);for(var r=0;r<e.length;r++)e[r].options=(0,o.default)(n,e[r].options),(0,a.default)(e[r].options);(0,a.default)(n),new(0,t.renderer)(t.element,e,n).render(),t.afterRender&&t.afterRender()}d.prototype.options=function(t){return this._options=(0,o.default)(this._options,t),this},d.prototype.blank=function(t){var e=new Array(t+1).join(\"0\");return this._encodings.push({data:e}),this},d.prototype.init=function(){var t;if(this._renderProperties)for(var e in Array.isArray(this._renderProperties)||(this._renderProperties=[this._renderProperties]),this._renderProperties){t=this._renderProperties[e];var n=(0,o.default)(this._options,t.options);\"auto\"==n.format&&(n.format=_()),this._errorHandler.wrapBarcodeCall((function(){var e=v(n.value,r.default[n.format.toUpperCase()],n);g(t,e,n)}))}},d.prototype.render=function(){if(!this._renderProperties)throw new s.NoElementException;if(Array.isArray(this._renderProperties))for(var t=0;t<this._renderProperties.length;t++)g(this._renderProperties[t],this._encodings,this._options);else g(this._renderProperties,this._encodings,this._options);return this},d.prototype._defaults=l.default,\"undefined\"!=typeof window&&(window.JsBarcode=h),\"undefined\"!=typeof jQuery&&(jQuery.fn.JsBarcode=function(t,e){var n=[];return jQuery(this).each((function(){n.push(this)})),h(n,t,e)}),t.exports=h},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r=n(18),o=n(19),i=n(25),a=n(31),u=n(34),f=n(39),c=n(40),s=n(41),l=n(44);e.default={CODE39:r.CODE39,CODE128:o.CODE128,CODE128A:o.CODE128A,CODE128B:o.CODE128B,CODE128C:o.CODE128C,EAN13:i.EAN13,EAN8:i.EAN8,EAN5:i.EAN5,EAN2:i.EAN2,UPC:i.UPC,UPCE:i.UPCE,ITF14:a.ITF14,ITF:a.ITF,MSI:u.MSI,MSI10:u.MSI10,MSI11:u.MSI11,MSI1010:u.MSI1010,MSI1110:u.MSI1110,pharmacode:f.pharmacode,codabar:c.codabar,CODE93:s.CODE93,CODE93FullASCII:s.CODE93FullASCII,GenericBarcode:l.GenericBarcode}},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0}),e.CODE39=void 0;var r,o=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}(),i=n(0);var a=function(t){function e(t,n){return function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e),t=t.toUpperCase(),n.mod43&&(t+=function(t){return u[t]}(function(t){for(var e=0,n=0;n<t.length;n++)e+=s(t[n]);return e%=43}(t))),function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,t,n))}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),o(e,[{key:\"encode\",value:function(){for(var t=c(\"*\"),e=0;e<this.data.length;e++)t+=c(this.data[e])+\"0\";return{data:t+=c(\"*\"),text:this.text}}},{key:\"valid\",value:function(){return-1!==this.data.search(/^[0-9A-Z\\-\\.\\ \\$\\/\\+\\%]+$/)}}]),e}(((r=i)&&r.__esModule?r:{default:r}).default),u=[\"0\",\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\",\"9\",\"A\",\"B\",\"C\",\"D\",\"E\",\"F\",\"G\",\"H\",\"I\",\"J\",\"K\",\"L\",\"M\",\"N\",\"O\",\"P\",\"Q\",\"R\",\"S\",\"T\",\"U\",\"V\",\"W\",\"X\",\"Y\",\"Z\",\"-\",\".\",\" \",\"$\",\"/\",\"+\",\"%\",\"*\"],f=[20957,29783,23639,30485,20951,29813,23669,20855,29789,23645,29975,23831,30533,22295,30149,24005,21623,29981,23837,22301,30023,23879,30545,22343,30161,24017,21959,30065,23921,22385,29015,18263,29141,17879,29045,18293,17783,29021,18269,17477,17489,17681,20753,35770];function c(t){return function(t){return f[t].toString(2)}(s(t))}function s(t){return u.indexOf(t)}e.CODE39=a},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0}),e.CODE128C=e.CODE128B=e.CODE128A=e.CODE128=void 0;var r=u(n(20)),o=u(n(22)),i=u(n(23)),a=u(n(24));function u(t){return t&&t.__esModule?t:{default:t}}e.CODE128=r.default,e.CODE128A=o.default,e.CODE128B=i.default,e.CODE128C=a.default},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r=i(n(5)),o=i(n(21));function i(t){return t&&t.__esModule?t:{default:t}}function a(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}var u=function(t){function e(t,n){if(function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e),/^[\\x00-\\x7F\\xC8-\\xD3]+$/.test(t))var r=a(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,(0,o.default)(t),n));else r=a(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,t,n));return a(r)}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),e}(r.default);e.default=u},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r=n(1),o=function(t){return t.match(new RegExp(\"^\"+r.A_CHARS+\"*\"))[0].length},i=function(t){return t.match(new RegExp(\"^\"+r.B_CHARS+\"*\"))[0].length},a=function(t){return t.match(new RegExp(\"^\"+r.C_CHARS+\"*\"))[0]};function u(t,e){var n=e?r.A_CHARS:r.B_CHARS,o=t.match(new RegExp(\"^(\"+n+\"+?)(([0-9]{2}){2,})([^0-9]|$)\"));if(o)return o[1]+String.fromCharCode(204)+f(t.substring(o[1].length));var i=t.match(new RegExp(\"^\"+n+\"+\"))[0];return i.length===t.length?t:i+String.fromCharCode(e?205:206)+u(t.substring(i.length),!e)}function f(t){var e=a(t),n=e.length;if(n===t.length)return t;t=t.substring(n);var r=o(t)>=i(t);return e+String.fromCharCode(r?206:205)+u(t,r)}e.default=function(t){var e=void 0;if(a(t).length>=2)e=r.C_START_CHAR+f(t);else{var n=o(t)>i(t);e=(n?r.A_START_CHAR:r.B_START_CHAR)+u(t,n)}return e.replace(/[\\xCD\\xCE]([^])[\\xCD\\xCE]/,(function(t,e){return String.fromCharCode(203)+e}))}},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r,o=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}(),i=n(5),a=(r=i)&&r.__esModule?r:{default:r},u=n(1);var f=function(t){function e(t,n){return function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e),function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,u.A_START_CHAR+t,n))}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),o(e,[{key:\"valid\",value:function(){return new RegExp(\"^\"+u.A_CHARS+\"+$\").test(this.data)}}]),e}(a.default);e.default=f},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r,o=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}(),i=n(5),a=(r=i)&&r.__esModule?r:{default:r},u=n(1);var f=function(t){function e(t,n){return function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e),function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,u.B_START_CHAR+t,n))}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),o(e,[{key:\"valid\",value:function(){return new RegExp(\"^\"+u.B_CHARS+\"+$\").test(this.data)}}]),e}(a.default);e.default=f},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r,o=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}(),i=n(5),a=(r=i)&&r.__esModule?r:{default:r},u=n(1);var f=function(t){function e(t,n){return function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e),function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,u.C_START_CHAR+t,n))}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),o(e,[{key:\"valid\",value:function(){return new RegExp(\"^\"+u.C_CHARS+\"+$\").test(this.data)}}]),e}(a.default);e.default=f},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0}),e.UPCE=e.UPC=e.EAN2=e.EAN5=e.EAN8=e.EAN13=void 0;var r=c(n(26)),o=c(n(27)),i=c(n(28)),a=c(n(29)),u=c(n(9)),f=c(n(30));function c(t){return t&&t.__esModule?t:{default:t}}e.EAN13=r.default,e.EAN8=o.default,e.EAN5=i.default,e.EAN2=a.default,e.UPC=u.default,e.UPCE=f.default},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r,o=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}(),i=function t(e,n,r){null===e&&(e=Function.prototype);var o=Object.getOwnPropertyDescriptor(e,n);if(void 0===o){var i=Object.getPrototypeOf(e);return null===i?void 0:t(i,n,r)}if(\"value\"in o)return o.value;var a=o.get;return void 0!==a?a.call(r):void 0},a=n(2),u=n(8),f=(r=u)&&r.__esModule?r:{default:r};var c=function(t){return(10-t.substr(0,12).split(\"\").map((function(t){return+t})).reduce((function(t,e,n){return n%2?t+3*e:t+e}),0)%10)%10},s=function(t){function e(t,n){!function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e),-1!==t.search(/^[0-9]{12}$/)&&(t+=c(t));var r=function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,t,n));return r.lastChar=n.lastChar,r}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),o(e,[{key:\"valid\",value:function(){return-1!==this.data.search(/^[0-9]{13}$/)&&+this.data[12]===c(this.data)}},{key:\"leftText\",value:function(){return i(e.prototype.__proto__||Object.getPrototypeOf(e.prototype),\"leftText\",this).call(this,1,6)}},{key:\"leftEncode\",value:function(){var t=this.data.substr(1,6),n=a.EAN13_STRUCTURE[this.data[0]];return i(e.prototype.__proto__||Object.getPrototypeOf(e.prototype),\"leftEncode\",this).call(this,t,n)}},{key:\"rightText\",value:function(){return i(e.prototype.__proto__||Object.getPrototypeOf(e.prototype),\"rightText\",this).call(this,7,6)}},{key:\"rightEncode\",value:function(){var t=this.data.substr(7,6);return i(e.prototype.__proto__||Object.getPrototypeOf(e.prototype),\"rightEncode\",this).call(this,t,\"RRRRRR\")}},{key:\"encodeGuarded\",value:function(){var t=i(e.prototype.__proto__||Object.getPrototypeOf(e.prototype),\"encodeGuarded\",this).call(this);return this.options.displayValue&&(t.unshift({data:\"000000000000\",text:this.text.substr(0,1),options:{textAlign:\"left\",fontSize:this.fontSize}}),this.options.lastChar&&(t.push({data:\"00\"}),t.push({data:\"00000\",text:this.options.lastChar,options:{fontSize:this.fontSize}}))),t}}]),e}(f.default);e.default=s},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r,o=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}(),i=function t(e,n,r){null===e&&(e=Function.prototype);var o=Object.getOwnPropertyDescriptor(e,n);if(void 0===o){var i=Object.getPrototypeOf(e);return null===i?void 0:t(i,n,r)}if(\"value\"in o)return o.value;var a=o.get;return void 0!==a?a.call(r):void 0},a=n(8),u=(r=a)&&r.__esModule?r:{default:r};var f=function(t){return(10-t.substr(0,7).split(\"\").map((function(t){return+t})).reduce((function(t,e,n){return n%2?t+e:t+3*e}),0)%10)%10},c=function(t){function e(t,n){return function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e),-1!==t.search(/^[0-9]{7}$/)&&(t+=f(t)),function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,t,n))}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),o(e,[{key:\"valid\",value:function(){return-1!==this.data.search(/^[0-9]{8}$/)&&+this.data[7]===f(this.data)}},{key:\"leftText\",value:function(){return i(e.prototype.__proto__||Object.getPrototypeOf(e.prototype),\"leftText\",this).call(this,0,4)}},{key:\"leftEncode\",value:function(){var t=this.data.substr(0,4);return i(e.prototype.__proto__||Object.getPrototypeOf(e.prototype),\"leftEncode\",this).call(this,t,\"LLLL\")}},{key:\"rightText\",value:function(){return i(e.prototype.__proto__||Object.getPrototypeOf(e.prototype),\"rightText\",this).call(this,4,4)}},{key:\"rightEncode\",value:function(){var t=this.data.substr(4,4);return i(e.prototype.__proto__||Object.getPrototypeOf(e.prototype),\"rightEncode\",this).call(this,t,\"RRRR\")}}]),e}(u.default);e.default=c},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}(),o=n(2),i=u(n(3)),a=u(n(0));function u(t){return t&&t.__esModule?t:{default:t}}var f=function(t){function e(t,n){return function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e),function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,t,n))}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),r(e,[{key:\"valid\",value:function(){return-1!==this.data.search(/^[0-9]{5}$/)}},{key:\"encode\",value:function(){var t,e=o.EAN5_STRUCTURE[(t=this.data,t.split(\"\").map((function(t){return+t})).reduce((function(t,e,n){return n%2?t+9*e:t+3*e}),0)%10)];return{data:\"1011\"+(0,i.default)(this.data,e,\"01\"),text:this.text}}}]),e}(a.default);e.default=f},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}(),o=n(2),i=a(n(3));function a(t){return t&&t.__esModule?t:{default:t}}var u=function(t){function e(t,n){return function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e),function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,t,n))}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),r(e,[{key:\"valid\",value:function(){return-1!==this.data.search(/^[0-9]{2}$/)}},{key:\"encode\",value:function(){var t=o.EAN2_STRUCTURE[parseInt(this.data)%4];return{data:\"1011\"+(0,i.default)(this.data,t,\"01\"),text:this.text}}}]),e}(a(n(0)).default);e.default=u},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}(),o=u(n(3)),i=u(n(0)),a=n(9);function u(t){return t&&t.__esModule?t:{default:t}}function f(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}var c=[\"XX00000XXX\",\"XX10000XXX\",\"XX20000XXX\",\"XXX00000XX\",\"XXXX00000X\",\"XXXXX00005\",\"XXXXX00006\",\"XXXXX00007\",\"XXXXX00008\",\"XXXXX00009\"],s=[[\"EEEOOO\",\"OOOEEE\"],[\"EEOEOO\",\"OOEOEE\"],[\"EEOOEO\",\"OOEEOE\"],[\"EEOOOE\",\"OOEEEO\"],[\"EOEEOO\",\"OEOOEE\"],[\"EOOEEO\",\"OEEOOE\"],[\"EOOOEE\",\"OEEEOO\"],[\"EOEOEO\",\"OEOEOE\"],[\"EOEOOE\",\"OEOEEO\"],[\"EOOEOE\",\"OEEOEO\"]],l=function(t){function e(t,n){!function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e);var r=f(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,t,n));if(r.isValid=!1,-1!==t.search(/^[0-9]{6}$/))r.middleDigits=t,r.upcA=p(t,\"0\"),r.text=n.text||\"\"+r.upcA[0]+t+r.upcA[r.upcA.length-1],r.isValid=!0;else{if(-1===t.search(/^[01][0-9]{7}$/))return f(r);if(r.middleDigits=t.substring(1,t.length-1),r.upcA=p(r.middleDigits,t[0]),r.upcA[r.upcA.length-1]!==t[t.length-1])return f(r);r.isValid=!0}return r.displayValue=n.displayValue,n.fontSize>10*n.width?r.fontSize=10*n.width:r.fontSize=n.fontSize,r.guardHeight=n.height+r.fontSize/2+n.textMargin,r}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),r(e,[{key:\"valid\",value:function(){return this.isValid}},{key:\"encode\",value:function(){return this.options.flat?this.flatEncoding():this.guardedEncoding()}},{key:\"flatEncoding\",value:function(){var t=\"\";return t+=\"101\",t+=this.encodeMiddleDigits(),{data:t+=\"010101\",text:this.text}}},{key:\"guardedEncoding\",value:function(){var t=[];return this.displayValue&&t.push({data:\"00000000\",text:this.text[0],options:{textAlign:\"left\",fontSize:this.fontSize}}),t.push({data:\"101\",options:{height:this.guardHeight}}),t.push({data:this.encodeMiddleDigits(),text:this.text.substring(1,7),options:{fontSize:this.fontSize}}),t.push({data:\"010101\",options:{height:this.guardHeight}}),this.displayValue&&t.push({data:\"00000000\",text:this.text[7],options:{textAlign:\"right\",fontSize:this.fontSize}}),t}},{key:\"encodeMiddleDigits\",value:function(){var t=this.upcA[0],e=this.upcA[this.upcA.length-1],n=s[parseInt(e)][parseInt(t)];return(0,o.default)(this.middleDigits,n)}}]),e}(i.default);function p(t,e){for(var n=parseInt(t[t.length-1]),r=c[n],o=\"\",i=0,u=0;u<r.length;u++){var f=r[u];o+=\"X\"===f?t[i++]:f}return\"\"+(o=\"\"+e+o)+(0,a.checksum)(o)}e.default=l},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0}),e.ITF14=e.ITF=void 0;var r=i(n(10)),o=i(n(33));function i(t){return t&&t.__esModule?t:{default:t}}e.ITF=r.default,e.ITF14=o.default},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});e.START_BIN=\"1010\",e.END_BIN=\"11101\",e.BINARIES=[\"00110\",\"10001\",\"01001\",\"11000\",\"00101\",\"10100\",\"01100\",\"00011\",\"10010\",\"01010\"]},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r,o=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}(),i=n(10),a=(r=i)&&r.__esModule?r:{default:r};var u=function(t){var e=t.substr(0,13).split(\"\").map((function(t){return parseInt(t,10)})).reduce((function(t,e,n){return t+e*(3-n%2*2)}),0);return 10*Math.ceil(e/10)-e},f=function(t){function e(t,n){return function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e),-1!==t.search(/^[0-9]{13}$/)&&(t+=u(t)),function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,t,n))}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),o(e,[{key:\"valid\",value:function(){return-1!==this.data.search(/^[0-9]{14}$/)&&+this.data[13]===u(this.data)}}]),e}(a.default);e.default=f},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0}),e.MSI1110=e.MSI1010=e.MSI11=e.MSI10=e.MSI=void 0;var r=f(n(4)),o=f(n(35)),i=f(n(36)),a=f(n(37)),u=f(n(38));function f(t){return t&&t.__esModule?t:{default:t}}e.MSI=r.default,e.MSI10=o.default,e.MSI11=i.default,e.MSI1010=a.default,e.MSI1110=u.default},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r,o=n(4),i=(r=o)&&r.__esModule?r:{default:r},a=n(6);var u=function(t){function e(t,n){return function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e),function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,t+(0,a.mod10)(t),n))}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),e}(i.default);e.default=u},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r,o=n(4),i=(r=o)&&r.__esModule?r:{default:r},a=n(6);var u=function(t){function e(t,n){return function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e),function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,t+(0,a.mod11)(t),n))}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),e}(i.default);e.default=u},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r,o=n(4),i=(r=o)&&r.__esModule?r:{default:r},a=n(6);var u=function(t){function e(t,n){return function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e),t+=(0,a.mod10)(t),t+=(0,a.mod10)(t),function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,t,n))}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),e}(i.default);e.default=u},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r,o=n(4),i=(r=o)&&r.__esModule?r:{default:r},a=n(6);var u=function(t){function e(t,n){return function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e),t+=(0,a.mod11)(t),t+=(0,a.mod10)(t),function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,t,n))}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),e}(i.default);e.default=u},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0}),e.pharmacode=void 0;var r,o=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}(),i=n(0);var a=function(t){function e(t,n){!function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e);var r=function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,t,n));return r.number=parseInt(t,10),r}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),o(e,[{key:\"encode\",value:function(){for(var t=this.number,e=\"\";!isNaN(t)&&0!=t;)t%2==0?(e=\"11100\"+e,t=(t-2)/2):(e=\"100\"+e,t=(t-1)/2);return{data:e=e.slice(0,-2),text:this.text}}},{key:\"valid\",value:function(){return this.number>=3&&this.number<=131070}}]),e}(((r=i)&&r.__esModule?r:{default:r}).default);e.pharmacode=a},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0}),e.codabar=void 0;var r,o=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}(),i=n(0);var a=function(t){function e(t,n){!function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e),0===t.search(/^[0-9\\-\\$\\:\\.\\+\\/]+$/)&&(t=\"A\"+t+\"A\");var r=function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,t.toUpperCase(),n));return r.text=r.options.text||r.text.replace(/[A-D]/g,\"\"),r}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),o(e,[{key:\"valid\",value:function(){return-1!==this.data.search(/^[A-D][0-9\\-\\$\\:\\.\\+\\/]+[A-D]$/)}},{key:\"encode\",value:function(){for(var t=[],e=this.getEncodings(),n=0;n<this.data.length;n++)t.push(e[this.data.charAt(n)]),n!==this.data.length-1&&t.push(\"0\");return{text:this.text,data:t.join(\"\")}}},{key:\"getEncodings\",value:function(){return{0:\"101010011\",1:\"101011001\",2:\"101001011\",3:\"110010101\",4:\"101101001\",5:\"110101001\",6:\"100101011\",7:\"100101101\",8:\"100110101\",9:\"110100101\",\"-\":\"101001101\",$:\"101100101\",\":\":\"1101011011\",\"/\":\"1101101011\",\".\":\"1101101101\",\"+\":\"1011011011\",A:\"1011001001\",B:\"1001001011\",C:\"1010010011\",D:\"1010011001\"}}}]),e}(((r=i)&&r.__esModule?r:{default:r}).default);e.codabar=a},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0}),e.CODE93FullASCII=e.CODE93=void 0;var r=i(n(11)),o=i(n(43));function i(t){return t&&t.__esModule?t:{default:t}}e.CODE93=r.default,e.CODE93FullASCII=o.default},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});e.SYMBOLS=[\"0\",\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\",\"9\",\"A\",\"B\",\"C\",\"D\",\"E\",\"F\",\"G\",\"H\",\"I\",\"J\",\"K\",\"L\",\"M\",\"N\",\"O\",\"P\",\"Q\",\"R\",\"S\",\"T\",\"U\",\"V\",\"W\",\"X\",\"Y\",\"Z\",\"-\",\".\",\" \",\"$\",\"/\",\"+\",\"%\",\"($)\",\"(%)\",\"(/)\",\"(+)\",\"ÿ\"],e.BINARIES=[\"100010100\",\"101001000\",\"101000100\",\"101000010\",\"100101000\",\"100100100\",\"100100010\",\"101010000\",\"100010010\",\"100001010\",\"110101000\",\"110100100\",\"110100010\",\"110010100\",\"110010010\",\"110001010\",\"101101000\",\"101100100\",\"101100010\",\"100110100\",\"100011010\",\"101011000\",\"101001100\",\"101000110\",\"100101100\",\"100010110\",\"110110100\",\"110110010\",\"110101100\",\"110100110\",\"110010110\",\"110011010\",\"101101100\",\"101100110\",\"100110110\",\"100111010\",\"100101110\",\"111010100\",\"111010010\",\"111001010\",\"101101110\",\"101110110\",\"110101110\",\"100100110\",\"111011010\",\"111010110\",\"100110010\",\"101011110\"],e.MULTI_SYMBOLS={\"\\0\":[\"(%)\",\"U\"],\"\u0001\":[\"($)\",\"A\"],\"\u0002\":[\"($)\",\"B\"],\"\u0003\":[\"($)\",\"C\"],\"\u0004\":[\"($)\",\"D\"],\"\u0005\":[\"($)\",\"E\"],\"\u0006\":[\"($)\",\"F\"],\"\u0007\":[\"($)\",\"G\"],\"\\b\":[\"($)\",\"H\"],\"\\t\":[\"($)\",\"I\"],\"\\n\":[\"($)\",\"J\"],\"\\v\":[\"($)\",\"K\"],\"\\f\":[\"($)\",\"L\"],\"\\r\":[\"($)\",\"M\"],\"\u000e\":[\"($)\",\"N\"],\"\u000f\":[\"($)\",\"O\"],\"\u0010\":[\"($)\",\"P\"],\"\u0011\":[\"($)\",\"Q\"],\"\u0012\":[\"($)\",\"R\"],\"\u0013\":[\"($)\",\"S\"],\"\u0014\":[\"($)\",\"T\"],\"\u0015\":[\"($)\",\"U\"],\"\u0016\":[\"($)\",\"V\"],\"\u0017\":[\"($)\",\"W\"],\"\u0018\":[\"($)\",\"X\"],\"\u0019\":[\"($)\",\"Y\"],\"\u001a\":[\"($)\",\"Z\"],\"\u001b\":[\"(%)\",\"A\"],\"\u001c\":[\"(%)\",\"B\"],\"\u001d\":[\"(%)\",\"C\"],\"\u001e\":[\"(%)\",\"D\"],\"\u001f\":[\"(%)\",\"E\"],\"!\":[\"(/)\",\"A\"],'\"':[\"(/)\",\"B\"],\"#\":[\"(/)\",\"C\"],\"&\":[\"(/)\",\"F\"],\"'\":[\"(/)\",\"G\"],\"(\":[\"(/)\",\"H\"],\")\":[\"(/)\",\"I\"],\"*\":[\"(/)\",\"J\"],\",\":[\"(/)\",\"L\"],\":\":[\"(/)\",\"Z\"],\";\":[\"(%)\",\"F\"],\"<\":[\"(%)\",\"G\"],\"=\":[\"(%)\",\"H\"],\">\":[\"(%)\",\"I\"],\"?\":[\"(%)\",\"J\"],\"@\":[\"(%)\",\"V\"],\"[\":[\"(%)\",\"K\"],\"\\\\\":[\"(%)\",\"L\"],\"]\":[\"(%)\",\"M\"],\"^\":[\"(%)\",\"N\"],_:[\"(%)\",\"O\"],\"`\":[\"(%)\",\"W\"],a:[\"(+)\",\"A\"],b:[\"(+)\",\"B\"],c:[\"(+)\",\"C\"],d:[\"(+)\",\"D\"],e:[\"(+)\",\"E\"],f:[\"(+)\",\"F\"],g:[\"(+)\",\"G\"],h:[\"(+)\",\"H\"],i:[\"(+)\",\"I\"],j:[\"(+)\",\"J\"],k:[\"(+)\",\"K\"],l:[\"(+)\",\"L\"],m:[\"(+)\",\"M\"],n:[\"(+)\",\"N\"],o:[\"(+)\",\"O\"],p:[\"(+)\",\"P\"],q:[\"(+)\",\"Q\"],r:[\"(+)\",\"R\"],s:[\"(+)\",\"S\"],t:[\"(+)\",\"T\"],u:[\"(+)\",\"U\"],v:[\"(+)\",\"V\"],w:[\"(+)\",\"W\"],x:[\"(+)\",\"X\"],y:[\"(+)\",\"Y\"],z:[\"(+)\",\"Z\"],\"{\":[\"(%)\",\"P\"],\"|\":[\"(%)\",\"Q\"],\"}\":[\"(%)\",\"R\"],\"~\":[\"(%)\",\"S\"],\"\":[\"(%)\",\"T\"]}},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r,o=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}(),i=n(11);var a=function(t){function e(t,n){return function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e),function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,t,n))}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),o(e,[{key:\"valid\",value:function(){return/^[\\x00-\\x7f]+$/.test(this.data)}}]),e}(((r=i)&&r.__esModule?r:{default:r}).default);e.default=a},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0}),e.GenericBarcode=void 0;var r,o=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}(),i=n(0);var a=function(t){function e(t,n){return function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,e),function(t,e){if(!t)throw new ReferenceError(\"this hasn't been initialised - super() hasn't been called\");return!e||\"object\"!=typeof e&&\"function\"!=typeof e?t:e}(this,(e.__proto__||Object.getPrototypeOf(e)).call(this,t,n))}return function(t,e){if(\"function\"!=typeof e&&null!==e)throw new TypeError(\"Super expression must either be null or a function, not \"+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}(e,t),o(e,[{key:\"encode\",value:function(){return{data:\"10101010101010101010101010101010101010101\",text:this.text}}},{key:\"valid\",value:function(){return!0}}]),e}(((r=i)&&r.__esModule?r:{default:r}).default);e.GenericBarcode=a},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0}),e.default=function(t){var e=[];return function t(n){if(Array.isArray(n))for(var r=0;r<n.length;r++)t(n[r]);else n.text=n.text||\"\",n.data=n.data||\"\",e.push(n)}(t),e}},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0}),e.default=function(t){return t.marginTop=t.marginTop||t.margin,t.marginBottom=t.marginBottom||t.margin,t.marginRight=t.marginRight||t.margin,t.marginLeft=t.marginLeft||t.margin,t}},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r=\"function\"==typeof Symbol&&\"symbol\"==typeof Symbol.iterator?function(t){return typeof t}:function(t){return t&&\"function\"==typeof Symbol&&t.constructor===Symbol&&t!==Symbol.prototype?\"symbol\":typeof t},o=u(n(48)),i=u(n(49)),a=n(15);function u(t){return t&&t.__esModule?t:{default:t}}function f(t){if(\"string\"==typeof t)return function(t){var e=document.querySelectorAll(t);if(0===e.length)return;for(var n=[],r=0;r<e.length;r++)n.push(f(e[r]));return n}(t);if(Array.isArray(t)){for(var e=[],n=0;n<t.length;n++)e.push(f(t[n]));return e}if(\"undefined\"!=typeof HTMLCanvasElement&&t instanceof HTMLImageElement)return u=t,{element:c=document.createElement(\"canvas\"),options:(0,o.default)(u),renderer:i.default.CanvasRenderer,afterRender:function(){u.setAttribute(\"src\",c.toDataURL())}};if(t&&t.nodeName&&\"svg\"===t.nodeName.toLowerCase()||\"undefined\"!=typeof SVGElement&&t instanceof SVGElement)return{element:t,options:(0,o.default)(t),renderer:i.default.SVGRenderer};if(\"undefined\"!=typeof HTMLCanvasElement&&t instanceof HTMLCanvasElement)return{element:t,options:(0,o.default)(t),renderer:i.default.CanvasRenderer};if(t&&t.getContext)return{element:t,renderer:i.default.CanvasRenderer};if(t&&\"object\"===(void 0===t?\"undefined\":r(t))&&!t.nodeName)return{element:t,renderer:i.default.ObjectRenderer};throw new a.InvalidElementException;var u,c}e.default=f},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r=i(n(12)),o=i(n(13));function i(t){return t&&t.__esModule?t:{default:t}}e.default=function(t){var e={};for(var n in o.default)o.default.hasOwnProperty(n)&&(t.hasAttribute(\"jsbarcode-\"+n.toLowerCase())&&(e[n]=t.getAttribute(\"jsbarcode-\"+n.toLowerCase())),t.hasAttribute(\"data-\"+n.toLowerCase())&&(e[n]=t.getAttribute(\"data-\"+n.toLowerCase())));return e.value=t.getAttribute(\"jsbarcode-value\")||t.getAttribute(\"data-value\"),e=(0,r.default)(e)}},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r=a(n(50)),o=a(n(51)),i=a(n(52));function a(t){return t&&t.__esModule?t:{default:t}}e.default={CanvasRenderer:r.default,SVGRenderer:o.default,ObjectRenderer:i.default}},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r,o=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}(),i=n(7),a=(r=i)&&r.__esModule?r:{default:r},u=n(14);var f=function(){function t(e,n,r){!function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,t),this.canvas=e,this.encodings=n,this.options=r}return o(t,[{key:\"render\",value:function(){if(!this.canvas.getContext)throw new Error(\"The browser does not support canvas.\");this.prepareCanvas();for(var t=0;t<this.encodings.length;t++){var e=(0,a.default)(this.options,this.encodings[t].options);this.drawCanvasBarcode(e,this.encodings[t]),this.drawCanvasText(e,this.encodings[t]),this.moveCanvasDrawing(this.encodings[t])}this.restoreCanvas()}},{key:\"prepareCanvas\",value:function(){var t=this.canvas.getContext(\"2d\");t.save(),(0,u.calculateEncodingAttributes)(this.encodings,this.options,t);var e=(0,u.getTotalWidthOfEncodings)(this.encodings),n=(0,u.getMaximumHeightOfEncodings)(this.encodings);this.canvas.width=e+this.options.marginLeft+this.options.marginRight,this.canvas.height=n,t.clearRect(0,0,this.canvas.width,this.canvas.height),this.options.background&&(t.fillStyle=this.options.background,t.fillRect(0,0,this.canvas.width,this.canvas.height)),t.translate(this.options.marginLeft,0)}},{key:\"drawCanvasBarcode\",value:function(t,e){var n,r=this.canvas.getContext(\"2d\"),o=e.data;n=\"top\"==t.textPosition?t.marginTop+t.fontSize+t.textMargin:t.marginTop,r.fillStyle=t.lineColor;for(var i=0;i<o.length;i++){var a=i*t.width+e.barcodePadding;\"1\"===o[i]?r.fillRect(a,n,t.width,t.height):o[i]&&r.fillRect(a,n,t.width,t.height*o[i])}}},{key:\"drawCanvasText\",value:function(t,e){var n,r,o=this.canvas.getContext(\"2d\"),i=t.fontOptions+\" \"+t.fontSize+\"px \"+t.font;t.displayValue&&(r=\"top\"==t.textPosition?t.marginTop+t.fontSize-t.textMargin:t.height+t.textMargin+t.marginTop+t.fontSize,o.font=i,\"left\"==t.textAlign||e.barcodePadding>0?(n=0,o.textAlign=\"left\"):\"right\"==t.textAlign?(n=e.width-1,o.textAlign=\"right\"):(n=e.width/2,o.textAlign=\"center\"),o.fillText(e.text,n,r))}},{key:\"moveCanvasDrawing\",value:function(t){this.canvas.getContext(\"2d\").translate(t.width,0)}},{key:\"restoreCanvas\",value:function(){this.canvas.getContext(\"2d\").restore()}}]),t}();e.default=f},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r,o=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}(),i=n(7),a=(r=i)&&r.__esModule?r:{default:r},u=n(14);var f=\"http://www.w3.org/2000/svg\",c=function(){function t(e,n,r){!function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,t),this.svg=e,this.encodings=n,this.options=r,this.document=r.xmlDocument||document}return o(t,[{key:\"render\",value:function(){var t=this.options.marginLeft;this.prepareSVG();for(var e=0;e<this.encodings.length;e++){var n=this.encodings[e],r=(0,a.default)(this.options,n.options),o=this.createGroup(t,r.marginTop,this.svg);this.setGroupOptions(o,r),this.drawSvgBarcode(o,r,n),this.drawSVGText(o,r,n),t+=n.width}}},{key:\"prepareSVG\",value:function(){for(;this.svg.firstChild;)this.svg.removeChild(this.svg.firstChild);(0,u.calculateEncodingAttributes)(this.encodings,this.options);var t=(0,u.getTotalWidthOfEncodings)(this.encodings),e=(0,u.getMaximumHeightOfEncodings)(this.encodings),n=t+this.options.marginLeft+this.options.marginRight;this.setSvgAttributes(n,e),this.options.background&&this.drawRect(0,0,n,e,this.svg).setAttribute(\"style\",\"fill:\"+this.options.background+\";\")}},{key:\"drawSvgBarcode\",value:function(t,e,n){var r,o=n.data;r=\"top\"==e.textPosition?e.fontSize+e.textMargin:0;for(var i=0,a=0,u=0;u<o.length;u++)a=u*e.width+n.barcodePadding,\"1\"===o[u]?i++:i>0&&(this.drawRect(a-e.width*i,r,e.width*i,e.height,t),i=0);i>0&&this.drawRect(a-e.width*(i-1),r,e.width*i,e.height,t)}},{key:\"drawSVGText\",value:function(t,e,n){var r,o,i=this.document.createElementNS(f,\"text\");e.displayValue&&(i.setAttribute(\"style\",\"font:\"+e.fontOptions+\" \"+e.fontSize+\"px \"+e.font),o=\"top\"==e.textPosition?e.fontSize-e.textMargin:e.height+e.textMargin+e.fontSize,\"left\"==e.textAlign||n.barcodePadding>0?(r=0,i.setAttribute(\"text-anchor\",\"start\")):\"right\"==e.textAlign?(r=n.width-1,i.setAttribute(\"text-anchor\",\"end\")):(r=n.width/2,i.setAttribute(\"text-anchor\",\"middle\")),i.setAttribute(\"x\",r),i.setAttribute(\"y\",o),i.appendChild(this.document.createTextNode(n.text)),t.appendChild(i))}},{key:\"setSvgAttributes\",value:function(t,e){var n=this.svg;n.setAttribute(\"width\",t+\"px\"),n.setAttribute(\"height\",e+\"px\"),n.setAttribute(\"x\",\"0px\"),n.setAttribute(\"y\",\"0px\"),n.setAttribute(\"viewBox\",\"0 0 \"+t+\" \"+e),n.setAttribute(\"xmlns\",f),n.setAttribute(\"version\",\"1.1\"),n.setAttribute(\"style\",\"transform: translate(0,0)\")}},{key:\"createGroup\",value:function(t,e,n){var r=this.document.createElementNS(f,\"g\");return r.setAttribute(\"transform\",\"translate(\"+t+\", \"+e+\")\"),n.appendChild(r),r}},{key:\"setGroupOptions\",value:function(t,e){t.setAttribute(\"style\",\"fill:\"+e.lineColor+\";\")}},{key:\"drawRect\",value:function(t,e,n,r,o){var i=this.document.createElementNS(f,\"rect\");return i.setAttribute(\"x\",t),i.setAttribute(\"y\",e),i.setAttribute(\"width\",n),i.setAttribute(\"height\",r),o.appendChild(i),i}}]),t}();e.default=c},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}();var o=function(){function t(e,n,r){!function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,t),this.object=e,this.encodings=n,this.options=r}return r(t,[{key:\"render\",value:function(){this.object.encodings=this.encodings}}]),t}();e.default=o},function(t,e,n){\"use strict\";Object.defineProperty(e,\"__esModule\",{value:!0});var r=function(){function t(t,e){for(var n=0;n<e.length;n++){var r=e[n];r.enumerable=r.enumerable||!1,r.configurable=!0,\"value\"in r&&(r.writable=!0),Object.defineProperty(t,r.key,r)}}return function(e,n,r){return n&&t(e.prototype,n),r&&t(e,r),e}}();var o=function(){function t(e){!function(t,e){if(!(t instanceof e))throw new TypeError(\"Cannot call a class as a function\")}(this,t),this.api=e}return r(t,[{key:\"handleCatch\",value:function(t){if(\"InvalidInputException\"!==t.name)throw t;if(this.api._options.valid===this.api._defaults.valid)throw t.message;this.api._options.valid(!1),this.api.render=function(){}}},{key:\"wrapBarcodeCall\",value:function(t){try{var e=t.apply(void 0,arguments);return this.api._options.valid(!0),e}catch(t){return this.handleCatch(t),this.api}}}]),t}();e.default=o}]);\n</script>\n</head>\n<body>\n    <div id=\"starfield\"></div>\n\n    <header class=\"app-header\">\n        <div>\n            <p class=\"eyebrow\">Ansancw</p>\n            <h1>EOS Operations Console</h1>\n        </div>\n\n        <div class=\"user-info\">\n            <span class=\"badge badge-vto\"><i class=\"fas fa-user-clock\"></i> VTO</span>\n            <span class=\"badge badge-clerk\"><i class=\"fas fa-id-badge\"></i> CLERK</span>\n            <span class=\"version-badge\" id=\"eos-version\">Version: 1.0.0</span>\n        </div>\n    </header>\n\n    <main>\n        <section id=\"action-panel\" class=\"status-neutral\">\n            <div class=\"status-copy\">\n                <i id=\"action-icon\" class=\"fas fa-info-circle\"></i>\n                <span id=\"action-message\">Awaiting file selections...</span>\n            </div>\n            <div class=\"status-actions\">\n                <button id=\"reconcile-btn\" class=\"browse-btn process-btn\" disabled>\n                    <i class=\"fas fa-sync-alt\"></i> Generate EOS\n                </button>\n                <button id=\"export-btn\" class=\"browse-btn export-btn\" disabled>\n                    <i class=\"fas fa-file-export\"></i> Export CSV\n                </button>\n                \n            </div>\n        </section>\n\n        <section class=\"console-grid\" id=\"eos-dashboard-view\">\n            <aside class=\"side-panel inputs-panel\">\n                <div class=\"panel-heading\">\n                    <div>\n                        <p class=\"eyebrow\">Workflow Inputs</p>\n                        <h2>Files and Hub</h2>\n                    </div>\n                </div>\n\n                <div class=\"upload-container dual-upload-container\">\n                    <div class=\"upload-card\" id=\"yms-card\">\n                        <i class=\"fas fa-database main-icon fa-5x\"></i>\n                        <div>\n                            <h2>Load YMS File</h2>\n                            <p id=\"yms-status\">Select the most up-to-date manifest.</p>\n                        </div>\n                        <div class=\"file-card-actions\">\n                            <button id=\"browse-yms-btn\" class=\"browse-btn\">\n                                <i class=\"fas fa-search\"></i> Select\n                            </button>\n                            <button id=\"clear-yms-btn\" class=\"browse-btn danger-btn\" disabled>\n                                <i class=\"fas fa-trash\"></i> Remove\n                            </button>\n                        </div>\n                    </div>\n\n                    <div class=\"upload-card\" id=\"dockdash-card\">\n                        <i class=\"fas fa-file-csv main-icon fa-5x\"></i>\n                        <div>\n                            <h2>Load Dock Dash</h2>\n                            <p id=\"dockdash-status\">Select the Dock Dash CSV.</p>\n                        </div>\n                        <div class=\"file-card-actions\">\n                            <button id=\"browse-dockdash-btn\" class=\"browse-btn\" disabled>\n                                <i class=\"fas fa-search\"></i> Select\n                            </button>\n                            <button id=\"clear-dockdash-btn\" class=\"browse-btn danger-btn\" disabled>\n                                <i class=\"fas fa-trash\"></i> Remove\n                            </button>\n                        </div>\n                    </div>\n\n                    <div class=\"upload-card\" id=\"gap-filler-card\">\n                        <i class=\"fas fa-network-wired main-icon fa-5x\"></i>\n                        <div>\n                            <h2>Research Hub</h2>\n                            <p id=\"gap-filler-status\">Paste data to clear ghosts.</p>\n                        </div>\n                        <div class=\"file-card-actions\">\n                            <button id=\"open-hub-btn\" class=\"browse-btn hub-btn\">\n                                <i class=\"fas fa-laptop-code\"></i> Open\n                            </button>\n                        </div>\n                    </div>\n                </div>\n            </aside>\n\n            <section class=\"dashboard-panel\">\n                <div class=\"panel-heading\">\n                    <div>\n                        <p class=\"eyebrow\">Live Summary</p>\n                        <h2>EOS Metrics</h2>\n                    </div>\n                    <span class=\"hint-pill\"><i class=\"far fa-hand-pointer\"></i> Click a tile for details</span>\n                </div>\n\n                <div class=\"metric-section\">\n                    <h3>Operations</h3>\n                    <div class=\"metrics-grid operations-grid\">\n                        <div class=\"metric-tile\" id=\"dropPallets\" data-category=\"Operations\"><div class=\"tile-content\"><i class=\"fas fa-pallet icon\"></i><div class=\"label\">Drop Pallets</div><div class=\"value\">0</div></div></div>\n                        <div class=\"metric-tile\" id=\"dropFloor\" data-category=\"Operations\"><div class=\"tile-content\"><i class=\"fas fa-box-open icon\"></i><div class=\"label\">Drop Floor</div><div class=\"value\">0</div></div></div>\n                        <div class=\"metric-tile\" id=\"transshipYard\" data-category=\"Operations\"><div class=\"tile-content\"><i class=\"fas fa-exchange-alt icon\"></i><div class=\"label\">Transship Yard</div><div class=\"value\">0</div></div></div>\n                        <div class=\"metric-tile\" id=\"livesHanded\" data-category=\"Operations\"><div class=\"tile-content\"><i class=\"fas fa-handshake icon\"></i><div class=\"label\">Lives Handed Over</div><div class=\"value\">0</div></div></div>\n                    </div>\n                </div>\n\n                <div class=\"metric-section\">\n                    <h3>Parcels and Volume</h3>\n                    <div class=\"metrics-grid parcel-grid\">\n                        <div class=\"metric-tile\" id=\"totalParcels\" data-category=\"Parcels\"><div class=\"tile-content\"><i class=\"fas fa-boxes icon\"></i><div class=\"label\">Total Parcels</div><div class=\"value\">0</div></div></div>\n                        <div class=\"metric-tile\" id=\"parcelsDock\" data-category=\"Critical\"><div class=\"tile-content\"><i class=\"fas fa-shipping-fast icon\"></i><div class=\"label\">Parcels On Dock</div><div class=\"value\">0</div></div></div>\n                        <div class=\"metric-tile\" id=\"parcelsYard\" data-category=\"Parcels\"><div class=\"tile-content\"><i class=\"fas fa-parking icon\"></i><div class=\"label\">Parcels In Yard</div><div class=\"value\">0</div></div></div>\n                        <div class=\"metric-tile\" id=\"volumeDoors\" data-category=\"Volume\"><div class=\"tile-content\"><i class=\"fas fa-door-open icon\"></i><div class=\"label\">Volume On Doors</div><div class=\"value\">0</div></div></div>\n                        <div class=\"metric-tile\" id=\"volumeYard\" data-category=\"Volume\"><div class=\"tile-content\"><i class=\"fas fa-ruler-combined icon\"></i><div class=\"label\">Volume In Yard</div><div class=\"value\">0</div></div></div>\n                    </div>\n                </div>\n            </section>\n\n            <aside class=\"side-panel priority-panel\">\n                <div class=\"panel-heading compact\">\n                    <div>\n                        <p class=\"eyebrow\">Exception Work</p>\n                        <h2>Priority Queue</h2>\n                    </div>\n                </div>\n\n                <div class=\"priority-stack\">\n                    <div class=\"metric-tile priority-tile\" id=\"azngOver72\" data-category=\"Critical\"><div class=\"tile-content\"><i class=\"fas fa-clock icon\"></i><div class=\"label\">AZNG &gt; 72H</div><div class=\"value\">0</div></div></div>\n                    <div class=\"metric-tile priority-tile\" id=\"researchQueue\" data-category=\"Critical\"><div class=\"tile-content\"><i class=\"fas fa-search-plus icon\"></i><div class=\"label\">Research Queue</div><div class=\"value\">0</div></div></div>\n                </div>\n\n                <div class=\"api-test-card hidden-feature\">\n                    <button id=\"test-fc-api-btn\" class=\"browse-btn secondary-btn\" type=\"button\">\n                        <i class=\"fas fa-plug-circle-bolt\"></i> Test FC API\n                    </button>\n                    <p id=\"fc-api-status\">Use FCInboundDockService to enrich Research Queue ISAs.</p>\n                </div>\n\n                <div class=\"queue-note\">\n                    <i class=\"fas fa-circle-info\"></i>\n                    <span>Priority tiles open their detail list after EOS is generated.</span>\n                </div>\n            </aside>\n        </section>\n\n        <section id=\"admin-tools\" class=\"hidden-section\">\n            <div class=\"tool-card\">\n                <div class=\"panel-heading\">\n                    <div>\n                        <p class=\"eyebrow\">Admin Tools</p>\n                        <h2>Barcode Console</h2>\n                    </div>\n                    <span class=\"hint-pill\"><i class=\"fas fa-keyboard\"></i> Ctrl+Shift+A</span>\n                </div>\n\n                <div class=\"tool-split\">\n                    <div class=\"generator-box\">\n                        <h3>Batch Barcode Generator</h3>\n                        <div class=\"barcode-controls\">\n                            <label>Bar Width<input type=\"number\" id=\"bar-width\" value=\"2\" min=\"1\" max=\"4\"></label>\n                            <label>Height<input type=\"number\" id=\"bar-height\" value=\"50\" min=\"10\" max=\"150\"></label>\n                            <label>Font Size<input type=\"number\" id=\"bar-font\" value=\"14\" min=\"8\" max=\"30\"></label>\n                        </div>\n                        <label class=\"field-label\" for=\"admin-input\">Pallet IDs</label>\n                        <textarea id=\"admin-input\" placeholder=\"TS12345...\"></textarea>\n                        <div class=\"tool-actions\">\n                            <button id=\"btn-generate-only\" class=\"btn-warning\"><i class=\"fas fa-barcode\"></i> Generate</button>\n                            <button id=\"btn-start-scan\" class=\"btn-warning\" disabled><i class=\"fas fa-expand\"></i> Scan Mode</button>\n                            <button id=\"btn-print-only\" class=\"btn-warning\" disabled><i class=\"fas fa-print\"></i> Print</button>\n                        </div>\n                    </div>\n\n                    <div class=\"decoder-box\">\n                        <h3>Barcode Decoder</h3>\n                        <label class=\"field-label\" for=\"admin-decoder\">Scan input</label>\n                        <input type=\"text\" id=\"admin-decoder\" placeholder=\"Click here and scan...\" autocomplete=\"off\">\n                        <div id=\"decoded-output\" class=\"output-display\">Waiting for scan...</div>\n\n                        <div class=\"memory-test-toggle\">\n                            <label for=\"memory-bypass-toggle\">\n                                <input type=\"checkbox\" id=\"memory-bypass-toggle\">\n                                <span>Bypass trailer memory for testing</span>\n                            </label>\n                        </div>\n\n                        <div class=\"memory-admin-actions\">\n                            <button id=\"clear-oculus-memory-btn\" class=\"btn-warning danger-btn\">\n                                <i class=\"fas fa-trash\"></i> Clear Oculus Memory\n                            </button>\n                            <p id=\"oculus-memory-admin-status\">Removes saved Vendor/Transship Oculus records.</p>\n                        </div>\n                    </div>\n                </div>\n                <div id=\"printable-area\"></div>\n            </div>\n        </section>\n\n        <div id=\"scan-overlay\" style=\"display: none;\">\n            <div class=\"scan-content\">\n                <button id=\"btn-close-scan\" class=\"close-overlay\"><i class=\"fas fa-xmark\"></i> Exit Mode</button>\n                <h2>Scan To Advance</h2>\n                <div class=\"giant-barcode-wrapper\"><svg id=\"giant-barcode\"></svg></div>\n                <div class=\"scan-controls\">\n                    <button id=\"btn-prev-slide\" class=\"nav-btn\"><i class=\"fas fa-chevron-left\"></i> Prev</button>\n                    <span id=\"scan-progress\">1 / 50</span>\n                    <button id=\"btn-next-slide\" class=\"nav-btn\">Next <i class=\"fas fa-chevron-right\"></i></button>\n                </div>\n                <p>Scan the barcode on screen to auto-advance.</p>\n            </div>\n        </div>\n    </main>\n\n    <div id=\"detail-modal\" class=\"modal\">\n        <div class=\"modal-content\">\n            <button class=\"close-button\" id=\"close-modal-btn\" aria-label=\"Close details\">&times;</button>\n            <h2 id=\"modal-title\">Trailer Details</h2>\n            <div class=\"table-container\">\n                <table id=\"detail-table\">\n                    <thead><tr><th>ISA</th><th>VRID</th><th>LOC</th><th>ACTION</th></tr></thead>\n                    <tbody id=\"detail-table-body\"></tbody>\n                </table>\n            </div>\n        </div>\n    </div>\n\n    <div id=\"research-hub-modal\" class=\"modal\" style=\"display:none; z-index: 2000;\">\n        <div class=\"modal-content hub-modal-content\">\n            <div id=\"hub-step-1\">\n                <h2><i class=\"fas fa-database\"></i> Oculus Memory</h2>\n                <p class=\"modal-intro\">Upload the latest Oculus Vendor and Transship CSVs. The app will store ISA, cartons, units, and pallets until the next Oculus sync.</p>\n                <div class=\"hub-grid oculus-upload-grid\">\n                    <div class=\"oculus-upload-card\" id=\"oculus-vendor-card\">\n                        <i class=\"fas fa-truck-loading\"></i>\n                        <div>\n                            <h3>Vendor CSV</h3>\n                            <p id=\"oculus-vendor-status\">Drops and AF lives/live-drops.</p>\n                        </div>\n                        <div class=\"file-card-actions\">\n                            <button id=\"browse-oculus-vendor-btn\" class=\"browse-btn\" type=\"button\">\n                                <i class=\"fas fa-file-csv\"></i> Select\n                            </button>\n                            <button id=\"clear-oculus-vendor-btn\" class=\"browse-btn danger-btn\" type=\"button\" disabled>\n                                <i class=\"fas fa-trash\"></i> Remove\n                            </button>\n                        </div>\n                    </div>\n                    <div class=\"oculus-upload-card\" id=\"oculus-transship-card\">\n                        <i class=\"fas fa-exchange-alt\"></i>\n                        <div>\n                            <h3>Transship CSV</h3>\n                            <p id=\"oculus-transship-status\">Transship trailers and unit counts.</p>\n                        </div>\n                        <div class=\"file-card-actions\">\n                            <button id=\"browse-oculus-transship-btn\" class=\"browse-btn\" type=\"button\">\n                                <i class=\"fas fa-file-csv\"></i> Select\n                            </button>\n                            <button id=\"clear-oculus-transship-btn\" class=\"browse-btn danger-btn\" type=\"button\" disabled>\n                                <i class=\"fas fa-trash\"></i> Remove\n                            </button>\n                        </div>\n                    </div>\n                </div>\n                <p class=\"oculus-sync-summary\" id=\"oculus-sync-summary\">No Oculus files selected.</p>\n                <div class=\"modal-actions\">\n                    <button onclick=\"document.getElementById('research-hub-modal').style.display='none'\" class=\"browse-btn secondary-btn\">Cancel</button>\n                    <button id=\"sync-oculus-memory-btn\" onclick=\"window.processHubData()\" class=\"browse-btn success-btn\" disabled>Sync Oculus Memory <i class=\"fas fa-check-circle\"></i></button>\n                </div>\n            </div>\n        </div>\n    </div>\n\n    <div id=\"fc-api-modal\" class=\"modal\" style=\"display:none; z-index: 2100;\">\n        <div class=\"modal-content api-modal-content\">\n            <h2><i class=\"fas fa-plug-circle-bolt\"></i> FC API Test</h2>\n            <p class=\"modal-intro\">Enter the FCInboundDockService API Gateway details to test Research Queue enrichment.</p>\n            <div class=\"api-config-grid\">\n                <label class=\"field-label\" for=\"fc-api-endpoint-input\">API Gateway Endpoint</label>\n                <input id=\"fc-api-endpoint-input\" type=\"text\" placeholder=\"https://...\">\n\n                <label class=\"field-label\" for=\"fc-api-warehouse-input\">Warehouse ID</label>\n                <input id=\"fc-api-warehouse-input\" type=\"text\" value=\"GYR2\">\n\n                <label class=\"field-label\" for=\"fc-api-token-input\">Authorization Token Optional</label>\n                <input id=\"fc-api-token-input\" type=\"password\" placeholder=\"Bearer token or raw token\">\n            </div>\n            <div class=\"modal-actions\">\n                <button id=\"fc-api-cancel-btn\" class=\"browse-btn secondary-btn\" type=\"button\">Cancel</button>\n                <button id=\"fc-api-submit-btn\" class=\"browse-btn\" type=\"button\">\n                    <i class=\"fas fa-plug-circle-bolt\"></i> Test API\n                </button>\n            </div>\n        </div>\n    </div>\n\n    <footer>\n        <span>EOS dashboard ready</span>\n    </footer>\n\n    <script>\n/*EOS_BOOTSTRAP*/\n</script><script>\n(function () {\n    'use strict';\n    const boot = window.__EOS_BOOT__;\n    const values = { ...boot.values };\n    const files = new Map();\n    const pending = new Map();\n    let sequence = 0;\n    const send = (action, extra = {}) => parent.postMessage({ eosChannel: boot.channel, action, ...extra }, '*');\n\n    window.eosStorage = {\n        getItem: key => Object.prototype.hasOwnProperty.call(values, key) ? values[key] : null,\n        setItem(key, value) {\n            values[key] = String(value);\n            send('storage', { key, value: String(value) });\n        },\n        removeItem(key) { delete values[key]; send('storage', { key, value: null }); }\n    };\n\n    function warning(message) {\n        let box = document.getElementById('browser-warning');\n        if (!box) {\n            box = document.createElement('div');\n            box.id = 'browser-warning';\n            box.style.cssText = 'position:fixed;bottom:12px;left:12px;right:12px;z-index:99999;background:#fff4d6;color:#392700;border:2px solid #e9ae32;padding:12px;white-space:pre-wrap';\n            document.body.appendChild(box);\n        }\n        box.textContent = message;\n        box.onclick = () => box.remove();\n    }\n    window.addEventListener('message', event => {\n        if (event.source !== parent || event.data?.eosChannel !== boot.channel) return;\n        if (event.data.action === 'warning') warning(event.data.message);\n        const resolve = pending.get(event.data.id);\n        if (resolve) { pending.delete(event.data.id); resolve(event.data); }\n    });\n\n    function download(content, name) {\n        const url = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8' }));\n        const link = document.createElement('a');\n        link.href = url;\n        link.download = name;\n        document.body.appendChild(link);\n        link.click();\n        link.remove();\n        setTimeout(() => URL.revokeObjectURL(url), 10000);\n    }\n\n    window.api = {\n        openFile: () => new Promise(resolve => {\n            const input = document.createElement('input');\n            input.type = 'file';\n            input.accept = '.csv,text/csv';\n            input.hidden = true;\n            input.dataset.eosFilePicker = 'true';\n            const finish = file => {\n                input.remove();\n                if (!file) return resolve(null);\n                const key = `/browser-${++sequence}/${file.name}`;\n                files.set(key, file);\n                resolve(key);\n            };\n            input.onchange = () => finish(input.files[0]);\n            input.oncancel = () => finish(null);\n            document.body.appendChild(input);\n            input.click();\n        }),\n        readCsvFile: async key => {\n            const file = files.get(key);\n            if (!file) throw new Error('Please select the CSV again.');\n            try { return await file.text(); } finally { files.delete(key); }\n        },\n        saveCsv: async content => {\n            download(content, 'Verified_EOS_Report.csv');\n            return true;\n        },\n        writeToClipboard: async text => {\n            const id = ++sequence;\n            const result = await new Promise(resolve => {\n                pending.set(id, resolve);\n                send('clipboard', { id, text: String(text) });\n                setTimeout(() => {\n                    if (pending.delete(id)) resolve({ ok: false });\n                }, 5000);\n            });\n            if (!result.ok) {\n                const dialog = document.createElement('dialog');\n                dialog.style.cssText = 'width:min(650px,90vw);padding:20px';\n                dialog.innerHTML = '<p>Automatic copy was unavailable. Select this text and press Ctrl+C.</p><textarea style=\"width:100%;height:280px\"></textarea><button>Close</button>';\n                dialog.querySelector('textarea').value = text;\n                dialog.querySelector('button').onclick = () => dialog.remove();\n                document.body.appendChild(dialog);\n                dialog.showModal();\n                dialog.querySelector('textarea').select();\n            }\n        },\n        getAppVersion: async () => boot.version + ' Browser Test',\n        getDisplayMetrics: async () => ({ workAreaSize: { width: screen.availWidth, height: screen.availHeight }, scaleFactor: devicePixelRatio }),\n        onDisplayMetricsChanged: callback => {\n            const listener = async () => callback(await window.api.getDisplayMetrics());\n            window.addEventListener('resize', listener);\n            return () => window.removeEventListener('resize', listener);\n        }\n    };\n    window.addEventListener('unhandledrejection', event => warning(`Browser test error: ${event.reason?.message || event.reason}`));\n    window.addEventListener('error', event => {\n        if (event.message) warning(`Browser test error: ${event.message}`);\n    });\n    window.addEventListener('DOMContentLoaded', () => {\n        const apiButton = document.getElementById('fc-api-submit-btn');\n        if (apiButton) {\n            apiButton.disabled = true;\n            apiButton.textContent = 'Unavailable in browser test';\n        }\n        const introduction = document.querySelector('#fc-api-modal .modal-intro');\n        if (introduction) introduction.textContent = 'This test supports CSV-based EOS. The desktop FC API connection is not included.';\n        const footer = document.querySelector('footer');\n        if (footer) footer.textContent = 'Browser test | CSV workflow | Memory is separate from the desktop app';\n        send('ready');\n    });\n})();\n\n</script><script>\n// database.js - The Memory System\n\nconst DB_KEY = 'gyr2_trailer_memory';\nconst OCULUS_DB_KEY = 'gyr2_oculus_memory';\nconst MEMORY_LIMIT_HOURS = 96;\n\nfunction loadDatabase() {\n    const raw = window.eosStorage.getItem(DB_KEY);\n    return raw ? JSON.parse(raw) : {};\n}\n\nfunction saveDatabase(db) {\n    window.eosStorage.setItem(DB_KEY, JSON.stringify(db));\n}\n\nfunction loadOculusMemory() {\n    const raw = window.eosStorage.getItem(OCULUS_DB_KEY);\n    return raw ? JSON.parse(raw) : { byIsa: {}, uploadedAt: null, counts: { vendor: 0, transship: 0 } };\n}\n\nfunction saveOculusMemory(records, counts) {\n    const db = {\n        byIsa: records || {},\n        uploadedAt: Date.now(),\n        counts: counts || { vendor: 0, transship: 0 }\n    };\n\n    window.eosStorage.setItem(OCULUS_DB_KEY, JSON.stringify(db));\n    return db;\n}\n\nfunction clearOculusMemory() {\n    window.eosStorage.removeItem(OCULUS_DB_KEY);\n}\n\nfunction recallOculusTrailer(isa) {\n    const db = loadOculusMemory();\n    const record = db.byIsa?.[isa];\n    if (!record) return null;\n\n    const now = Date.now();\n    const limitMS = MEMORY_LIMIT_HOURS * 60 * 60 * 1000;\n    if (db.uploadedAt && now - db.uploadedAt > limitMS) {\n        window.eosStorage.removeItem(OCULUS_DB_KEY);\n        console.log(\"Oculus memory expired and was cleared.\");\n        return null;\n    }\n\n    return record;\n}\n\nfunction purgeOldRecords() {\n    const db = loadDatabase();\n    const now = Date.now();\n    const limitMS = MEMORY_LIMIT_HOURS * 60 * 60 * 1000;\n    let deletedCount = 0;\n\n    Object.keys(db).forEach(isa => {\n        if (now - db[isa].timestamp > limitMS) {\n            delete db[isa];\n            deletedCount++;\n        }\n    });\n\n    saveDatabase(db);\n    if (deletedCount > 0) console.log(`Cleaned up ${deletedCount} old records from memory.`);\n}\n\nfunction rememberTrailer(isa, vrid, category, units, notes) {\n    const db = loadDatabase();\n    db[isa] = {\n        vrid,\n        category,\n        units: parseInt(units, 10) || 0,\n        notes,\n        timestamp: Date.now(),\n    };\n    saveDatabase(db);\n}\n\nfunction recallTrailer(isa, currentVrid) {\n    const db = loadDatabase();\n    const record = db[isa];\n\n    if (!record) return null;\n\n    if (record.vrid !== currentVrid) {\n        console.log(`Memory mismatch for ${isa}: old VRID ${record.vrid} vs new ${currentVrid}`);\n        return null;\n    }\n\n    return record;\n}\n\npurgeOldRecords();\n\n</script>\n    <script>\n﻿// =========================================================================\r\n// 1. Dependencies & Global State\r\n// =========================================================================\r\nlet ymsFilePath = null;\r\nlet dockdashFilePath = null;\r\nlet ymsData = []; \r\nlet dockdashData = []; \n\n// =========================================================================\n// 0. Monitor-Aware UI Scaling\n// =========================================================================\nconst BASE_DISPLAY_SIZE = { width: 1440, height: 900 };\nconst MEMORY_BYPASS_KEY = 'gyr2_memory_bypass_testing';\nlet currentDisplayMetrics = null;\n\nfunction clampNumber(value, min, max) {\n    return Math.min(Math.max(value, min), max);\n}\n\nfunction applyResponsiveScale(metrics = currentDisplayMetrics) {\n    const root = document.documentElement;\n    const displaySize = metrics?.workAreaSize || {\n        width: window.innerWidth,\n        height: window.innerHeight,\n    };\n\n    const displayScale = Math.min(\n        displaySize.width / BASE_DISPLAY_SIZE.width,\n        displaySize.height / BASE_DISPLAY_SIZE.height\n    );\n    const viewportScale = Math.min(window.innerWidth / 1280, window.innerHeight / 760);\n    const appScale = clampNumber(Math.min(displayScale, viewportScale), 0.82, 1.16);\n    const layoutWidth = clampNumber(Math.round(displaySize.width * 0.94), 1040, 1720);\n\n    root.style.setProperty('--app-scale', appScale.toFixed(3));\n    root.style.setProperty('--app-max-width', `${layoutWidth}px`);\n    root.classList.toggle('compact-display', appScale < 0.92);\n    root.classList.toggle('wide-display', appScale > 1.06);\n}\n\nfunction setupMonitorAwareScaling() {\n    applyResponsiveScale();\n    window.addEventListener('resize', () => applyResponsiveScale());\n\n    if (!window.api?.getDisplayMetrics) return;\n\n    window.api.getDisplayMetrics()\n        .then(metrics => {\n            currentDisplayMetrics = metrics;\n            applyResponsiveScale(metrics);\n        })\n        .catch(() => applyResponsiveScale());\n\n    if (window.api.onDisplayMetricsChanged) {\n        window.api.onDisplayMetricsChanged(metrics => {\n            currentDisplayMetrics = metrics;\n            applyResponsiveScale(metrics);\n        });\n    }\n}\n\nfunction isMemoryBypassEnabled() {\n    return window.eosStorage.getItem(MEMORY_BYPASS_KEY) === 'true';\n}\n\nfunction setMemoryBypassEnabled(enabled) {\n    window.eosStorage.setItem(MEMORY_BYPASS_KEY, enabled ? 'true' : 'false');\n}\n\n// --- NEW: HUB DATA STORAGE ---\nlet hubData = {\n    vendorDock: {},\n    vendorYard: {},\n    transshipDock: {},\n    transshipYard: {}\n};\nlet pendingOculusUploads = {\n    vendor: null,\n    transship: null\n};\nlet gapFillerData = { byIsa: {}, byVrid: {} }; \nlet lastProcessedStats = {}; \nlet fcApiTrailerLookup = {};\n\nconst FC_API_ENDPOINT_KEY = 'gyr2_fc_ids_api_endpoint';\nconst FC_API_WAREHOUSE_KEY = 'gyr2_fc_ids_warehouse_id';\nconst FC_API_AUTH_SESSION_KEY = 'gyr2_fc_ids_auth_token';\n\r\n// Helper to normalize strings\r\nfunction normalize(val) { \r\n    let str = String(val || \"\").trim().toUpperCase();\r\n    if (str.startsWith('\"') && str.endsWith('\"')) str = str.slice(1, -1).trim();\r\n    if (str.includes(\"E+\") && !isNaN(parseFloat(str))) {\r\n        let num = parseFloat(str);\r\n        if (num > 1e10) return String(Math.round(num)); \r\n    }\r\n    return str;\r\n}\r\n\r\nfunction parseHours(str) { return parseFloat(String(str || \"\").toLowerCase().replace(\"hrs\", \"\").trim()) || 0; }\r\n\r\nfunction getField(record, keyName) {\n    if (!record) return undefined;\n    const normalizedKey = keyName.toUpperCase().trim();\n    const actualKey = Object.keys(record).find(k => k.trim().toUpperCase() === normalizedKey);\n    return actualKey ? record[actualKey] : undefined;\n}\n\nfunction escapeHtmlAttr(value) {\n    return String(value || '')\n        .replace(/&/g, '&amp;')\n        .replace(/\"/g, '&quot;')\n        .replace(/</g, '&lt;')\n        .replace(/>/g, '&gt;');\n}\n\nconst PARCEL_CARRIERS = ['UPSS', 'UPSN', 'FDEG', 'FED EX', 'FEDEX', 'DHLC'];\n\nfunction isParcelCarrier(carrier) {\n    const normalizedCarrier = normalize(carrier).replace(/\\s+/g, ' ');\n    const compactCarrier = normalizedCarrier.replace(/\\s+/g, '');\n\n    return PARCEL_CARRIERS.some(code => {\n        const normalizedCode = normalize(code).replace(/\\s+/g, ' ');\n        const compactCode = normalizedCode.replace(/\\s+/g, '');\n\n        return normalizedCarrier.includes(normalizedCode) || compactCarrier.includes(compactCode);\n    });\n}\n\nfunction isLiveDropCarrier(carrier) {\n    const normalizedCarrier = normalize(carrier);\n    const compactCarrier = normalizedCarrier.replace(/\\s+/g, '');\n\n    return normalizedCarrier === \"ATSB\" || compactCarrier.includes(\"ATSB\");\n}\n\nfunction isClampLoadNote(notes) {\n    return normalize(notes).includes(\"CLAMP\");\n}\n\nfunction isDoorLocation(location) {\n    return normalize(location).startsWith(\"DD\");\n}\n\nfunction isYardLocation(location) {\n    return normalize(location).startsWith(\"PS\");\n}\n\nfunction categoryAllowsLocation(category, location) {\n    if (['dropPallets', 'dropFloor', 'parcelsYard', 'transshipYard', 'azngOver72'].includes(category)) {\n        return isYardLocation(location);\n    }\n\n    if (['parcelsDock', 'livesHanded'].includes(category)) {\n        return isDoorLocation(location);\n    }\n\n    return true;\n}\n\nconst DISRUPTION_NOTE_TERMS = [\n    \"DAMAGED\",\n    \"DAMAGE\",\n    \"RED TAG\",\n    \"RED TAGGED\",\n    \"REDTAG\",\n    \"BAD TRAILER\",\n    \"BAD ORDER\",\n    \"UNUSABLE\",\n    \"DO NOT USE\",\n    \"DONT USE\",\n    \"OUT OF SERVICE\",\n    \"OOS\",\n    \"BROKEN\",\n    \"NOT USABLE\",\n    \"CAN'T USE\",\n    \"CANNOT USE\",\n    \"CAN NOT USE\",\n    \"UNSAFE\",\n    \"UNSAFE TO UNLOAD\",\n    \"UNSAFE TO LOAD\",\n    \"DO NOT LOAD\",\n    \"DONT LOAD\",\n    \"DO NOT UNLOAD\",\n    \"DONT UNLOAD\",\n    \"CANNOT UNLOAD\",\n    \"CAN NOT UNLOAD\",\n    \"CAN'T UNLOAD\",\n    \"CANNOT LOAD\",\n    \"CAN NOT LOAD\",\n    \"CAN'T LOAD\",\n    \"NEEDS REPAIR\",\n    \"NEED REPAIR\",\n    \"REPAIR NEEDED\",\n    \"TRAILER REPAIR\",\n    \"MECHANICAL ISSUE\",\n    \"MECHANICAL\",\n    \"FLAT TIRE\",\n    \"TIRE ISSUE\",\n    \"NO BRAKES\",\n    \"BRAKE ISSUE\",\n    \"AIR LEAK\",\n    \"LEAKING\",\n    \"HOLE IN\",\n    \"DOOR BROKEN\",\n    \"DOOR ISSUE\"\n];\n\nconst DISRUPTION_NOTE_PATTERNS = [\n    /\\bCASE\\s*(#|:)?\\s*\\d{6,}\\b/,\n    /\\bUNSAFE\\b.*\\b(LOAD|UNLOAD|USE|TRAILER)\\b/,\n    /\\b(DO NOT|DONT|DON'T|CANNOT|CAN NOT|CAN'T)\\b.*\\b(LOAD|UNLOAD|USE)\\b/,\n    /\\b(LOAD|UNLOAD|USE)\\b.*\\b(UNSAFE|DAMAGED|BROKEN)\\b/,\r\n    /\\b(NEED|NEEDS|REQUIRES?)\\b.*\\b(REPAIR|FIX|MAINTENANCE)\\b/,\n    /\\b(RED|ORANGE)\\b.*\\bTAG(GED)?\\b/,\n    /\\bOUT\\b.*\\bSERVICE\\b/\n];\n\nconst PROBLEM_SOLVE_NOTE_PATTERNS = [\n    /\\bPROBLEM\\s*SOLVE\\b/,\n    /\\bPROBLEM\\s*SOLV(E|ING)\\b/,\n    /\\bPS\\s*TRAILER\\b/\n];\n\r\nconst FREIGHT_DISRUPTION_PATTERNS = [\r\n    /\\bREJECT(?:ED|ING|ION|IONS|S)?\\b/,\r\n    /\\bMISS?\\s*SHIP(?:S|PED|PING|MENT|MENTS)?\\b/,\r\n    /\\b(?:NO|WITHOUT|MISSING|AWAITING|PENDING)\\s+(?:(?:A|THE|AVAILABLE|VALID)\\s+)?MANI(?:FEST(?:S|ED)?)?\\b/,\r\n    /\\bMANI(?:FEST)?\\s+(?:(?:IS|WAS|STILL)\\s+)?(?:MISSING|UNAVAILABLE|PENDING|NOT\\s+(?:FOUND|AVAILABLE|RECEIVED|ATTACHED|PROVIDED))\\b/,\r\n    /\\b(?:UNMANIFESTED|NOT\\s+MANIFESTED)\\b/\r\n];\r\n\r\nfunction hasFreightDisruptionNote(notes) {\r\n    const text = normalize(notes).replace(/[-_\\u2010-\\u2015]+/g, ' ').replace(/\\s+/g, ' ');\r\n    return FREIGHT_DISRUPTION_PATTERNS.some(pattern => {\r\n        for (const match of text.matchAll(new RegExp(pattern.source, 'g'))) {\r\n            // A clerk explicitly saying \"not rejected\" or \"no misships\" is not a disruption.\r\n            const before = text.slice(0, match.index);\r\n            if (!/\\b(?:(?:NOT|NEVER|NO|WITHOUT)\\s+(?:BEEN\\s+)?|NO\\s+LONGER\\s+)$/.test(before)) return true;\r\n        }\r\n        return false;\r\n    });\r\n}\r\n\nfunction isParcelCategory(category) {\n    return category === 'parcelsDock' || category === 'parcelsYard';\n}\n\nfunction isProblemSolveNote(normalizedNotes) {\n    return PROBLEM_SOLVE_NOTE_PATTERNS.some(pattern => pattern.test(normalizedNotes));\n}\n\nfunction isDisruptionNote(notes, category = \"\") {\n    const normalizedNotes = normalize(notes);\n    const hasDisruptionSignal = DISRUPTION_NOTE_TERMS.some(term => normalizedNotes.includes(term)) ||\n        DISRUPTION_NOTE_PATTERNS.some(pattern => pattern.test(normalizedNotes));\n\n    if (hasDisruptionSignal || hasFreightDisruptionNote(notes)) return true;\r\n\n    return isProblemSolveNote(normalizedNotes) && !isParcelCategory(category);\n}\n\nfunction createDisruptionBuckets() {\n    return {\n        dropPallets: [],\n        dropFloor: [],\n        parcelsDock: [],\n        parcelsYard: [],\n        transshipYard: [],\n        azngOver72: [],\n        livesHanded: []\n    };\n}\n\nfunction getDisruptionCount(stats, category) {\n    return stats.disruptions?.[category]?.length || 0;\n}\n\nfunction formatCountWithDisruptions(count, disruptions) {\n    return disruptions > 0 ? `${count} + ${disruptions} DISRUPTIONS` : count;\n}\n\nfunction formatMetricWithDisruptions(stats, category) {\n    return formatCountWithDisruptions(stats[category].length, getDisruptionCount(stats, category));\n}\n\nfunction addCategorizedRecord(stats, category, record) {\n    if (!Array.isArray(stats[category])) return;\n\n    if (isDisruptionNote(record.notes, category)) {\n        stats.disruptions[category].push(record);\n    } else {\n        stats[category].push(record);\n    }\n}\n\nfunction formatLivesValue(stats) {\n    const liveDropCount = stats.liveDrops ? stats.liveDrops.length : 0;\n    const trueLiveCount = Math.max(stats.livesHanded.length - liveDropCount, 0);\n    const liveValue = liveDropCount > 0 ?\n        `${trueLiveCount} (${liveDropCount} live/drops)` :\n        String(stats.livesHanded.length);\n\n    return formatCountWithDisruptions(liveValue, getDisruptionCount(stats, 'livesHanded'));\n}\n\nfunction inferYmsOnlyCategory(ymsInfo) {\n    const notes = normalize(ymsInfo.notes);\n\n    if (notes.includes(\"IBTRANS\")) {\n        if (isYardLocation(ymsInfo.location)) {\n            return { category: 'transshipYard', confidence: 'MEDIUM', reason: 'IBTRANS in notes, PS location' };\n        }\n\n        if (isDoorLocation(ymsInfo.location)) {\n            return { category: null, confidence: 'IGNORE', reason: 'IBTRANS already on DD; units unknown' };\n        }\n    }\n\n    if (notes.includes(\"PARCEL\")) {\n        if (isDoorLocation(ymsInfo.location)) {\n            return { category: 'parcelsDock', confidence: 'MEDIUM', reason: 'PARCEL in notes, DD location' };\n        }\n\n        if (isYardLocation(ymsInfo.location)) {\n            return { category: 'parcelsYard', confidence: 'MEDIUM', reason: 'PARCEL in notes, PS location' };\n        }\n    }\n\n    return null;\n}\n\nfunction resolveOculusCategory(oculusRecord, ymsInfo) {\n    const loc = normalize(ymsInfo.location);\n    const sourceType = normalize(oculusRecord.sourceType);\n    const isParcel = isParcelCarrier(ymsInfo.carrier);\n    const isLive = normalize(ymsInfo.loadType) === \"LIVE\";\n\n    if (sourceType === \"TRANSSHIP\") {\n        if (isYardLocation(loc)) return 'transshipYard';\n        if (isDoorLocation(loc)) return 'volumeDoors';\n        return null;\n    }\n\n    if (isParcel) {\n        if (isDoorLocation(loc)) return 'parcelsDock';\n        if (isYardLocation(loc)) return 'parcelsYard';\n        return null;\n    }\n\n    if (isLive && isDoorLocation(loc)) return 'livesHanded';\n    if (isDoorLocation(loc)) return 'volumeDoors';\n    if (isYardLocation(loc)) return (oculusRecord.pallets > 0 || isClampLoadNote(ymsInfo.notes)) ? 'dropPallets' : 'dropFloor';\n\n    return null;\n}\n\nfunction normalizeFcApiTrailer(record) {\n    const isa = normalize(record?.isa || record?.ISA);\n    if (!isa) return null;\n\n    return {\n        isa,\n        warehouseId: normalize(record.warehouseId),\n        location: normalize(record.locationCode || record.location || record.LOCATION),\n        updatedAt: record.updatedAt || \"\",\n        priorityLastUpdatedAt: record.priorityLastUpdatedAt || \"\",\n        appointmentType: normalize(record.appointmentType || record[\"APPOINTMENT TYPE\"]),\n        carrierLoadType: normalize(record.carrierLoadType || record[\"CARRIER LOAD TYPE\"]),\n        dockArrivalTime: record.dockArrivalTime || \"\",\n        priorityScore: Number(record.priorityScore || 0),\n        pallets: Number(record.pallets || 0),\n        cartons: Number(record.cartons || 0),\n        units: Number(record.units || 0),\n        empty: Boolean(record.empty),\n        raw: record\n    };\n}\n\nfunction resolveFcApiCategory(apiTrailer) {\n    if (!apiTrailer) return null;\n\n    const loc = normalize(apiTrailer.location);\n    const appt = normalize(apiTrailer.appointmentType);\n    const loadType = normalize(apiTrailer.carrierLoadType);\n\n    if (appt === \"TRANSSHIP\") {\n        if (isYardLocation(loc)) return 'transshipYard';\n        if (isDoorLocation(loc)) return 'volOnlyDoors';\n    }\n\n    if (appt === \"SMALL_PARCEL\") {\n        if (isDoorLocation(loc)) return 'parcelsDock';\n        if (isYardLocation(loc)) return 'parcelsYard';\n    }\n\n    if (loadType === \"LIVE\" && isDoorLocation(loc)) return 'livesHanded';\n    if (isDoorLocation(loc)) return 'volOnlyDoors';\n    if (isYardLocation(loc)) return apiTrailer.pallets > 0 ? 'dropPallets' : 'dropFloor';\n\n    return null;\n}\n\nfunction parseSpdDate(value) {\n    const raw = String(value || \"\").trim().replace(/^\"|\"$/g, '');\n    if (!raw || raw.toLowerCase() === 'undefined') return null;\n\n    const match = raw.match(/^(\\d{1,2})\\/(\\d{1,2})(?:\\/(\\d{2,4}))?\\s+(\\d{1,2}):(\\d{2})$/);\n    if (!match) return null;\n\n    const month = parseInt(match[1], 10);\n    const day = parseInt(match[2], 10);\n    let year = match[3] ? parseInt(match[3], 10) : new Date().getFullYear();\n    if (year < 100) year += 2000;\n\n    const hour = parseInt(match[4], 10);\n    const minute = parseInt(match[5], 10);\n    const date = new Date(year, month - 1, day, hour, minute);\n\n    return Number.isNaN(date.getTime()) ? null : date;\n}\n\nfunction formatSpdDate(date) {\n    const month = date.getMonth() + 1;\n    const day = date.getDate();\n    const year = date.getFullYear();\n    const hour = String(date.getHours()).padStart(2, '0');\n    const minute = String(date.getMinutes()).padStart(2, '0');\n\n    return `${month}/${day}/${year} ${hour}:${minute}`;\n}\n\nfunction findOldestSpdRecord(records, ymsLookup) {\n    return records\n        .map(record => {\n            const isa = normalize(getField(record, \"ISA\"));\n            const ymsInfo = ymsLookup[isa];\n            const dockLocation = normalize(getField(record, \"LOCATION\"));\n            const spdDate = parseSpdDate(getField(record, \"SPD\"));\n\n            return { isa, dockLocation, ymsInfo, spdDate };\n        })\n        .filter(candidate =>\n            candidate.isa &&\n            candidate.ymsInfo &&\n            candidate.spdDate &&\n            !isDoorLocation(candidate.dockLocation) &&\n            !isDoorLocation(candidate.ymsInfo.location)\n        )\n        .sort((a, b) => a.spdDate - b.spdDate)[0] || null;\n}\n\nfunction findOldestTrailerInYard(records, ymsLookup) {\n    return records\n        .map(record => {\n            const isa = normalize(getField(record, \"ISA\"));\n            const ymsInfo = ymsLookup[isa];\n            const dockLocation = normalize(getField(record, \"LOCATION\"));\n            const dwellHours = parseHours(getField(record, \"YARD DWELL\"));\n\n            return { isa, dockLocation, ymsInfo, dwellHours };\n        })\n        .filter(candidate =>\n            candidate.isa &&\n            candidate.ymsInfo &&\n            candidate.dwellHours > 0 &&\n            !isDoorLocation(candidate.dockLocation) &&\n            !isDoorLocation(candidate.ymsInfo.location)\n        )\n        .sort((a, b) => b.dwellHours - a.dwellHours)[0] || null;\n}\n\n// =========================================================================\n// 2. Clipboard Logic\n// =========================================================================\nfunction copyStatsToClipboard(stats) {\n    if (!stats || !stats.dropPallets) return;\n    \n    const totalParcels = stats.parcelsDock.length + stats.parcelsYard.length;\n    const parcelDisruptions = getDisruptionCount(stats, 'parcelsDock') + getDisruptionCount(stats, 'parcelsYard');\n    const livesClipboardValue = formatLivesValue(stats);\n    \n    const oldestSpdIsa = stats.oldestSpd ? stats.oldestSpd.isa : \"\";\n    const oldestSpdDate = stats.oldestSpd ? stats.oldestSpd.date : \"\";\n    const oldestTrailerIsa = stats.oldestTrailer ? stats.oldestTrailer.isa : \"\";\n    const formatVolume = value => Math.round(value || 0).toLocaleString();\n\n    const clipboardString = [\n        oldestSpdIsa,                   // Oldest SPD ISA\n        oldestSpdDate,                  // Oldest SPD Date\n        oldestTrailerIsa,               // Oldest Trailer In Yard ISA\n        \"\",\n        formatMetricWithDisruptions(stats, 'dropPallets'), // 1. Drop PL\n        formatMetricWithDisruptions(stats, 'dropFloor'),   // 2. Drop FL\n        formatMetricWithDisruptions(stats, 'parcelsDock'), // 3. Parcels Dock\n        formatMetricWithDisruptions(stats, 'parcelsYard'), // 4. Parcels Yard\n        formatCountWithDisruptions(totalParcels, parcelDisruptions), // 5. Total Parcels\n        formatMetricWithDisruptions(stats, 'transshipYard'), // 6. Transship Yard\n        formatMetricWithDisruptions(stats, 'azngOver72'),    // 7. AZNG > 72h\n        \"\",                             // 8. Space\n        livesClipboardValue,            // 9. Lives Handed\n        \"\",                             // 10. Space\n        \"\",                             // 11. Space\r\n        formatVolume(stats.volumeDoors), // 12. Volume Doors\n        formatVolume(stats.volumeYard)   // 13. Volume Yard\n    ].join('\\n');\n\r\n    window.api.writeToClipboard(clipboardString);\r\n}\r\n\r\n// =========================================================================\r\n// 3. UI Update Functions \r\n// =========================================================================\r\nfunction updateMetricsUI(stats) {\r\n    const updateTile = (id, value, isCritical = false) => {\n        const element = document.getElementById(id);\n        if (element) {\n            const valueElement = element.querySelector('.value'); \n            if (valueElement) {\n                const formattedValue = value.toLocaleString();\n                valueElement.textContent = formattedValue;\n                valueElement.title = formattedValue;\n                valueElement.classList.toggle('long-value', formattedValue.length >= 6);\n                valueElement.classList.toggle('extra-long-value', formattedValue.length >= 8);\n            }\n            const numericValue = typeof value === 'number' ?\n                value :\n                (String(value).match(/\\d+/g) || []).reduce((sum, part) => sum + Number(part), 0);\n            if (isCritical && numericValue > 0) element.classList.add('critical-active');\n            else element.classList.remove('critical-active');\n        }\n    };\n\r\n    const totalParcels = stats.parcelsDock.length + stats.parcelsYard.length;\n    const parcelDisruptions = getDisruptionCount(stats, 'parcelsDock') + getDisruptionCount(stats, 'parcelsYard');\n\n    updateTile('dropPallets', formatMetricWithDisruptions(stats, 'dropPallets'));\n    updateTile('dropFloor', formatMetricWithDisruptions(stats, 'dropFloor'));\n    updateTile('totalParcels', formatCountWithDisruptions(totalParcels, parcelDisruptions));\n    updateTile('parcelsDock', formatMetricWithDisruptions(stats, 'parcelsDock'));\n    updateTile('parcelsYard', formatMetricWithDisruptions(stats, 'parcelsYard'));\n    updateTile('transshipYard', formatMetricWithDisruptions(stats, 'transshipYard'));\n    updateTile('livesHanded', formatLivesValue(stats));\n    updateTile('azngOver72', formatMetricWithDisruptions(stats, 'azngOver72'), true);\n    updateTile('researchQueue', stats.researchQueue, true); \r\n    \r\n    updateTile('volumeDoors', Math.round(stats.volumeDoors));\r\n    updateTile('volumeYard', Math.round(stats.volumeYard));\r\n}\r\n\r\nfunction updateActionPanel(status) {\n    const panel = document.getElementById('action-panel');\n    const message = document.getElementById('action-message');\n    const icon = document.getElementById('action-icon');\n    panel.classList.remove('status-neutral', 'status-critical', 'status-success');\n\n    if (status.reconciled) {\n        const isCritical = status.azngOver72 > 0 || status.researchQueue > 0;\n        panel.classList.add(isCritical ? 'status-critical' : 'status-success');\n        icon.className = isCritical ? 'fas fa-exclamation-triangle' : 'fas fa-check-circle';\n        message.textContent = isCritical ?\n            `CRITICAL: ${status.researchQueue} items need research.` :\n            'SUCCESS: Metrics generated.';\n    } else {\n        panel.classList.add('status-neutral');\n        icon.className = 'fas fa-info-circle';\n        message.textContent = status.message || \"Ready.\";\n    }\n}\n\nfunction updateCardStatus(type, text, success) {\n    const card = document.getElementById(`${type}-card`);\r\n    const status = document.getElementById(`${type}-status`);\r\n    const icon = card ? card.querySelector('.main-icon') : null;\r\n\r\n    if (!card) return;\r\n\r\n    card.classList.remove('success', 'error');\r\n    \r\n    if (success === true) {\r\n        card.classList.add('success');\r\n        if(icon) icon.className = 'fas fa-check-circle main-icon fa-5x';\r\n    } else if (success === false) {\r\n        card.classList.add('error');\r\n        if(icon) icon.className = 'fas fa-times-circle main-icon fa-5x';\r\n    } else {\r\n        // Reset to default icons\r\n        if(icon) {\r\n            if (type === 'yms') icon.className = 'fas fa-database main-icon fa-5x';\r\n            else if (type === 'dockdash') icon.className = 'fas fa-file-csv main-icon fa-5x';\r\n            else if (type === 'gap-filler') icon.className = 'fas fa-network-wired main-icon fa-5x'; // Updated Icon\r\n        }\r\n    }\n    if (status) status.textContent = text;\n}\n\nfunction updateFcApiStatus(message, state = null) {\n    const status = document.getElementById('fc-api-status');\n    const card = document.querySelector('.api-test-card');\n    if (status) status.textContent = message;\n    if (card) {\n        card.classList.remove('success', 'error');\n        if (state) card.classList.add(state);\n    }\n}\n\nfunction getFcApiConfig() {\n    const savedEndpoint = window.eosStorage.getItem(FC_API_ENDPOINT_KEY) || '';\n    const savedWarehouse = window.eosStorage.getItem(FC_API_WAREHOUSE_KEY) || 'GYR2';\n    const savedAuthToken = sessionStorage.getItem(FC_API_AUTH_SESSION_KEY) || '';\n\n    return new Promise(resolve => {\n        const modal = document.getElementById('fc-api-modal');\n        const endpointInput = document.getElementById('fc-api-endpoint-input');\n        const warehouseInput = document.getElementById('fc-api-warehouse-input');\n        const tokenInput = document.getElementById('fc-api-token-input');\n        const submitBtn = document.getElementById('fc-api-submit-btn');\n        const cancelBtn = document.getElementById('fc-api-cancel-btn');\n\n        if (!modal || !endpointInput || !warehouseInput || !tokenInput || !submitBtn || !cancelBtn) {\n            resolve(null);\n            return;\n        }\n\n        endpointInput.value = savedEndpoint;\n        warehouseInput.value = savedWarehouse;\n        tokenInput.value = savedAuthToken;\n        modal.style.display = 'block';\n        endpointInput.focus();\n\n        const cleanup = () => {\n            modal.style.display = 'none';\n            submitBtn.removeEventListener('click', handleSubmit);\n            cancelBtn.removeEventListener('click', handleCancel);\n            modal.removeEventListener('click', handleBackdrop);\n            document.removeEventListener('keydown', handleKeydown);\n        };\n\n        const handleCancel = () => {\n            cleanup();\n            resolve(null);\n        };\n\n        const handleSubmit = () => {\n            const endpoint = endpointInput.value.trim();\n            const warehouseId = warehouseInput.value.trim().toUpperCase();\n            const authToken = tokenInput.value.trim();\n\n            if (!endpoint || !warehouseId) {\n                updateFcApiStatus('Endpoint and warehouse are required.', 'error');\n                return;\n            }\n\n            window.eosStorage.setItem(FC_API_ENDPOINT_KEY, endpoint);\n            window.eosStorage.setItem(FC_API_WAREHOUSE_KEY, warehouseId);\n            sessionStorage.setItem(FC_API_AUTH_SESSION_KEY, authToken);\n\n            cleanup();\n            resolve({ endpoint, warehouseId, authToken });\n        };\n\n        const handleBackdrop = event => {\n            if (event.target === modal) handleCancel();\n        };\n\n        const handleKeydown = event => {\n            if (event.key === 'Escape') handleCancel();\n            if (event.key === 'Enter' && document.activeElement !== tokenInput) handleSubmit();\n        };\n\n        submitBtn.addEventListener('click', handleSubmit);\n        cancelBtn.addEventListener('click', handleCancel);\n        modal.addEventListener('click', handleBackdrop);\n        document.addEventListener('keydown', handleKeydown);\n    });\n}\n\nasync function testFcApiForResearchQueue() {\n    if (!window.api?.getTrailersByFC) {\n        alert('FC API bridge is not available.');\n        return;\n    }\n\n    const config = await getFcApiConfig();\n    if (!config) return;\n\n    updateFcApiStatus('Calling FCInboundDockService...', null);\n\n    try {\n        const result = await window.api.getTrailersByFC(config);\n        const trailers = (result.trailers || [])\n            .map(normalizeFcApiTrailer)\n            .filter(Boolean);\n\n        fcApiTrailerLookup = trailers.reduce((lookup, trailer) => {\n            lookup[trailer.isa] = trailer;\n            return lookup;\n        }, {});\n\n        const researchRecords = lastProcessedStats.researchQueueRecords || [];\n        let matched = 0;\n        let enriched = 0;\n\n        researchRecords.forEach(record => {\n            const apiTrailer = fcApiTrailerLookup[normalize(record.isa)];\n            if (!apiTrailer) return;\n\n            matched += 1;\n            const suggestedCategory = resolveFcApiCategory(apiTrailer);\n            if (suggestedCategory) {\n                record.suggestedCategory = suggestedCategory;\n                record.confidence = 'API';\n            }\n            if (apiTrailer.units > 0) record.suggestedUnits = apiTrailer.units;\n            if (apiTrailer.location) record.location = apiTrailer.location;\n            record.apiMatch = {\n                units: apiTrailer.units,\n                cartons: apiTrailer.cartons,\n                pallets: apiTrailer.pallets,\n                appointmentType: apiTrailer.appointmentType,\n                carrierLoadType: apiTrailer.carrierLoadType,\n                priorityScore: apiTrailer.priorityScore,\n                updatedAt: apiTrailer.updatedAt\n            };\n            record.notes = `FC-IDS ${apiTrailer.appointmentType || 'UNKNOWN'} ${apiTrailer.carrierLoadType || ''} ${record.notes || ''}`.trim();\n            enriched += 1;\n        });\n\n        updateFcApiStatus(`API OK: ${trailers.length} trailers returned, ${matched} Research Queue matches.`, 'success');\n\n        if (researchRecords.length) {\n            lastProcessedStats.researchQueue = researchRecords.length;\n            showDetailModal('researchQueue');\n        }\n\n        if (!enriched) {\n            alert(`API worked and returned ${trailers.length} trailers, but none matched the current Research Queue.`);\n        }\n    } catch (error) {\n        console.error('FC API test failed:', error);\n        updateFcApiStatus(`API failed: ${error.message}`, 'error');\n        alert(`FC API test failed:\\n${error.message}`);\n    }\n}\n\n// =========================================================================\n// 4. Modal & Research Logic\n// =========================================================================\r\n\r\nfunction parseOculusNumber(value) {\n    return parseFloat(String(value || \"0\").replace(/,/g, \"\")) || 0;\n}\n\nfunction cleanOculusText(value) {\n    return String(value || \"\").trim();\n}\n\nfunction getFlexibleField(record, candidates) {\n    const keys = Object.keys(record || {});\n    for (const candidate of candidates) {\n        const normalizedCandidate = normalize(candidate);\n        const exactKey = keys.find(key => normalize(key) === normalizedCandidate);\n        if (exactKey) return record[exactKey];\n    }\n\n    for (const candidate of candidates) {\n        const normalizedCandidate = normalize(candidate);\n        const fuzzyKey = keys.find(key => normalize(key).includes(normalizedCandidate));\n        if (fuzzyKey) return record[fuzzyKey];\n    }\n\n    return \"\";\n}\n\nfunction extractOculusIsa(record) {\n    const directIsa = getFlexibleField(record, [\n        \"ISA\",\n        \"ISA ID\",\n        \"INBOUND SHIPMENT APPOINTMENT\",\n        \"INBOUND SHIPMENT APPOINTMENT ID\",\n        \"APPOINTMENT ID\",\n        \"LOAD ID\",\n        \"LOAD IDENTIFIER\"\n    ]);\n    const directMatch = String(directIsa || \"\").match(/\\b(2\\d{11})\\b/);\n    if (directMatch) return normalize(directMatch[1]);\n\n    const joinedValues = Object.values(record || {}).join(\" \");\n    const fallbackMatch = joinedValues.match(/\\b(2\\d{11})\\b/);\n    return fallbackMatch ? normalize(fallbackMatch[1]) : \"\";\n}\n\nfunction extractOculusVrid(record) {\n    return normalize(getFlexibleField(record, [\n        \"VRID\",\n        \"TRAILER VRID\",\n        \"TRIP ID\",\n        \"TOUR ID\"\n    ]));\n}\n\nfunction parseOculusCsvRows(rows, sourceType) {\n    const records = {};\n    let count = 0;\n\n    rows.forEach(row => {\n        const isa = extractOculusIsa(row);\n        if (!isa) return;\n\n        const cartons = parseOculusNumber(getFlexibleField(row, [\n            \"CARTONS/TOTES\",\n            \"CARTONS / TOTES\",\n            \"CARTON/TOTE\",\n            \"CARTON / TOTE\",\n            \"CARTONS\",\n            \"CARTON COUNT\",\n            \"CARTON QTY\",\n            \"TOTES\",\n            \"TOTE COUNT\",\n            \"TOTE QTY\",\n            \"CASES\",\n            \"CASE COUNT\"\n        ]));\n        const units = parseOculusNumber(getFlexibleField(row, [\"UNITS\", \"UNIT COUNT\", \"UNIT QTY\", \"TOTAL UNITS\", \"PENDING UNITS\", \"EXPECTED UNITS\", \"EACHES\", \"EACH QTY\", \"QUANTITY\", \"QTY\"]));\n        const pallets = parseOculusNumber(getFlexibleField(row, [\"PALLETS\", \"PALLET COUNT\", \"PALLET QTY\", \"NUMBER OF PALLETS\"]));\n        const cut = cleanOculusText(getFlexibleField(row, [\"CRITICAL UNLOAD TIME\", \"CUT\"]));\n        const trailerNumber = cleanOculusText(getFlexibleField(row, [\"TRAILER NUMBER\", \"TRAILER NUM\", \"TRAILER\"]));\n        const trailerLocation = cleanOculusText(getFlexibleField(row, [\"TRAILER LOCATION\", \"LOCATION\"]));\n        const status = cleanOculusText(getFlexibleField(row, [\"STATUS\", \"APPT. STATUS\", \"TRANSLOAD STATUS\", \"TRANSSHIP STATUS\"]));\n        const loadConfig = cleanOculusText(getFlexibleField(row, [\"LOAD CONFIG\", \"FL TYPE\"]));\n        const scac = cleanOculusText(getFlexibleField(row, [\"SCAC\", \"CARRIER\"]));\n        const apptType = cleanOculusText(getFlexibleField(row, [\"APPT. TYPE\", \"APPOINTMENT TYPE\"]));\n        const liveVsDrop = cleanOculusText(getFlexibleField(row, [\"LIVE VS DROP\", \"LOAD TYPE\"]));\n\n        records[isa] = {\n            isa,\n            vrid: extractOculusVrid(row),\n            sourceType,\n            cartons,\n            units,\n            pallets,\n            cut,\n            trailerNumber,\n            trailerLocation,\n            status,\n            loadConfig,\n            scac,\n            apptType,\n            liveVsDrop,\n            isPalletized: pallets > 0,\n            timestamp: Date.now()\n        };\n        count++;\n    });\n\n    return { records, count };\n}\n\nfunction updateOculusUploadStatus(type, text, success) {\n    const status = document.getElementById(`oculus-${type}-status`);\n    const card = document.getElementById(`oculus-${type}-card`);\n\n    if (status) status.textContent = text;\n    if (card) {\n        card.classList.remove('success', 'error');\n        if (success === true) card.classList.add('success');\n        if (success === false) card.classList.add('error');\n    }\n}\n\nfunction updateOculusSyncButton() {\n    const button = document.getElementById('sync-oculus-memory-btn');\n    const summary = document.getElementById('oculus-sync-summary');\n    const vendorCount = pendingOculusUploads.vendor?.count || 0;\n    const transshipCount = pendingOculusUploads.transship?.count || 0;\n\n    if (button) button.disabled = !(vendorCount > 0 && transshipCount > 0);\n    if (summary) {\n        summary.textContent = vendorCount || transshipCount ?\n            `Ready: ${vendorCount} vendor records and ${transshipCount} transship records selected.` :\n            \"No Oculus files selected.\";\n    }\n}\n\nfunction refreshOculusMemoryCard() {\n    if (typeof loadOculusMemory !== 'function') {\n        updateCardStatus('gap-filler', 'Sync Oculus memory', null);\n        return;\n    }\n\n    const saved = loadOculusMemory();\n    const total = Object.keys(saved.byIsa || {}).length;\n    if (!total) {\n        updateCardStatus('gap-filler', 'Sync Oculus memory', null);\n        return;\n    }\n\n    const uploadedDate = saved.uploadedAt ? new Date(saved.uploadedAt).toLocaleDateString() : 'saved';\n    updateCardStatus('gap-filler', `Oculus Memory: ${total} records (${uploadedDate})`, true);\n}\n\nasync function handleOculusFileSelection(type) {\n    const filePath = await window.api.openFile();\n    if (!filePath) return;\n\n    updateOculusUploadStatus(type, \"Reading...\", null);\n\n    try {\n        const rawData = await window.api.readCsvFile(filePath);\n        const rows = parseCSV(rawData, []);\n        const parsed = parseOculusCsvRows(rows, type);\n        const fileName = filePath.split(/[/\\\\]/).pop();\n\n        pendingOculusUploads[type] = parsed;\n        updateOculusUploadStatus(type, `Loaded: ${fileName} (${parsed.count} ISA records)`, parsed.count > 0);\n    } catch (error) {\n        console.error(`Failed to read Oculus ${type} file:`, error);\n        pendingOculusUploads[type] = null;\n        updateOculusUploadStatus(type, \"Failed to load file.\", false);\n    }\n\n    updateOculusSyncButton();\n    updateFileClearButtons();\n}\n\nwindow.processHubData = function() {\n    const vendorUpload = pendingOculusUploads.vendor;\n    const transshipUpload = pendingOculusUploads.transship;\n\n    if (!vendorUpload?.count || !transshipUpload?.count) {\n        alert(\"Please load both the Oculus Vendor CSV and Transship CSV before syncing.\");\n        return;\n    }\n\n    const records = {\n        ...vendorUpload.records,\n        ...transshipUpload.records\n    };\n    const total = Object.keys(records).length;\n\n    if (typeof saveOculusMemory === 'function') {\n        saveOculusMemory(records, {\n            vendor: vendorUpload.count,\n            transship: transshipUpload.count\n        });\n    }\n\n    document.getElementById('research-hub-modal').style.display = 'none';\n    refreshOculusMemoryCard();\n\n    const reconcileBtn = document.getElementById('reconcile-btn');\n    if (ymsFilePath && dockdashFilePath && reconcileBtn) reconcileBtn.disabled = false;\n};\n\r\n// --- MANUAL INTERACTION ---\r\nwindow.editResearchItem = function(index) {\r\n    const record = lastProcessedStats.researchQueueRecords[index];\r\n    const newLoc = prompt(\"Enter new Location (leave blank to keep current):\", record.location);\r\n    if (newLoc) {\r\n        lastProcessedStats.researchQueueRecords[index].location = newLoc;\r\n        showDetailModal('researchQueue');\r\n    }\r\n};\r\n\r\nwindow.moveResearchItem = function(index) {\r\n    const record = lastProcessedStats.researchQueueRecords[index];\r\n    const select = document.getElementById(`assign-select-${index}`);\r\n    const unitsInput = document.getElementById(`assign-units-${index}`);\r\n    \r\n    const targetCategory = select.value;\r\n    const manualUnits = parseFloat(unitsInput.value.replace(/,/g, '')) || 0;\r\n\r\n    if (!targetCategory) { alert(\"Please select a category.\"); return; }\r\n\r\n    // 1. SAVE TO MEMORY\n    if (!isMemoryBypassEnabled() && typeof rememberTrailer === 'function') {\n        rememberTrailer(record.isa, record.vrid, targetCategory, manualUnits, record.notes);\n    }\n\r\n    // 2. Update Stats\r\n    const recordInfo = { \r\n        isa: record.isa, \r\n        vrid: record.vrid, \r\n        location: record.location, \r\n        dwell: record.dwell, \r\n        pallets: 'MANUAL',\r\n        category: targetCategory,\r\n        units: manualUnits,\r\n        notes: record.notes || ''\r\n    };\r\n\r\n    if (Array.isArray(lastProcessedStats[targetCategory])) {\r\n        addCategorizedRecord(lastProcessedStats, targetCategory, recordInfo);\r\n    }\r\n\r\n    switch(targetCategory) {\r\n        case 'dropPallets':\r\n        case 'dropFloor':\r\n        case 'transshipYard':\r\n        case 'parcelsYard': lastProcessedStats.volumeYard += manualUnits; break;\r\n        case 'parcelsDock':\r\n        case 'livesHanded': lastProcessedStats.volumeDoors += manualUnits; break;\r\n        case 'volOnlyDoors': lastProcessedStats.volumeDoors += manualUnits; break;\r\n        case 'volOnlyYard': lastProcessedStats.volumeYard += manualUnits; break;\r\n    }\r\n\r\n    // 3. Remove from Queue & Refresh UI\r\n    lastProcessedStats.researchQueueRecords.splice(index, 1);\r\n    lastProcessedStats.researchQueue = lastProcessedStats.researchQueueRecords.length;\r\n\r\n    updateMetricsUI(lastProcessedStats);\r\n    copyStatsToClipboard(lastProcessedStats);\r\n\r\n    if (lastProcessedStats.researchQueue > 0) {\r\n        showDetailModal('researchQueue'); \r\n    } else {\r\n        document.getElementById('detail-modal').style.display = 'none';\r\n        updateActionPanel({ \r\n            reconciled: true, \r\n            excluded: lastProcessedStats.excluded.length, \r\n            azngOver72: lastProcessedStats.azngOver72.length, \r\n            researchQueue: 0,\r\n            message: \"All research items resolved.\"\r\n        });\r\n    }\r\n};\r\n\r\nfunction showDetailModal(metricId) {\n    if (!lastProcessedStats || Object.keys(lastProcessedStats).length === 0) {\n        return;\n    }\n\n    let records = lastProcessedStats[metricId];\n    let modalTitle = metricId.toUpperCase().replace(/([A-Z])/g, ' $1');\n    const isResearchQueue = (metricId === 'researchQueue');\n    const hasDisruptionDetails = Array.isArray(lastProcessedStats.disruptions?.[metricId]);\n    \n    if (isResearchQueue) records = lastProcessedStats.researchQueueRecords;\n    if (metricId === 'excluded') records = lastProcessedStats.excluded;\n    if (hasDisruptionDetails) {\n        const usableRecords = (lastProcessedStats[metricId] || []).map(record => ({\n            ...record,\n            detailStatus: 'USABLE'\n        }));\n        const disruptions = (lastProcessedStats.disruptions[metricId] || []).map(record => ({\n            ...record,\n            detailStatus: 'DISRUPTION'\n        }));\n\n        records = [...usableRecords, ...disruptions];\n    }\n\n    if (!Array.isArray(records) || records.length === 0) { \n        return; \n    }\r\n\r\n    const modal = document.getElementById('detail-modal'); \r\n    const tbody = document.getElementById('detail-table-body');\r\n    const thead = modal.querySelector('thead tr');\r\n    const title = document.getElementById('modal-title');\r\n    \r\n    title.textContent = `${modalTitle} (${records.length})`;\r\n    thead.innerHTML = ''; \r\n    \r\n    let headers = isResearchQueue ? \n        ['ISA', 'VRID', 'LOC', 'NOTES', 'CATEGORY', 'UNITS', 'ACTION'] : \n        (metricId === 'excluded' ? ['ISA', 'VRID', 'LOCATION'] : ['ISA', 'VRID', 'LOCATION', 'DWELL', 'PALLETS']);\n\n    if (hasDisruptionDetails) headers = ['ISA', 'VRID / TRAILER', 'LOCATION', 'DWELL', 'PALLETS', 'STATUS', 'NOTES'];\r\n\r\n    headers.forEach(h => { const th = document.createElement('th'); th.textContent = h; thead.appendChild(th); });\r\n    \r\n    tbody.innerHTML = ''; \r\n    records.forEach((record, index) => {\r\n        const row = tbody.insertRow();\r\n        row.insertCell().textContent = record.isa || (record.countSource === 'yard-notes' ? 'No ISA (yard notes)' : 'N/A');\r\n        row.insertCell().textContent = record.vrid || record.trailer || 'N/A';\r\n        row.insertCell().textContent = record.location || 'N/A';\r\n        \r\n        if (isResearchQueue) {\n            const notesCell = row.insertCell();\n            notesCell.textContent = record.notes || ''; \n            notesCell.style.maxWidth = \"200px\"; notesCell.style.overflow = \"hidden\"; notesCell.style.textOverflow = \"ellipsis\"; notesCell.style.whiteSpace = \"nowrap\";\n\n            // Auto-Select Logic\n            const defaultCat = record.suggestedCategory || \"\"; \n            const defaultUnits = record.suggestedUnits ? String(record.suggestedUnits) : \"\";\n            const cellAssign = row.insertCell();\n            cellAssign.innerHTML = `\n                <div class=\"research-assignment-controls\">\n                <button onclick=\"window.editResearchItem(${index})\" class=\"research-edit-btn\">EDIT LOC</button>\n                <select id=\"assign-select-${index}\" class=\"research-select\">\n                    <option value=\"\" disabled ${!defaultCat ? 'selected' : ''}>Select...</option>\n                    <optgroup label=\"Volume Only\">\n                        <option value=\"volOnlyDoors\" ${defaultCat === 'volOnlyDoors' ? 'selected' : ''}>Volume on Doors</option>\n                        <option value=\"volOnlyYard\" ${defaultCat === 'volOnlyYard' ? 'selected' : ''}>Volume in Yard</option>\r\n                    </optgroup>\r\n                    <optgroup label=\"Assign to Tile\">\r\n                        <option value=\"dropPallets\" ${defaultCat === 'dropPallets' ? 'selected' : ''}>Drop Pallets</option>\r\n                        <option value=\"dropFloor\" ${defaultCat === 'dropFloor' ? 'selected' : ''}>Drop Floor</option>\r\n                        <option value=\"transshipYard\" ${defaultCat === 'transshipYard' ? 'selected' : ''}>Transship Yard</option>\r\n                        <option value=\"parcelsDock\" ${defaultCat === 'parcelsDock' ? 'selected' : ''}>Parcels on Dock</option>\r\n                        <option value=\"parcelsYard\" ${defaultCat === 'parcelsYard' ? 'selected' : ''}>Parcels in Yard</option>\r\n                        <option value=\"livesHanded\" ${defaultCat === 'livesHanded' ? 'selected' : ''}>Lives Handed Over</option>\n                    </optgroup>\n                </select>\n                <input type=\"text\" inputmode=\"decimal\" id=\"assign-units-${index}\" class=\"research-units-input\" placeholder=\"Units\" value=\"${escapeHtmlAttr(defaultUnits)}\">\n                <button onclick=\"window.moveResearchItem(${index})\" class=\"research-move-btn\">MOVE</button>\n                </div>`;\n        } else if (hasDisruptionDetails) {\n            row.insertCell().textContent = record.dwell || 'N/A';\n            row.insertCell().textContent = record.pallets || '0';\n            row.insertCell().textContent = record.detailStatus || 'USABLE';\n            row.insertCell().textContent = record.notes || '';\n        } else if (metricId !== 'excluded') {\n            row.insertCell().textContent = record.dwell || 'N/A';\n            row.insertCell().textContent = record.pallets || '0';\n        }\n    });\r\n    modal.style.display = 'block';\r\n}\r\n\r\n// =========================================================================\r\n// 5. File Handling & Parsing\r\n// =========================================================================\r\nfunction parseCSV(text, requiredHeaders = []) {\r\n    text = text.replace(/\\r\\n/g, \"\\n\").replace(/\\r/g, \"\\n\");\r\n    const rows = [];\r\n    let currentRow = [];\r\n    let currentVal = \"\";\r\n    let insideQuote = false;\r\n\r\n    for (let i = 0; i < text.length; i++) {\r\n        const char = text[i];\r\n        if (char === '\"') insideQuote = !insideQuote;\r\n        else if (char === ',' && !insideQuote) { currentRow.push(currentVal.trim()); currentVal = \"\"; }\r\n        else if (char === '\\n' && !insideQuote) {\r\n            currentRow.push(currentVal.trim());\r\n            if (currentRow.length > 1 || currentRow[0] !== \"\") rows.push(currentRow);\r\n            currentRow = []; currentVal = \"\";\r\n        } else currentVal += char;\r\n    }\r\n    if (currentVal) currentRow.push(currentVal.trim());\r\n    if (currentRow.length > 0) rows.push(currentRow);\r\n    if (rows.length < 2) return [];\r\n\r\n    if (requiredHeaders.length === 0) {\r\n        // Broad parsing (for Gap Filler backup)\r\n        const headers = rows[0].map(h => h.trim().toUpperCase());\r\n        const data = [];\r\n        for (let i = 1; i < rows.length; i++) {\r\n            const record = {};\r\n            if (rows[i].length >= headers.length) {\r\n                headers.forEach((h, index) => { record[h] = rows[i][index]; });\r\n                data.push(record);\r\n            }\r\n        }\r\n        return data;\r\n    }\r\n\r\n    const headers = rows[0].map(h => h.trim().toUpperCase());\r\n    const missing = requiredHeaders.filter(h => !headers.some(header => header.includes(h)));\r\n    if (missing.length > 0) { alert(`Missing required headers: ${missing.join(\", \")}`); return []; }\r\n\r\n    const data = [];\r\n    for (let i = 1; i < rows.length; i++) {\r\n        const record = {};\r\n        if (rows[i].length >= headers.length) {\r\n            headers.forEach((h, index) => { record[h] = rows[i][index]; });\r\n            data.push(record);\r\n        }\r\n    }\r\n    return data;\r\n}\r\n\r\nasync function handleFileSelection(type) {\n    const filePath = await window.api.openFile();\r\n    if (!filePath) return;\r\n    \r\n    updateCardStatus(type, \"Reading...\", null);\r\n    const rawData = await window.api.readCsvFile(filePath);\r\n    \r\n    // YMS needs \"LOAD IDENTIFIER(S)\", DockDash needs \"ISA\"\r\n    const headers = type === 'yms' ? [\"LOAD IDENTIFIER(S)\"] : [\"ISA\", \"VRID\"];\r\n    const parsed = parseCSV(rawData, headers);\r\n    \r\n    if (parsed.length === 0) {\r\n        updateCardStatus(type, \"Failed to load or empty.\", false);\r\n        return;\r\n    }\r\n    \r\n    if (type === 'yms') { ymsData = parsed; ymsFilePath = filePath; }\r\n    else { dockdashData = parsed; dockdashFilePath = filePath; }\r\n    \r\n    const fileName = filePath.split(/[/\\\\]/).pop();\r\n    updateCardStatus(type, `Loaded: ${fileName} (${parsed.length} rows)`, true);\n    \r\n    const reconcileBtn = document.getElementById('reconcile-btn');\r\n    const dockdashBtn = document.getElementById('browse-dockdash-btn');\n    \n    if (type === 'yms' && dockdashBtn) dockdashBtn.disabled = false;\n    if (ymsFilePath && dockdashFilePath && reconcileBtn) reconcileBtn.disabled = false;\n    updateFileClearButtons();\n}\n\nfunction updateFileClearButtons() {\n    const clearYmsBtn = document.getElementById('clear-yms-btn');\n    const clearDockdashBtn = document.getElementById('clear-dockdash-btn');\n    const clearVendorBtn = document.getElementById('clear-oculus-vendor-btn');\n    const clearTransshipBtn = document.getElementById('clear-oculus-transship-btn');\n\n    if (clearYmsBtn) clearYmsBtn.disabled = !ymsFilePath;\n    if (clearDockdashBtn) clearDockdashBtn.disabled = !dockdashFilePath;\n    if (clearVendorBtn) clearVendorBtn.disabled = !(pendingOculusUploads.vendor?.count > 0);\n    if (clearTransshipBtn) clearTransshipBtn.disabled = !(pendingOculusUploads.transship?.count > 0);\n}\n\nfunction updateRequiredFileControls() {\n    const reconcileBtn = document.getElementById('reconcile-btn');\n    const exportBtn = document.getElementById('export-btn');\n    const dockdashBtn = document.getElementById('browse-dockdash-btn');\n\n    if (dockdashBtn) dockdashBtn.disabled = !ymsFilePath;\n    if (reconcileBtn) reconcileBtn.disabled = !(ymsFilePath && dockdashFilePath);\n    if (exportBtn && !(ymsFilePath && dockdashFilePath)) exportBtn.disabled = true;\n    updateFileClearButtons();\n}\n\nfunction clearLoadedFile(type) {\n    if (type === 'yms') {\n        ymsFilePath = null;\n        ymsData = [];\n        dockdashFilePath = null;\n        dockdashData = [];\n        lastProcessedStats = {};\n        updateCardStatus('yms', 'Select YMS File', null);\n        updateCardStatus('dockdash', 'Select Dock Dash File', null);\n    } else if (type === 'dockdash') {\n        dockdashFilePath = null;\n        dockdashData = [];\n        lastProcessedStats = {};\n        updateCardStatus('dockdash', 'Select Dock Dash File', null);\n    }\n\n    updateRequiredFileControls();\n    updateActionPanel({ reconciled: false, message: 'Awaiting file selections...' });\n}\n\nfunction clearOculusUpload(type) {\n    pendingOculusUploads[type] = null;\n    updateOculusUploadStatus(type, type === 'vendor' ? 'Drops and AF lives/live-drops.' : 'Transship trailers and unit counts.', null);\n    updateOculusSyncButton();\n    updateFileClearButtons();\n}\n\nfunction clearSavedOculusMemory() {\n    if (typeof clearOculusMemory === 'function') clearOculusMemory();\n    pendingOculusUploads = { vendor: null, transship: null };\n    updateOculusUploadStatus('vendor', 'Drops and AF lives/live-drops.', null);\n    updateOculusUploadStatus('transship', 'Transship trailers and unit counts.', null);\n    refreshOculusMemoryCard();\n    updateOculusSyncButton();\n    updateFileClearButtons();\n\n    const status = document.getElementById('oculus-memory-admin-status');\n    if (status) status.textContent = 'Oculus memory cleared.';\n\n    if (typeof cutBuildRows === 'function') cutBuildRows();\n}\n\n// Backup Gap Filler Selection\nasync function handleGapFillerSelection() {\r\n    const filePath = await window.api.openFile();\r\n    if (!filePath) return;\r\n\r\n    updateCardStatus('gap-filler', \"Reading...\", null);\r\n    const rawData = await window.api.readCsvFile(filePath);\r\n    const rows = parseCSV(rawData, []); \r\n    \r\n    gapFillerData = { byIsa: {}, byVrid: {} };\r\n    let count = 0;\r\n\r\n    rows.forEach(row => {\r\n        const isa = normalize(getField(row, \"ISA\") || getField(row, \"Container ID\"));\r\n        const vrid = normalize(getField(row, \"Trailer VRID\") || getField(row, \"VRID\"));\r\n        const rawUnits = getField(row, \"Total Units\") || getField(row, \"Pending Units\") || \"0\";\r\n        const units = parseFloat(rawUnits.replace(/,/g, '')) || 0;\r\n\r\n        if (isa && isa.length > 4) {\r\n            gapFillerData.byIsa[isa] = { units: units, vrid: vrid || \"UNKNOWN\" };\r\n            count++;\r\n        }\r\n        if (vrid && vrid.length > 4) {\r\n            gapFillerData.byVrid[vrid] = { units: units, isa: isa || \"UNKNOWN\" };\r\n            if (!isa || isa.length <= 4) count++;\r\n        }\r\n    });\r\n\r\n    updateCardStatus('gap-filler', `Loaded: ${count} Records`, true);\r\n    console.log(\"Gap Filler Data Loaded:\", gapFillerData);\r\n}\r\n\r\n// =========================================================================\r\n// 6. Core Logic: Reconcile (UPGRADED)\r\n// =========================================================================\r\nfunction extractYmsIsa(record) {\r\n    const fullLoadId = getField(record, \"LOAD IDENTIFIER(S)\");\r\n    if (fullLoadId) {\r\n        const match = fullLoadId.match(/ISA\\W*(\\d+)/i);\r\n        if (match) return normalize(match[1]);\r\n    }\r\n    return null;\r\n}\r\n\r\nfunction getYmsCarrier(record) {\r\n    return normalize(getField(record, 'CARRIER') || getField(record, 'OWNER (OPERATOR)') || getField(record, 'OWNER'));\r\n}\r\n\r\nfunction getYmsTrailerIdentity(record) {\r\n    const vrid = normalize(getField(record, 'VRID') || String(getField(record, 'LOAD IDENTIFIER(S)') || '').match(/\\bVRID\\W*([A-Z0-9]+)/i)?.[1]);\r\n    const trailer = normalize(getField(record, 'VEHICLE ID') || getField(record, 'TRAILER NUMBER') || getField(record, 'TRAILER ID'));\r\n    const location = normalize(getField(record, 'LOCATION'));\r\n    const carrier = getYmsCarrier(record).replace(/\\s+/g, '');\r\n    const keys = [];\r\n    if (vrid) keys.push(`vrid:${vrid}`);\r\n    if (trailer) keys.push(`trailer:${carrier}:${trailer}`);\r\n    if (!keys.length) keys.push(`location:${carrier}:${location}`);\r\n    return { vrid, trailer, keys };\r\n}\r\n\r\nfunction collectUnassignedYardParcels(rows) {\r\n    const seen = new Set();\r\n    // Rows with an attached ISA are handled by the existing reconciliation/research flow.\r\n    rows.filter(row => extractYmsIsa(row)).forEach(row => {\r\n        getYmsTrailerIdentity(row).keys.forEach(key => seen.add(key));\r\n    });\r\n    const parcels = [];\r\n    rows.forEach(row => {\r\n        if (extractYmsIsa(row)) return;\r\n        const location = normalize(getField(row, 'LOCATION'));\r\n        const notes = getField(row, 'NOTES') || '';\r\n        const carrier = getYmsCarrier(row);\r\n        const equipmentType = normalize(getField(row, 'TYPE'));\r\n        if (!isYardLocation(location) || !isParcelCarrier(carrier) || !/\\bISA\\b/i.test(notes)) return;\r\n        if (equipmentType && !/\\bTRAILER\\b/.test(equipmentType)) return;\r\n        const identity = getYmsTrailerIdentity(row);\r\n        const alreadySeen = identity.keys.some(key => seen.has(key));\r\n        identity.keys.forEach(key => seen.add(key));\r\n        if (alreadySeen) return;\r\n        parcels.push({\r\n            isa: '', vrid: identity.vrid, trailer: identity.trailer, location, carrier,\r\n            dwell: getField(row, 'YARD DWELL') || getField(row, 'TIME IN YARD') || '',\r\n            pallets: '', units: 0, notes, countSource: 'yard-notes'\r\n        });\r\n    });\r\n    return parcels;\r\n}\r\n\r\nfunction calculateMetrics(data, excluded) {\r\n    let stats = {\n        dropPallets: [], dropFloor: [], parcelsDock: [], parcelsYard: [],\n        transshipYard: [], azngOver72: [], livesHanded: [], liveDrops: [], researchQueue: 0,\n        volumeDoors: 0, volumeYard: 0, excluded: excluded, disruptions: createDisruptionBuckets()\n    };\n    \r\n    data.forEach(record => {\r\n        const type = normalize(getField(record, \"CARRIER LOAD TYPE\"));\r\n        const appt = normalize(getField(record, \"APPOINTMENT TYPE\"));\r\n        const loc = normalize(getField(record, \"LOCATION\"));\r\n        const carrier = normalize(getField(record, \"CARRIER\"));\n        const units = parseFloat(String(getField(record, \"UNITS\") || \"0\").replace(/,/g, '')) || 0;\n        const dwell = parseHours(getField(record, \"YARD DWELL\"));\n        const isParcel = appt === \"SMALL_PARCEL\" || isParcelCarrier(carrier);\n        \r\n        const info = { \n            isa: getField(record, \"ISA\"), \n            vrid: getField(record, \"VRID\"), \n            location: loc, \n            dwell: getField(record, \"YARD DWELL\"), \n            pallets: getField(record, \"PALLETS\"),\n            carrier,\n            loadType: type,\n            notes: [getField(record, \"__YMS_NOTES\"), getField(record, \"NOTES\")].filter(Boolean).join(' | ')\r\n        };\n        \r\n        if (isDoorLocation(loc)) stats.volumeDoors += units;\n        else if (isYardLocation(loc)) stats.volumeYard += units;\n\n        if (type === \"DROP\" && appt === \"CARP\" && isYardLocation(loc)) {\n            const dropCategory = (parseFloat(getField(record, \"PALLETS\")) > 0 || isClampLoadNote(info.notes)) ? 'dropPallets' : 'dropFloor';\n            addCategorizedRecord(stats, dropCategory, info);\n        }\n        if (isParcel) {\n            if (isDoorLocation(loc)) addCategorizedRecord(stats, 'parcelsDock', info);\n            if (isYardLocation(loc)) addCategorizedRecord(stats, 'parcelsYard', info);\n        }\n        if (appt === \"TRANSSHIP\" && isYardLocation(loc)) addCategorizedRecord(stats, 'transshipYard', info);\n        if (carrier.startsWith(\"AZNG\") && dwell >= 72 && isYardLocation(loc)) addCategorizedRecord(stats, 'azngOver72', info);\n        if (type === \"LIVE\" && isDoorLocation(loc)) {\n            addCategorizedRecord(stats, 'livesHanded', info);\n            if (!isDisruptionNote(info.notes, 'livesHanded') && isLiveDropCarrier(carrier)) stats.liveDrops.push(info);\n        }\n    });\r\n    return stats;\r\n}\r\n\r\nasync function reconcileAndDisplay() {\r\n    if (!ymsData.length || !dockdashData.length) return;\r\n    \r\n    updateActionPanel({ reconciled: false, message: 'Processing with Hub...' });\r\n\r\n    try {\r\n        const ymsIsaSet = new Set();\r\n        const ymsLookup = {}; \r\n        \r\n        ymsData.forEach(r => { \r\n            const isa = extractYmsIsa(r); \r\n            if (isa) {\r\n                ymsIsaSet.add(isa);\r\n                ymsLookup[isa] = {\n                    location: normalize(getField(r, \"LOCATION\")),\n                    dwell: getField(r, \"YARD DWELL\"),\n                    fullLoadId: getField(r, \"LOAD IDENTIFIER(S)\"),\n                    notes: (getField(r, \"NOTES\") || \"\").toUpperCase(),\n                    owner: (getField(r, \"OWNER (OPERATOR)\") || getField(r, \"OWNER\") || \"\").toUpperCase(),\n                    carrier: getYmsCarrier(r),\r\n                    loadType: normalize(getField(r, \"CARRIER LOAD TYPE\"))\n                };\n            }\r\n        });\r\n\r\n        const dockdashIsaSet = new Set();\r\n        const finalMetricsData = [];\r\n        const excludedRecords = [];\r\n\r\n        dockdashData.forEach(r => {\r\n            let isa = normalize(getField(r, \"ISA\"));\r\n            if (!isa || isa.includes(\"E+\") || isa.length < 5) return; \r\n            dockdashIsaSet.add(isa);\n            \n            if (ymsIsaSet.has(isa)) {\n                finalMetricsData.push({\n                    ...r,\n                    __YMS_NOTES: ymsLookup[isa]?.notes || \"\"\n                });\n            } else {\n                excludedRecords.push({ isa, vrid: normalize(getField(r, \"VRID\")), location: getField(r, \"LOCATION\") });\n            }\n        });\r\n\r\n        const researchQueueRecords = []; \r\n        const autoAssignedGhosts = [];\r\n\r\n        // GHOST PROCESSING (Logic: Hub -> Memory -> Auto)\r\n        ymsData.forEach(r => {\r\n            const isa = extractYmsIsa(r);\r\n            if (isa && !dockdashIsaSet.has(isa)) {\r\n                const ymsInfo = ymsLookup[isa];\r\n                let vrid = 'UNKNOWN';\r\n                if (ymsInfo.fullLoadId) {\r\n                    const match = ymsInfo.fullLoadId.match(/VRID\\W*([A-Z0-9]+)/i);\r\n                    if (match) vrid = normalize(match[1]);\r\n                }\r\n\r\n                let oculusMatch = null;\n                let finalCategory = null;\n\n                if (typeof recallOculusTrailer === 'function') {\n                    oculusMatch = recallOculusTrailer(isa);\n                    if (oculusMatch) finalCategory = resolveOculusCategory(oculusMatch, ymsInfo);\n                }\n\n                // --- MEMORY CHECK ---\n                let memory = null;\n                if ((!oculusMatch || !finalCategory) && !isMemoryBypassEnabled() && typeof recallTrailer === 'function') {\n                    memory = recallTrailer(isa, vrid);\n                }\n\n                if (oculusMatch && finalCategory && !(oculusMatch.units > 0)) {\n                    researchQueueRecords.push({\n                        isa,\n                        vrid,\n                        location: ymsInfo.location,\n                        dwell: ymsInfo.dwell,\n                        notes: `OCULUS ${normalize(oculusMatch.sourceType)} matched but units were missing: ${ymsInfo.notes}`,\n                        owner: ymsInfo.owner,\n                        suggestedCategory: finalCategory,\n                        confidence: 'MEDIUM'\n                    });\n                } else if (oculusMatch && finalCategory) {\n                    autoAssignedGhosts.push({\n                        isa, vrid: oculusMatch.vrid || vrid,\n                        location: ymsInfo.location, dwell: ymsInfo.dwell,\n                        category: finalCategory,\n                        units: oculusMatch.units,\n                        cartons: oculusMatch.cartons,\n                        pallets: oculusMatch.pallets,\n                        carrier: ymsInfo.carrier, loadType: ymsInfo.loadType,\n                        isMemory: true,\n                        notes: `OCULUS ${normalize(oculusMatch.sourceType)}: ${ymsInfo.notes}`\n                    });\n                } else if (memory) {\n                    autoAssignedGhosts.push({\n                        isa, vrid, location: ymsInfo.location, dwell: ymsInfo.dwell,\n                        category: memory.category, units: memory.units,\n                        carrier: ymsInfo.carrier, loadType: ymsInfo.loadType,\n                        isMemory: true, notes: `MEM: ${ymsInfo.notes}`\n                    });\n                } else {\n                    const inferred = inferYmsOnlyCategory(ymsInfo);\n                    if (inferred) {\n                        if (inferred.category) {\n                            autoAssignedGhosts.push({\n                                isa, vrid,\n                                location: ymsInfo.location, dwell: ymsInfo.dwell,\n                                category: inferred.category,\n                                units: 0,\n                                carrier: ymsInfo.carrier,\n                                loadType: ymsInfo.loadType,\n                                isMemory: false,\n                                confidence: inferred.confidence,\n                                notes: `${inferred.reason}: ${ymsInfo.notes}`\n                            });\n                        }\n                        return;\n                    }\n\n                    // Send to Research Queue\n                    researchQueueRecords.push({ \n                        isa, vrid, location: ymsInfo.location, dwell: ymsInfo.dwell, \n                        notes: ymsInfo.notes, owner: ymsInfo.owner,\r\n                        suggestedCategory: 'dropPallets', confidence: 'LOW'\r\n                    });\r\n                }\r\n            }\r\n        });\r\n\r\n        lastProcessedStats = calculateMetrics(finalMetricsData, excludedRecords);\n        const oldestSpd = findOldestSpdRecord(dockdashData, ymsLookup);\n        lastProcessedStats.oldestSpd = oldestSpd ? {\n            isa: oldestSpd.isa,\n            date: formatSpdDate(oldestSpd.spdDate)\n        } : null;\n\n        const oldestTrailer = findOldestTrailerInYard(dockdashData, ymsLookup);\n        lastProcessedStats.oldestTrailer = oldestTrailer ? {\n            isa: oldestTrailer.isa,\n            dwellHours: oldestTrailer.dwellHours\n        } : null;\n        \n        autoAssignedGhosts.forEach(ghost => {\n            if (\n                Array.isArray(lastProcessedStats[ghost.category]) &&\n                categoryAllowsLocation(ghost.category, ghost.location)\n            ) {\n                addCategorizedRecord(lastProcessedStats, ghost.category, ghost);\n                if (\n                    ghost.category === 'livesHanded' &&\n                    ghost.loadType === \"LIVE\" &&\n                    !isDisruptionNote(ghost.notes, 'livesHanded') &&\n                    isLiveDropCarrier(ghost.carrier)\n                ) {\n                    lastProcessedStats.liveDrops.push(ghost);\n                }\n            }\n            if (isDoorLocation(ghost.location)) lastProcessedStats.volumeDoors += (ghost.units || 0);\n            else if (isYardLocation(ghost.location)) lastProcessedStats.volumeYard += (ghost.units || 0);\n        });\n\r\n        collectUnassignedYardParcels(ymsData).forEach(parcel => {\r\n            addCategorizedRecord(lastProcessedStats, 'parcelsYard', parcel);\r\n        });\r\n\r\n        lastProcessedStats.researchQueueRecords = researchQueueRecords;\r\n        lastProcessedStats.researchQueue = researchQueueRecords.length;\r\n\r\n        updateMetricsUI(lastProcessedStats);\n        \n        const exportBtn = document.getElementById('export-btn');\n        if(exportBtn) exportBtn.disabled = false;\n\n        updateActionPanel({ \n            reconciled: true, \r\n            excluded: excludedRecords.length, \r\n            azngOver72: lastProcessedStats.azngOver72.length, \r\n            researchQueue: lastProcessedStats.researchQueue,\r\n            message: `Resolved ${autoAssignedGhosts.length} items via Hub/Memory/notes. ${researchQueueRecords.length} need review.`\n        });\n        \r\n        copyStatsToClipboard(lastProcessedStats);\r\n\r\n    } catch (error) {\r\n        console.error(\"Reconcile Error:\", error);\r\n        alert(`CRASH: ${error.message}\\nCheck console.`);\r\n        updateActionPanel({ reconciled: false, message: 'Process Failed' });\r\n    }\r\n}\r\n\r\n// =========================================================================\r\n// 8. CSV Export Logic (Improved & Verified)\r\n// =========================================================================\r\nfunction exportVerifiedCsv() {\r\n    console.log(\"Export process started...\");\r\n\r\n    if (!dockdashData || dockdashData.length === 0) {\r\n        alert(\"Error: No Dock Dash data loaded to export.\");\r\n        return;\r\n    }\r\n    if (!ymsData || ymsData.length === 0) {\r\n        alert(\"Error: No YMS data loaded for verification.\");\r\n        return;\r\n    }\r\n\r\n    const ymsMap = {};\r\n    ymsData.forEach(row => {\r\n        const isa = extractYmsIsa(row);\r\n        if (isa) {\r\n            ymsMap[isa] = { \r\n                loc: getField(row, \"LOCATION\") || \"UNKNOWN\", \r\n                notes: getField(row, \"NOTES\") || \"\" \r\n            };\r\n        }\r\n    });\r\n\r\n    const validRows = [];\r\n    const originalHeaders = Object.keys(dockdashData[0]);\r\n    \r\n    const exportHeaders = [...originalHeaders];\r\n    if (!exportHeaders.includes(\"NOTES\")) exportHeaders.push(\"NOTES\");\r\n\r\n    dockdashData.forEach(ddRow => {\r\n        const isa = normalize(getField(ddRow, \"ISA\"));\r\n        \r\n        if (ymsMap[isa]) {\r\n            const correctedRow = { ...ddRow };\r\n            const locKey = Object.keys(correctedRow).find(k => k.toUpperCase().includes(\"LOCATION\"));\r\n            if (locKey) correctedRow[locKey] = ymsMap[isa].loc;\r\n            correctedRow[\"NOTES\"] = ymsMap[isa].notes;\r\n            validRows.push(correctedRow);\r\n        }\r\n    });\r\n\r\n    console.log(`Verification complete. Matches found: ${validRows.length}`);\r\n\r\n    if (validRows.length === 0) {\r\n        alert(\"No matching verified records found.\\n\\nThis usually means the ISAs in your YMS file don't match the ISAs in your Dock Dash file.\");\r\n        return;\r\n    }\r\n\r\n    try {\r\n        const csvContent = [\r\n            exportHeaders.join(\",\"), \r\n            ...validRows.map(row => \r\n                exportHeaders.map(fieldName => {\r\n                    let val = row[fieldName] || \"\";\r\n                    return `\"${String(val).replace(/\"/g, '\"\"')}\"`;\r\n                }).join(\",\")\r\n            )\r\n        ].join(\"\\n\");\r\n\r\n        if (!window.api.saveCsv) {\n            throw new Error('Save API is not available.');\n        }\n\n        window.api.saveCsv(csvContent).then(success => {\n            if (success) {\n                alert(`Verified export saved.\\n(${validRows.length} trailers exported)`);\n            }\n        });\n    } catch (err) {\n        console.error(\"Export Error:\", err);\n        alert(\"Failed to generate CSV file: \" + err.message);\n    }\r\n}\r\n\r\n// =========================================================================\r\n// 9. Initialization & Events\r\n// =========================================================================\r\nfunction setupCosmicBackground() {\n    const starfield = document.getElementById('starfield');\n    if (!starfield) return;\n    for (let i = 0; i < 200; i++) {\n        const star = document.createElement('div');\r\n        star.className = 'star';\r\n        star.style.top = `${Math.random() * 100}%`;\r\n        star.style.left = `${Math.random() * 100}%`;\r\n        star.style.animationDuration = `${2 + Math.random() * 3}s`;\r\n        starfield.appendChild(star);\n    }\n}\n\nlet generatedBarcodes = [];\nlet currentBarcodeIndex = 0;\nlet scanBuffer = '';\nlet scanBufferTimer = null;\n\nfunction getBarcodeOptions() {\n    return {\n        format: 'CODE128',\n        width: parseInt(document.getElementById('bar-width')?.value, 10) || 2,\n        height: parseInt(document.getElementById('bar-height')?.value, 10) || 50,\n        fontSize: parseInt(document.getElementById('bar-font')?.value, 10) || 14,\n        displayValue: true,\n        margin: 10,\n    };\n}\n\nfunction renderBarcode(svg, value, overrides = {}) {\n    if (typeof JsBarcode !== 'function') {\n        throw new Error('Barcode library is not loaded.');\n    }\n\n    JsBarcode(svg, value, { ...getBarcodeOptions(), ...overrides });\n}\n\nfunction setAdminButtonsEnabled(enabled) {\n    const startBtn = document.getElementById('btn-start-scan');\n    const printBtn = document.getElementById('btn-print-only');\n\n    [startBtn, printBtn].forEach(btn => {\n        if (!btn) return;\n        btn.disabled = !enabled;\n    });\n}\n\nfunction generateAdminBarcodes() {\n    const input = document.getElementById('admin-input');\n    const printableArea = document.getElementById('printable-area');\n    if (!input || !printableArea) return;\n\n    generatedBarcodes = input.value\n        .split(/\\r\\n|\\n|\\r/)\n        .map(value => value.trim())\n        .filter(Boolean);\n\n    printableArea.innerHTML = '';\n\n    if (generatedBarcodes.length === 0) {\n        alert('Paste at least one pallet ID first.');\n        setAdminButtonsEnabled(false);\n        return;\n    }\n\n    try {\n        generatedBarcodes.forEach(value => {\n            const wrapper = document.createElement('div');\n            wrapper.className = 'barcode-wrapper';\n\n            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');\n            wrapper.appendChild(svg);\n            printableArea.appendChild(wrapper);\n            renderBarcode(svg, value);\n        });\n\n        currentBarcodeIndex = 0;\n        setAdminButtonsEnabled(true);\n    } catch (error) {\n        console.error('Barcode generation failed:', error);\n        alert(error.message);\n        setAdminButtonsEnabled(false);\n    }\n}\n\nfunction updateScanProgress() {\n    const progress = document.getElementById('scan-progress');\n    if (progress) {\n        progress.textContent = `${currentBarcodeIndex + 1} / ${generatedBarcodes.length}`;\n    }\n}\n\nfunction renderCurrentScanBarcode() {\n    if (!generatedBarcodes.length) return;\n\n    const svg = document.getElementById('giant-barcode');\n    if (!svg) return;\n\n    svg.innerHTML = '';\n    renderBarcode(svg, generatedBarcodes[currentBarcodeIndex], {\n        width: 3,\n        height: 160,\n        fontSize: 28,\n        margin: 20,\n    });\n    updateScanProgress();\n}\n\nfunction showScanMode() {\n    if (!generatedBarcodes.length) {\n        alert('Generate barcodes first.');\n        return;\n    }\n\n    const overlay = document.getElementById('scan-overlay');\n    if (!overlay) return;\n\n    overlay.style.display = 'flex';\n    currentBarcodeIndex = 0;\n    scanBuffer = '';\n    renderCurrentScanBarcode();\n}\n\nfunction closeScanMode() {\n    const overlay = document.getElementById('scan-overlay');\n    if (overlay) overlay.style.display = 'none';\n    scanBuffer = '';\n}\n\nfunction moveScanSlide(delta) {\n    if (!generatedBarcodes.length) return;\n\n    currentBarcodeIndex = Math.max(0, Math.min(generatedBarcodes.length - 1, currentBarcodeIndex + delta));\n    renderCurrentScanBarcode();\n}\n\nfunction handleScanKeydown(event) {\n    const overlay = document.getElementById('scan-overlay');\n    const isScanning = overlay && overlay.style.display !== 'none';\n    if (!isScanning) return;\n\n    if (event.key === 'Escape') {\n        closeScanMode();\n        return;\n    }\n    if (event.key === 'ArrowLeft') {\n        moveScanSlide(-1);\n        return;\n    }\n    if (event.key === 'ArrowRight') {\n        moveScanSlide(1);\n        return;\n    }\n    if (event.key === 'Enter') {\n        const expected = generatedBarcodes[currentBarcodeIndex];\n        if (!scanBuffer || scanBuffer === expected) {\n            moveScanSlide(1);\n        }\n        scanBuffer = '';\n        return;\n    }\n    if (event.key.length === 1) {\n        scanBuffer += event.key;\n        clearTimeout(scanBufferTimer);\n        scanBufferTimer = setTimeout(() => { scanBuffer = ''; }, 500);\n    }\n}\n\nfunction updateDecoderOutput(value) {\n    const output = document.getElementById('decoded-output');\n    if (!output) return;\n\n    if (!value) {\n        output.textContent = 'Waiting for scan...';\n        return;\n    }\n\n    const codes = Array.from(value).map(char => `${char} [${char.charCodeAt(0)}]`).join(' ');\n    output.textContent = `Length: ${value.length}\\nRaw: ${value}\\nChars: ${codes}`;\n}\n\nfunction setupAdminTools() {\n    const adminTools = document.getElementById('admin-tools');\n    const generateBtn = document.getElementById('btn-generate-only');\n    const startScanBtn = document.getElementById('btn-start-scan');\n    const printBtn = document.getElementById('btn-print-only');\n    const closeScanBtn = document.getElementById('btn-close-scan');\n    const prevBtn = document.getElementById('btn-prev-slide');\n    const nextBtn = document.getElementById('btn-next-slide');\n    const decoder = document.getElementById('admin-decoder');\n    const memoryBypassToggle = document.getElementById('memory-bypass-toggle');\n    const clearOculusMemoryBtn = document.getElementById('clear-oculus-memory-btn');\n\n    if (generateBtn) generateBtn.addEventListener('click', generateAdminBarcodes);\n    if (startScanBtn) startScanBtn.addEventListener('click', showScanMode);\n    if (printBtn) printBtn.addEventListener('click', () => window.print());\n    if (closeScanBtn) closeScanBtn.addEventListener('click', closeScanMode);\n    if (prevBtn) prevBtn.addEventListener('click', () => moveScanSlide(-1));\n    if (nextBtn) nextBtn.addEventListener('click', () => moveScanSlide(1));\n    if (decoder) {\n        decoder.addEventListener('input', (event) => updateDecoderOutput(event.target.value));\n        decoder.addEventListener('keydown', (event) => {\n            if (event.key === 'Enter') {\n                event.preventDefault();\n                updateDecoderOutput(event.target.value);\n            }\n        });\n    }\n    if (memoryBypassToggle) {\n        memoryBypassToggle.checked = isMemoryBypassEnabled();\n        memoryBypassToggle.addEventListener('change', (event) => {\n            setMemoryBypassEnabled(event.target.checked);\n        });\n    }\n    if (clearOculusMemoryBtn) {\n        clearOculusMemoryBtn.addEventListener('click', clearSavedOculusMemory);\n    }\n\n    document.addEventListener('keydown', (event) => {\n        if (event.ctrlKey && event.shiftKey && event.key.toUpperCase() === 'A') {\n            event.preventDefault();\n            adminTools?.classList.toggle('visible');\n            return;\n        }\n\n        handleScanKeydown(event);\n    });\n}\n\nwindow.addEventListener('DOMContentLoaded', () => {\n    console.log(\"App started: DOM content loaded\");\n\n    setupMonitorAwareScaling();\n    setupCosmicBackground();\n    setupAdminTools();\n    \r\n    if (window.api && window.api.getAppVersion) {\r\n        window.api.getAppVersion().then(v => {\r\n            const el = document.getElementById('eos-version');\r\n            if (el) el.textContent = `Version: ${v}`;\r\n        });\r\n    }\r\n\r\n    // 2. Button Listeners \r\n    const ymsBtn = document.getElementById('browse-yms-btn');\r\n    if (ymsBtn) {\n        ymsBtn.addEventListener('click', () => handleFileSelection('yms'));\n        console.log(\"YMS button connected\");\n    }\n\n    const clearYmsBtn = document.getElementById('clear-yms-btn');\n    if (clearYmsBtn) {\n        clearYmsBtn.addEventListener('click', () => clearLoadedFile('yms'));\n    }\n\n    const ddBtn = document.getElementById('browse-dockdash-btn');\n    if (ddBtn) {\n        ddBtn.addEventListener('click', () => handleFileSelection('dockdash'));\n        console.log(\"Dock Dash button connected\");\n    }\n\n    const clearDockdashBtn = document.getElementById('clear-dockdash-btn');\n    if (clearDockdashBtn) {\n        clearDockdashBtn.addEventListener('click', () => clearLoadedFile('dockdash'));\n    }\n    \r\n    // --- UPDATED: HUB BUTTON LISTENER ---\r\n    const hubBtn = document.getElementById('open-hub-btn');\n    if (hubBtn) {\n        hubBtn.addEventListener('click', () => {\n            document.getElementById('research-hub-modal').style.display = 'block';\n            updateOculusSyncButton();\n        });\n        console.log(\"Hub button connected\");\n    }\n\n    const oculusVendorBtn = document.getElementById('browse-oculus-vendor-btn');\n    if (oculusVendorBtn) {\n        oculusVendorBtn.addEventListener('click', () => handleOculusFileSelection('vendor'));\n    }\n\n    const clearOculusVendorBtn = document.getElementById('clear-oculus-vendor-btn');\n    if (clearOculusVendorBtn) {\n        clearOculusVendorBtn.addEventListener('click', () => clearOculusUpload('vendor'));\n    }\n\n    const oculusTransshipBtn = document.getElementById('browse-oculus-transship-btn');\n    if (oculusTransshipBtn) {\n        oculusTransshipBtn.addEventListener('click', () => handleOculusFileSelection('transship'));\n    }\n\n    const clearOculusTransshipBtn = document.getElementById('clear-oculus-transship-btn');\n    if (clearOculusTransshipBtn) {\n        clearOculusTransshipBtn.addEventListener('click', () => clearOculusUpload('transship'));\n    }\n    \r\n    const recBtn = document.getElementById('reconcile-btn');\r\n    if (recBtn) {\r\n        recBtn.addEventListener('click', reconcileAndDisplay);\r\n        console.log(\"Reconcile button connected\");\r\n    }\r\n\r\n    const expBtn = document.getElementById('export-btn');\n    if (expBtn) {\n        expBtn.addEventListener('click', exportVerifiedCsv);\n        console.log(\"Export button connected\");\n    }\n\n    const fcApiBtn = document.getElementById('test-fc-api-btn');\n    if (fcApiBtn) {\n        fcApiBtn.addEventListener('click', testFcApiForResearchQueue);\n        console.log(\"FC API test button connected\");\n    }\n\n    // 3. Tile Listeners\n    const tiles = document.querySelectorAll('.metric-tile');\r\n    console.log(`Found ${tiles.length} metric tiles.`);\r\n    \r\n    tiles.forEach(tile => {\r\n        tile.addEventListener('click', (e) => {\r\n            console.log(\"Tile clicked:\", e.currentTarget.id);\r\n            showDetailModal(e.currentTarget.id);\r\n        });\r\n    });\r\n    \r\n    const modal = document.getElementById('detail-modal');\r\n    const closeBtn = document.getElementById('close-modal-btn');\r\n    if (closeBtn && modal) {\r\n        closeBtn.addEventListener('click', () => modal.style.display = 'none');\r\n        window.addEventListener('click', (e) => { \r\n            if (e.target === modal) modal.style.display = 'none';\r\n            // Also close Hub Modal if clicked outside\r\n            if (e.target === document.getElementById('research-hub-modal')) {\r\n                document.getElementById('research-hub-modal').style.display = 'none';\r\n            }\r\n        });\r\n    }\r\n    \r\n    // 4. Initial Status\n    updateCardStatus('yms', 'Select YMS File', null); \n    updateCardStatus('dockdash', 'Select Dock Dash File', null); \n    refreshOculusMemoryCard();\n    updateOculusSyncButton();\n    updateRequiredFileControls();\n});\n\r\n\r\n\r\n\r\n\n</script>\n    \n</body>\n</html>\n";
+    const hostWindow = window;
+    const hostDocument = document;
     const appVersion = "3.4.2";
+    const appBodyHtml = "\n    <div id=\"starfield\"></div>\n\n    <header class=\"app-header\">\n        <div>\n            <p class=\"eyebrow\">Ansancw</p>\n            <h1>EOS Operations Console</h1>\n        </div>\n\n        <div class=\"user-info\">\n            <span class=\"badge badge-vto\"><i class=\"fas fa-user-clock\"></i> VTO</span>\n            <span class=\"badge badge-clerk\"><i class=\"fas fa-id-badge\"></i> CLERK</span>\n            <span class=\"version-badge\" id=\"eos-version\">Version: 1.0.0</span>\n        </div>\n    </header>\n\n    <main>\n        <section id=\"action-panel\" class=\"status-neutral\">\n            <div class=\"status-copy\">\n                <i id=\"action-icon\" class=\"fas fa-info-circle\"></i>\n                <span id=\"action-message\">Awaiting file selections...</span>\n            </div>\n            <div class=\"status-actions\">\n                <button id=\"reconcile-btn\" class=\"browse-btn process-btn\" disabled>\n                    <i class=\"fas fa-sync-alt\"></i> Generate EOS\n                </button>\n                <button id=\"export-btn\" class=\"browse-btn export-btn\" disabled>\n                    <i class=\"fas fa-file-export\"></i> Export CSV\n                </button>\n                \n            </div>\n        </section>\n\n        <section class=\"console-grid\" id=\"eos-dashboard-view\">\n            <aside class=\"side-panel inputs-panel\">\n                <div class=\"panel-heading\">\n                    <div>\n                        <p class=\"eyebrow\">Workflow Inputs</p>\n                        <h2>Files and Hub</h2>\n                    </div>\n                </div>\n\n                <div class=\"upload-container dual-upload-container\">\n                    <div class=\"upload-card\" id=\"yms-card\">\n                        <i class=\"fas fa-database main-icon fa-5x\"></i>\n                        <div>\n                            <h2>Load YMS File</h2>\n                            <p id=\"yms-status\">Select the most up-to-date manifest.</p>\n                        </div>\n                        <div class=\"file-card-actions\">\n                            <button id=\"browse-yms-btn\" class=\"browse-btn\">\n                                <i class=\"fas fa-search\"></i> Select\n                            </button>\n                            <button id=\"clear-yms-btn\" class=\"browse-btn danger-btn\" disabled>\n                                <i class=\"fas fa-trash\"></i> Remove\n                            </button>\n                        </div>\n                    </div>\n\n                    <div class=\"upload-card\" id=\"dockdash-card\">\n                        <i class=\"fas fa-file-csv main-icon fa-5x\"></i>\n                        <div>\n                            <h2>Load Dock Dash</h2>\n                            <p id=\"dockdash-status\">Select the Dock Dash CSV.</p>\n                        </div>\n                        <div class=\"file-card-actions\">\n                            <button id=\"browse-dockdash-btn\" class=\"browse-btn\" disabled>\n                                <i class=\"fas fa-search\"></i> Select\n                            </button>\n                            <button id=\"clear-dockdash-btn\" class=\"browse-btn danger-btn\" disabled>\n                                <i class=\"fas fa-trash\"></i> Remove\n                            </button>\n                        </div>\n                    </div>\n\n                    <div class=\"upload-card\" id=\"gap-filler-card\">\n                        <i class=\"fas fa-network-wired main-icon fa-5x\"></i>\n                        <div>\n                            <h2>Research Hub</h2>\n                            <p id=\"gap-filler-status\">Paste data to clear ghosts.</p>\n                        </div>\n                        <div class=\"file-card-actions\">\n                            <button id=\"open-hub-btn\" class=\"browse-btn hub-btn\">\n                                <i class=\"fas fa-laptop-code\"></i> Open\n                            </button>\n                        </div>\n                    </div>\n                </div>\n            </aside>\n\n            <section class=\"dashboard-panel\">\n                <div class=\"panel-heading\">\n                    <div>\n                        <p class=\"eyebrow\">Live Summary</p>\n                        <h2>EOS Metrics</h2>\n                    </div>\n                    <span class=\"hint-pill\"><i class=\"far fa-hand-pointer\"></i> Click a tile for details</span>\n                </div>\n\n                <div class=\"metric-section\">\n                    <h3>Operations</h3>\n                    <div class=\"metrics-grid operations-grid\">\n                        <div class=\"metric-tile\" id=\"dropPallets\" data-category=\"Operations\"><div class=\"tile-content\"><i class=\"fas fa-pallet icon\"></i><div class=\"label\">Drop Pallets</div><div class=\"value\">0</div></div></div>\n                        <div class=\"metric-tile\" id=\"dropFloor\" data-category=\"Operations\"><div class=\"tile-content\"><i class=\"fas fa-box-open icon\"></i><div class=\"label\">Drop Floor</div><div class=\"value\">0</div></div></div>\n                        <div class=\"metric-tile\" id=\"transshipYard\" data-category=\"Operations\"><div class=\"tile-content\"><i class=\"fas fa-exchange-alt icon\"></i><div class=\"label\">Transship Yard</div><div class=\"value\">0</div></div></div>\n                        <div class=\"metric-tile\" id=\"livesHanded\" data-category=\"Operations\"><div class=\"tile-content\"><i class=\"fas fa-handshake icon\"></i><div class=\"label\">Lives Handed Over</div><div class=\"value\">0</div></div></div>\n                    </div>\n                </div>\n\n                <div class=\"metric-section\">\n                    <h3>Parcels and Volume</h3>\n                    <div class=\"metrics-grid parcel-grid\">\n                        <div class=\"metric-tile\" id=\"totalParcels\" data-category=\"Parcels\"><div class=\"tile-content\"><i class=\"fas fa-boxes icon\"></i><div class=\"label\">Total Parcels</div><div class=\"value\">0</div></div></div>\n                        <div class=\"metric-tile\" id=\"parcelsDock\" data-category=\"Critical\"><div class=\"tile-content\"><i class=\"fas fa-shipping-fast icon\"></i><div class=\"label\">Parcels On Dock</div><div class=\"value\">0</div></div></div>\n                        <div class=\"metric-tile\" id=\"parcelsYard\" data-category=\"Parcels\"><div class=\"tile-content\"><i class=\"fas fa-parking icon\"></i><div class=\"label\">Parcels In Yard</div><div class=\"value\">0</div></div></div>\n                        <div class=\"metric-tile\" id=\"volumeDoors\" data-category=\"Volume\"><div class=\"tile-content\"><i class=\"fas fa-door-open icon\"></i><div class=\"label\">Volume On Doors</div><div class=\"value\">0</div></div></div>\n                        <div class=\"metric-tile\" id=\"volumeYard\" data-category=\"Volume\"><div class=\"tile-content\"><i class=\"fas fa-ruler-combined icon\"></i><div class=\"label\">Volume In Yard</div><div class=\"value\">0</div></div></div>\n                    </div>\n                </div>\n            </section>\n\n            <aside class=\"side-panel priority-panel\">\n                <div class=\"panel-heading compact\">\n                    <div>\n                        <p class=\"eyebrow\">Exception Work</p>\n                        <h2>Priority Queue</h2>\n                    </div>\n                </div>\n\n                <div class=\"priority-stack\">\n                    <div class=\"metric-tile priority-tile\" id=\"azngOver72\" data-category=\"Critical\"><div class=\"tile-content\"><i class=\"fas fa-clock icon\"></i><div class=\"label\">AZNG &gt; 72H</div><div class=\"value\">0</div></div></div>\n                    <div class=\"metric-tile priority-tile\" id=\"researchQueue\" data-category=\"Critical\"><div class=\"tile-content\"><i class=\"fas fa-search-plus icon\"></i><div class=\"label\">Research Queue</div><div class=\"value\">0</div></div></div>\n                </div>\n\n                <div class=\"api-test-card hidden-feature\">\n                    <button id=\"test-fc-api-btn\" class=\"browse-btn secondary-btn\" type=\"button\">\n                        <i class=\"fas fa-plug-circle-bolt\"></i> Test FC API\n                    </button>\n                    <p id=\"fc-api-status\">Use FCInboundDockService to enrich Research Queue ISAs.</p>\n                </div>\n\n                <div class=\"queue-note\">\n                    <i class=\"fas fa-circle-info\"></i>\n                    <span>Priority tiles open their detail list after EOS is generated.</span>\n                </div>\n            </aside>\n        </section>\n\n        </main>\n\n    <div id=\"detail-modal\" class=\"modal\">\n        <div class=\"modal-content\">\n            <button class=\"close-button\" id=\"close-modal-btn\" aria-label=\"Close details\">&times;</button>\n            <h2 id=\"modal-title\">Trailer Details</h2>\n            <div class=\"table-container\">\n                <table id=\"detail-table\">\n                    <thead><tr><th>ISA</th><th>VRID</th><th>LOC</th><th>ACTION</th></tr></thead>\n                    <tbody id=\"detail-table-body\"></tbody>\n                </table>\n            </div>\n        </div>\n    </div>\n\n    <div id=\"research-hub-modal\" class=\"modal\" style=\"display:none; z-index: 2000;\">\n        <div class=\"modal-content hub-modal-content\">\n            <div id=\"hub-step-1\">\n                <h2><i class=\"fas fa-database\"></i> Oculus Memory</h2>\n                <p class=\"modal-intro\">Upload the latest Oculus Vendor and Transship CSVs. The app will store ISA, cartons, units, and pallets until the next Oculus sync.</p>\n                <div class=\"hub-grid oculus-upload-grid\">\n                    <div class=\"oculus-upload-card\" id=\"oculus-vendor-card\">\n                        <i class=\"fas fa-truck-loading\"></i>\n                        <div>\n                            <h3>Vendor CSV</h3>\n                            <p id=\"oculus-vendor-status\">Drops and AF lives/live-drops.</p>\n                        </div>\n                        <div class=\"file-card-actions\">\n                            <button id=\"browse-oculus-vendor-btn\" class=\"browse-btn\" type=\"button\">\n                                <i class=\"fas fa-file-csv\"></i> Select\n                            </button>\n                            <button id=\"clear-oculus-vendor-btn\" class=\"browse-btn danger-btn\" type=\"button\" disabled>\n                                <i class=\"fas fa-trash\"></i> Remove\n                            </button>\n                        </div>\n                    </div>\n                    <div class=\"oculus-upload-card\" id=\"oculus-transship-card\">\n                        <i class=\"fas fa-exchange-alt\"></i>\n                        <div>\n                            <h3>Transship CSV</h3>\n                            <p id=\"oculus-transship-status\">Transship trailers and unit counts.</p>\n                        </div>\n                        <div class=\"file-card-actions\">\n                            <button id=\"browse-oculus-transship-btn\" class=\"browse-btn\" type=\"button\">\n                                <i class=\"fas fa-file-csv\"></i> Select\n                            </button>\n                            <button id=\"clear-oculus-transship-btn\" class=\"browse-btn danger-btn\" type=\"button\" disabled>\n                                <i class=\"fas fa-trash\"></i> Remove\n                            </button>\n                        </div>\n                    </div>\n                </div>\n                <p class=\"oculus-sync-summary\" id=\"oculus-sync-summary\">No Oculus files selected.</p>\n                <div class=\"modal-actions\">\n                    <button data-eos-action=\"cancel-hub\" class=\"browse-btn secondary-btn\">Cancel</button>\n                    <button id=\"sync-oculus-memory-btn\" data-eos-action=\"sync\" class=\"browse-btn success-btn\" disabled>Sync Oculus Memory <i class=\"fas fa-check-circle\"></i></button>\n                </div>\n            </div>\n        </div>\n    </div>\n\n    <div id=\"fc-api-modal\" class=\"modal\" style=\"display:none; z-index: 2100;\">\n        <div class=\"modal-content api-modal-content\">\n            <h2><i class=\"fas fa-plug-circle-bolt\"></i> FC API Test</h2>\n            <p class=\"modal-intro\">Enter the FCInboundDockService API Gateway details to test Research Queue enrichment.</p>\n            <div class=\"api-config-grid\">\n                <label class=\"field-label\" for=\"fc-api-endpoint-input\">API Gateway Endpoint</label>\n                <input id=\"fc-api-endpoint-input\" type=\"text\" placeholder=\"https://...\">\n\n                <label class=\"field-label\" for=\"fc-api-warehouse-input\">Warehouse ID</label>\n                <input id=\"fc-api-warehouse-input\" type=\"text\" value=\"GYR2\">\n\n                <label class=\"field-label\" for=\"fc-api-token-input\">Authorization Token Optional</label>\n                <input id=\"fc-api-token-input\" type=\"password\" placeholder=\"Bearer token or raw token\">\n            </div>\n            <div class=\"modal-actions\">\n                <button id=\"fc-api-cancel-btn\" class=\"browse-btn secondary-btn\" type=\"button\">Cancel</button>\n                <button id=\"fc-api-submit-btn\" class=\"browse-btn\" type=\"button\">\n                    <i class=\"fas fa-plug-circle-bolt\"></i> Test API\n                </button>\n            </div>\n        </div>\n    </div>\n\n    <footer>\n        <span>EOS dashboard ready</span>\n    </footer>\n\n    \n    \n    \n";
+    const appCss = ".eos-root {\n    --bg: #0b1016;\n    --panel: #121a23;\n    --panel-2: #172230;\n    --panel-3: #0f1720;\n    --line: #283544;\n    --line-strong: #344657;\n    --text-color: #eef4f8;\n    --muted: #8fa2b4;\n    --primary-color: #ff9900;\n    --primary-2: #ffb84d;\n    --cyan: #22d3ee;\n    --teal: #2dd4bf;\n    --green: #4ade80;\n    --violet: #a78bfa;\n    --red: #fb7185;\n    --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);\n    --app-scale: 1;\n    --app-max-width: 1460px;\n    --app-gutter: clamp(14px, calc(28px * var(--app-scale)), 34px);\n    --panel-pad: clamp(12px, calc(16px * var(--app-scale)), 20px);\n    --grid-gap: clamp(10px, calc(16px * var(--app-scale)), 20px);\n    --tile-pad: clamp(11px, calc(14px * var(--app-scale)), 18px);\n    --tile-height: clamp(112px, calc(132px * var(--app-scale)), 158px);\n    --side-column: clamp(250px, calc(280px * var(--app-scale)), 310px);\n    --priority-column: clamp(230px, calc(260px * var(--app-scale)), 290px);\n}\n\n* {\n    box-sizing: border-box;\n}\n\n.eos-root {\n    font-size: clamp(13px, calc(15px * var(--app-scale)), 17px);\n}\n\n.eos-body {\n    min-height: 100vh;\n    margin: 0;\n    background: var(--bg);\n    color: var(--text-color);\n    font-family: \"Segoe UI\", Tahoma, Geneva, Verdana, sans-serif;\n    overflow-x: hidden;\n}\n\nbutton,\ninput,\ntextarea,\nselect {\n    font: inherit;\n}\n\nbutton:disabled {\n    cursor: not-allowed;\n    filter: saturate(0.35);\n    opacity: 0.58;\n}\n\n#starfield {\n    position: fixed;\n    inset: 0;\n    z-index: -1;\n    overflow: hidden;\n    background:\n        radial-gradient(circle at 20% 0%, rgba(56, 189, 248, 0.12), transparent 32rem),\n        linear-gradient(135deg, #0b1016 0%, #111827 100%);\n    pointer-events: none;\n}\n\n.star {\n    position: absolute;\n    width: 2px;\n    height: 2px;\n    border-radius: 50%;\n    background: rgba(255, 255, 255, 0.72);\n    animation: twinkle 3s infinite ease-in-out;\n}\n\n@keyframes twinkle {\n    0%, 100% { opacity: 0.72; transform: scale(1); }\n    50% { opacity: 0.2; transform: scale(0.8); }\n}\n\n.app-header {\n    position: sticky;\n    top: 0;\n    z-index: 100;\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: calc(24px * var(--app-scale));\n    padding: clamp(14px, calc(18px * var(--app-scale)), 22px) var(--app-gutter);\n    border-bottom: 1px solid var(--line);\n    background: rgba(11, 16, 22, 0.9);\n    backdrop-filter: blur(16px);\n}\n\n.eyebrow {\n    margin: 0 0 4px;\n    color: var(--primary-2);\n    font-size: 0.72rem;\n    font-weight: 800;\n    letter-spacing: 0.08em;\n    text-transform: uppercase;\n}\n\nh1,\nh2,\nh3,\np {\n    margin-top: 0;\n}\n\nh1 {\n    margin-bottom: 0;\n    font-size: 1.45rem;\n    line-height: 1.15;\n}\n\nh2 {\n    margin-bottom: 0;\n    font-size: 1.1rem;\n    line-height: 1.2;\n}\n\nh3 {\n    margin-bottom: 12px;\n    color: #c9d6e2;\n    font-size: 0.82rem;\n    letter-spacing: 0.05em;\n    text-transform: uppercase;\n}\n\n.user-info {\n    display: flex;\n    align-items: center;\n    gap: 10px;\n}\n\n.badge,\n.version-badge,\n.hint-pill {\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    gap: 7px;\n    min-height: 32px;\n    padding: 6px 10px;\n    border: 1px solid var(--line);\n    border-radius: 999px;\n    color: var(--muted);\n    font-size: 0.8rem;\n    font-weight: 700;\n    white-space: nowrap;\n}\n\n.badge-vto {\n    border-color: rgba(255, 153, 0, 0.35);\n    color: var(--primary-2);\n}\n\n.badge-clerk {\n    border-color: rgba(74, 222, 128, 0.35);\n    color: var(--green);\n}\n\nmain {\n    width: min(var(--app-max-width), 100%);\n    margin: 0 auto;\n    padding: clamp(14px, calc(18px * var(--app-scale)), 24px) var(--app-gutter) clamp(16px, calc(22px * var(--app-scale)), 30px);\n}\n\n#action-panel {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: calc(18px * var(--app-scale));\n    margin-bottom: var(--grid-gap);\n    padding: var(--panel-pad);\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: rgba(18, 26, 35, 0.92);\n    box-shadow: var(--shadow);\n}\n\n#action-panel.status-neutral {\n    border-color: var(--line);\n    background: rgba(18, 26, 35, 0.92);\n}\n\n#action-panel.status-success {\n    border-color: rgba(74, 222, 128, 0.34);\n    background: linear-gradient(90deg, rgba(74, 222, 128, 0.14), rgba(18, 26, 35, 0.92));\n}\n\n#action-panel.status-critical {\n    border-color: rgba(251, 113, 133, 0.34);\n    background: linear-gradient(90deg, rgba(251, 113, 133, 0.16), rgba(255, 153, 0, 0.08));\n}\n\n#action-panel.cut-hidden {\n    display: none;\n}\n\n.status-copy {\n    display: flex;\n    align-items: center;\n    min-width: 0;\n    gap: 14px;\n    font-weight: 800;\n}\n\n#action-icon {\n    display: grid;\n    flex: 0 0 auto;\n    place-items: center;\n    width: 42px;\n    height: 42px;\n    border-radius: 8px;\n    background: #223041;\n    color: var(--primary-color);\n    font-size: 1.2rem;\n}\n\n.status-critical #action-icon {\n    background: rgba(251, 113, 133, 0.18);\n    color: var(--red);\n}\n\n.status-success #action-icon {\n    background: rgba(74, 222, 128, 0.16);\n    color: var(--green);\n}\n\n#action-message {\n    min-width: 0;\n    overflow-wrap: anywhere;\n}\n\n.status-actions {\n    display: flex;\n    flex: 0 0 auto;\n    gap: 10px;\n}\n\n.browse-btn,\n.btn-warning,\n.nav-btn,\n.close-overlay {\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    gap: 8px;\n    min-height: 40px;\n    padding: 0 14px;\n    border: 0;\n    border-radius: 8px;\n    background: linear-gradient(135deg, var(--primary-color), #f97316);\n    color: #16100a;\n    font-size: 0.88rem;\n    font-weight: 900;\n    cursor: pointer;\n    text-decoration: none;\n    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);\n    transition: border-color 0.18s, box-shadow 0.18s, filter 0.18s, transform 0.18s;\n}\n\n.browse-btn:hover:not(:disabled),\n.btn-warning:hover:not(:disabled),\n.nav-btn:hover:not(:disabled),\n.close-overlay:hover:not(:disabled) {\n    filter: brightness(1.08);\n    transform: translateY(-1px);\n    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.24);\n}\n\n.browse-btn:active:not(:disabled),\n.btn-warning:active:not(:disabled),\n.nav-btn:active:not(:disabled),\n.close-overlay:active:not(:disabled) {\n    transform: translateY(0);\n    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);\n}\n\n.browse-btn:focus-visible,\n.btn-warning:focus-visible,\n.nav-btn:focus-visible,\n.close-overlay:focus-visible {\n    outline: 2px solid rgba(255, 184, 77, 0.85);\n    outline-offset: 3px;\n}\n\n.export-btn,\n.success-btn {\n    background: linear-gradient(135deg, var(--green), #22c55e);\n}\n\n.hub-btn {\n    background: linear-gradient(135deg, var(--violet), #7c3aed);\n    color: #f8f5ff;\n}\n\n.secondary-btn {\n    border: 1px solid var(--line);\n    background: linear-gradient(180deg, #243347, #1b2735);\n    color: var(--text-color);\n}\n\n.console-grid {\n    display: grid;\n    grid-template-columns: var(--side-column) minmax(0, 1fr) var(--priority-column);\n    gap: var(--grid-gap);\n    align-items: start;\n}\n\n.side-panel,\n.dashboard-panel,\n.tool-card {\n    min-width: 0;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: rgba(18, 26, 35, 0.92);\n    box-shadow: var(--shadow);\n}\n\n.side-panel,\n.dashboard-panel {\n    padding: var(--panel-pad);\n}\n\n.panel-heading {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: calc(14px * var(--app-scale));\n    margin-bottom: calc(18px * var(--app-scale));\n}\n\n.panel-heading.compact {\n    margin-bottom: 14px;\n}\n\n.upload-container {\n    display: grid;\n    gap: clamp(8px, calc(10px * var(--app-scale)), 13px);\n}\n\n.upload-card {\n    display: grid;\n    grid-template-columns: 34px minmax(0, 1fr);\n    align-items: start;\n    gap: calc(12px * var(--app-scale));\n    min-height: clamp(64px, calc(72px * var(--app-scale)), 84px);\n    padding: clamp(10px, calc(12px * var(--app-scale)), 15px);\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-2);\n}\n\n.upload-card.success {\n    border-color: rgba(74, 222, 128, 0.42);\n}\n\n.upload-card.error {\n    border-color: rgba(251, 113, 133, 0.42);\n}\n\n.main-icon {\n    color: var(--primary-color);\n    font-size: 1.25rem !important;\n}\n\n.upload-card.success .main-icon {\n    color: var(--green);\n}\n\n.upload-card.error .main-icon {\n    color: var(--red);\n}\n\n.file-card-actions {\n    display: flex;\n    grid-column: 1 / -1;\n    flex-wrap: nowrap;\n    gap: 10px;\n}\n\n.file-card-actions .browse-btn {\n    flex: 1 1 0;\n    min-width: 0;\n    padding-inline: 10px;\n    white-space: nowrap;\n}\n\n.danger-btn {\n    background: linear-gradient(135deg, #fb7185, #ef4444);\n    color: #210b0f;\n}\n\n.danger-btn:disabled {\n    cursor: not-allowed;\n    opacity: 0.45;\n    filter: grayscale(0.35);\n}\n\n.upload-card h2 {\n    margin-bottom: 3px;\n    font-size: 0.95rem;\n    line-height: 1.2;\n}\n\n.upload-card p {\n    margin: 0;\n    color: var(--muted);\n    font-size: 0.78rem;\n    line-height: 1.35;\n}\n\n.queue-note {\n    margin-top: 16px;\n    padding: 12px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-3);\n}\n\n.queue-note {\n    color: var(--muted);\n    font-size: 0.82rem;\n    line-height: 1.4;\n}\n\n.queue-note {\n    display: flex;\n    gap: 10px;\n}\n\n.queue-note i {\n    margin-top: 2px;\n    color: var(--primary-2);\n}\n\n.api-test-card {\n    display: grid;\n    gap: 9px;\n    margin-top: 16px;\n    padding: 12px;\n    border: 1px solid rgba(34, 211, 238, 0.28);\n    border-radius: 8px;\n    background: rgba(34, 211, 238, 0.06);\n}\n\n.api-test-card .browse-btn {\n    width: 100%;\n}\n\n.api-test-card p {\n    margin: 0;\n    color: var(--muted);\n    font-size: 0.78rem;\n    font-weight: 800;\n    line-height: 1.35;\n}\n\n.api-test-card.success {\n    border-color: rgba(74, 222, 128, 0.36);\n    background: rgba(74, 222, 128, 0.07);\n}\n\n.api-test-card.error {\n    border-color: rgba(251, 113, 133, 0.38);\n    background: rgba(251, 113, 133, 0.08);\n}\n\n.metric-section + .metric-section {\n    margin-top: calc(18px * var(--app-scale));\n}\n\n.metrics-grid {\n    display: grid;\n    grid-template-columns: repeat(4, minmax(0, 1fr));\n    gap: clamp(9px, calc(12px * var(--app-scale)), 16px);\n}\n\n.parcel-grid {\n    grid-template-columns: repeat(5, minmax(0, 1fr));\n}\n\n.priority-stack {\n    display: grid;\n    gap: clamp(9px, calc(12px * var(--app-scale)), 16px);\n}\n\n.metric-tile {\n    container-type: inline-size;\n    min-height: var(--tile-height);\n    padding: var(--tile-pad);\n    border: 1px solid var(--line);\n    border-left-width: 4px;\n    border-radius: 8px;\n    background: linear-gradient(180deg, #182331, #121a23);\n    cursor: pointer;\n    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;\n}\n\n.metric-tile:hover {\n    border-color: var(--line-strong);\n    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);\n    transform: translateY(-2px);\n}\n\n.priority-tile {\n    min-height: clamp(126px, calc(150px * var(--app-scale)), 178px);\n}\n\n.tile-content {\n    min-width: 0;\n}\n\n.icon {\n    margin-bottom: clamp(12px, calc(18px * var(--app-scale)), 22px);\n    font-size: 1.25rem;\n}\n\n.label {\n    min-height: 32px;\n    color: var(--muted);\n    font-size: 0.76rem;\n    font-weight: 800;\n    letter-spacing: 0.04em;\n    line-height: 1.25;\n    text-transform: uppercase;\n}\n\n.value {\n    margin-top: clamp(6px, calc(8px * var(--app-scale)), 10px);\n    max-width: 100%;\n    overflow: hidden;\n    font-size: clamp(1.55rem, 23cqw, 2rem);\n    font-weight: 900;\n    line-height: 1;\n    letter-spacing: 0;\n    white-space: nowrap;\n    font-variant-numeric: tabular-nums;\n}\n\n.metric-tile[data-category=\"Volume\"] .value {\n    font-size: clamp(1.35rem, 20cqw, 1.85rem);\n}\n\n.value.long-value {\n    font-size: clamp(1.35rem, 19cqw, 1.75rem);\n}\n\n.value.extra-long-value {\n    font-size: clamp(1.15rem, 17cqw, 1.55rem);\n}\n\n.metric-tile[data-category=\"Operations\"] {\n    border-left-color: var(--cyan);\n}\n\n.metric-tile[data-category=\"Operations\"] .icon,\n.metric-tile[data-category=\"Operations\"] .value {\n    color: var(--cyan);\n}\n\n.metric-tile[data-category=\"Parcels\"] {\n    border-left-color: var(--violet);\n}\n\n.metric-tile[data-category=\"Parcels\"] .icon,\n.metric-tile[data-category=\"Parcels\"] .value {\n    color: var(--violet);\n}\n\n.metric-tile[data-category=\"Critical\"] {\n    border-left-color: var(--red);\n}\n\n.metric-tile[data-category=\"Critical\"] .icon,\n.metric-tile[data-category=\"Critical\"] .value {\n    color: var(--red);\n}\n\n.metric-tile[data-category=\"Volume\"] {\n    border-left-color: var(--green);\n}\n\n.metric-tile[data-category=\"Volume\"] .icon,\n.metric-tile[data-category=\"Volume\"] .value {\n    color: var(--green);\n}\n\n.metric-tile.critical-active {\n    border-color: rgba(251, 113, 133, 0.55);\n    box-shadow: 0 0 0 1px rgba(251, 113, 133, 0.25), 0 18px 42px rgba(251, 113, 133, 0.13);\n}\n\n.compact-display .hint-pill {\n    display: none;\n}\n\n.compact-display .metric-tile {\n    min-height: 108px;\n}\n\n.compact-display .priority-tile {\n    min-height: 118px;\n}\n\n.compact-display .icon {\n    margin-bottom: 10px;\n}\n\n.wide-display .metric-tile {\n    min-height: 152px;\n}\n\n.hidden-section {\n    display: none;\n    margin-top: 16px;\n    animation: slideDown 0.25s ease-out;\n}\n\n.hidden-feature {\n    display: none !important;\n}\n\n.hidden-section.visible {\n    display: block;\n}\n\n@keyframes slideDown {\n    from { opacity: 0; transform: translateY(-10px); }\n    to { opacity: 1; transform: translateY(0); }\n}\n\n.tool-card {\n    padding: var(--panel-pad);\n}\n\n.tool-split {\n    display: grid;\n    grid-template-columns: 1.25fr 0.75fr;\n    gap: var(--grid-gap);\n}\n\n.generator-box,\n.decoder-box {\n    min-width: 0;\n    padding: 14px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-2);\n}\n\n.barcode-controls {\n    display: grid;\n    grid-template-columns: repeat(3, 1fr);\n    gap: 10px;\n    margin-bottom: 12px;\n}\n\n.barcode-controls label,\n.field-label,\n.hub-grid label {\n    display: grid;\n    gap: 6px;\n    color: #c9d6e2;\n    font-size: 0.78rem;\n    font-weight: 800;\n    text-transform: uppercase;\n}\n\ninput,\ntextarea,\nselect {\n    width: 100%;\n    border: 1px solid var(--line-strong);\n    border-radius: 8px;\n    background: #0b121a;\n    color: var(--text-color);\n    outline: none;\n}\n\ninput:focus,\ntextarea:focus,\nselect:focus {\n    border-color: rgba(255, 153, 0, 0.62);\n    box-shadow: 0 0 0 3px rgba(255, 153, 0, 0.1);\n}\n\n.barcode-controls input {\n    min-height: 38px;\n    padding: 8px;\n}\n\ntextarea#admin-input,\ninput#admin-decoder {\n    font-family: Consolas, \"Courier New\", monospace;\n}\n\ntextarea#admin-input {\n    min-height: 150px;\n    padding: 10px;\n    resize: vertical;\n}\n\ninput#admin-decoder {\n    min-height: 42px;\n    padding: 10px;\n}\n\n.tool-actions {\n    display: flex;\n    gap: 10px;\n    margin-top: 10px;\n}\n\n.tool-actions .btn-warning {\n    flex: 1;\n}\n\n.output-display {\n    min-height: 92px;\n    margin-top: 10px;\n    padding: 10px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-3);\n    color: var(--primary-2);\n    font-family: Consolas, \"Courier New\", monospace;\n    font-size: 0.82rem;\n    white-space: pre-wrap;\n}\n\n.memory-test-toggle {\n    margin-top: 12px;\n    padding: 10px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-3);\n}\n\n.memory-test-toggle label {\n    display: flex;\n    align-items: center;\n    gap: 10px;\n    color: var(--muted);\n    font-size: 0.82rem;\n    font-weight: 800;\n}\n\n.memory-test-toggle input {\n    width: 18px;\n    height: 18px;\n    accent-color: var(--primary-color);\n}\n\n.memory-admin-actions {\n    margin-top: 12px;\n    padding: 10px;\n    border: 1px solid rgba(251, 113, 133, 0.36);\n    border-radius: 8px;\n    background: rgba(251, 113, 133, 0.08);\n}\n\n.memory-admin-actions .btn-warning {\n    width: 100%;\n}\n\n.memory-admin-actions p {\n    margin: 8px 0 0;\n    color: var(--muted);\n    font-size: 0.78rem;\n    line-height: 1.35;\n}\n\n#printable-area {\n    margin-top: 14px;\n}\n\n.barcode-wrapper {\n    display: inline-block;\n    margin: 0 12px 16px 0;\n    padding: 12px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: #ffffff;\n}\n\n.modal {\n    display: none;\n    position: fixed;\n    inset: 0;\n    z-index: 200;\n    overflow: auto;\n    padding: 32px 18px;\n    background-color: rgba(0, 0, 0, 0.76);\n    backdrop-filter: blur(8px);\n}\n\n.modal-content {\n    width: min(980px, 100%);\n    max-height: calc(100vh - 64px);\n    margin: 0 auto;\n    overflow-y: auto;\n    padding: 24px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel);\n    box-shadow: var(--shadow);\n}\n\n.close-button {\n    float: right;\n    width: 36px;\n    min-height: 36px;\n    padding: 0;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-2);\n    color: var(--text-color);\n    font-size: 1.5rem;\n    cursor: pointer;\n}\n\n.close-button:hover {\n    border-color: rgba(255, 153, 0, 0.62);\n    color: var(--primary-color);\n}\n\n.table-container {\n    width: 100%;\n    overflow: auto;\n}\n\n#detail-table {\n    width: 100%;\n    min-width: 660px;\n    margin-top: 15px;\n    border-collapse: collapse;\n    color: var(--text-color);\n}\n\n#detail-table th,\n#detail-table td {\n    padding: 12px 15px;\n    border-bottom: 1px solid var(--line);\n    text-align: left;\n}\n\n#detail-table th {\n    background-color: rgba(255, 153, 0, 0.1);\n    color: var(--primary-2);\n    font-size: 0.78rem;\n    text-transform: uppercase;\n}\n\n#detail-table tbody tr:hover {\n    background-color: rgba(255, 255, 255, 0.04);\n}\n\n.research-assignment-controls {\n    display: grid;\n    min-width: 150px;\n    gap: 8px;\n}\n\n.research-select,\n.research-units-input {\n    min-height: 36px;\n    padding: 7px 9px;\n    border: 1px solid var(--line-strong);\n    border-radius: 8px;\n    background: #0b121a;\n    color: var(--text-color);\n}\n\n.research-select option,\n.research-select optgroup {\n    background: #0b121a;\n    color: var(--text-color);\n}\n\n.research-units-input {\n    width: 100%;\n    color: var(--green);\n    font-weight: 900;\n}\n\n.research-units-input::placeholder {\n    color: var(--muted);\n    font-weight: 700;\n}\n\n.research-edit-btn,\n.research-move-btn {\n    min-height: 32px;\n    border: 0;\n    border-radius: 8px;\n    color: #121a23;\n    font-weight: 900;\n    cursor: pointer;\n}\n\n.research-edit-btn {\n    background: linear-gradient(135deg, #fbbf24, #f97316);\n}\n\n.research-move-btn {\n    background: linear-gradient(135deg, var(--green), #22c55e);\n}\n\n.hub-modal-content h2 {\n    margin-bottom: 10px;\n    color: var(--primary-2);\n}\n\n.modal-intro {\n    margin-bottom: 16px;\n    color: var(--muted);\n}\n\n.hub-grid {\n    display: grid;\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n    gap: 16px;\n}\n\n.oculus-upload-grid {\n    align-items: stretch;\n}\n\n.oculus-upload-card {\n    display: grid;\n    grid-template-columns: auto 1fr;\n    align-items: center;\n    gap: 14px;\n    min-height: 156px;\n    padding: 18px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: rgba(255, 255, 255, 0.035);\n}\n\n.oculus-upload-card > i {\n    color: var(--primary-2);\n    font-size: 2rem;\n}\n\n.oculus-upload-card h3 {\n    margin: 0 0 6px;\n    color: var(--text-color);\n    font-size: 0.98rem;\n}\n\n.oculus-upload-card p {\n    margin: 0;\n    color: var(--muted);\n    font-size: 0.84rem;\n}\n\n.oculus-upload-card > .browse-btn,\n.oculus-upload-card > .file-card-actions {\n    grid-column: 1 / -1;\n}\n\n.oculus-upload-card > .browse-btn {\n    justify-content: center;\n}\n\n.oculus-upload-card.success {\n    border-color: rgba(34, 197, 94, 0.55);\n}\n\n.oculus-upload-card.error {\n    border-color: rgba(239, 68, 68, 0.65);\n}\n\n.oculus-sync-summary {\n    margin: 16px 0 0;\n    color: var(--muted);\n    font-weight: 800;\n}\n\n.api-modal-content {\n    width: min(720px, 100%);\n}\n\n.api-modal-content h2 {\n    margin-bottom: 10px;\n    color: var(--primary-2);\n}\n\n.api-config-grid {\n    display: grid;\n    gap: 8px;\n}\n\n.api-config-grid input {\n    min-height: 42px;\n    padding: 10px;\n    margin-bottom: 8px;\n}\n\n.cut-board-view {\n    margin-top: 0;\n}\n\n.cut-viewbar {\n    display: grid;\n    grid-template-columns: auto 1fr auto;\n    align-items: center;\n    gap: 16px;\n    margin-bottom: 16px;\n    padding: 16px;\n    border: 1px solid rgba(255, 153, 0, 0.36);\n    border-radius: 8px;\n    background: linear-gradient(90deg, rgba(255, 153, 0, 0.14), rgba(34, 211, 238, 0.07));\n    box-shadow: var(--shadow);\n}\n\n.cut-viewbar-copy h2 {\n    margin-bottom: 0;\n    color: #f8fafc;\n    font-size: 1.08rem;\n}\n\n.cut-viewbar-actions {\n    display: flex;\n    align-items: center;\n    gap: 10px;\n}\n\n.cut-shell {\n    display: grid;\n    grid-template-columns: 310px minmax(0, 1fr) 320px;\n    gap: var(--grid-gap);\n    align-items: start;\n}\n\n.cut-source-card {\n    display: grid;\n    grid-template-columns: 36px 1fr;\n    align-items: center;\n    gap: 12px;\n    min-height: 64px;\n    margin-top: 10px;\n    padding: 12px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-2);\n}\n\n.cut-source-card i {\n    color: var(--primary-2);\n    font-size: 1.1rem;\n}\n\n.cut-source-card strong,\n.cut-source-card span {\n    display: block;\n}\n\n.cut-source-card span {\n    margin-top: 3px;\n    color: var(--muted);\n    font-size: 0.78rem;\n}\n\n.cut-source-card.ready {\n    border-color: rgba(34, 197, 94, 0.36);\n}\n\n.cut-source-card.ready i {\n    color: var(--green);\n}\n\n.cut-filter-stack {\n    display: grid;\n    gap: 8px;\n    margin-top: 18px;\n}\n\n.cut-filter-heading {\n    padding: 12px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-3);\n}\n\n.cut-filter-heading span,\n.cut-metric-card span,\n.cut-action-card span {\n    display: block;\n    color: var(--muted);\n    font-size: 0.78rem;\n}\n\n.cut-filter-heading strong {\n    display: block;\n    margin-top: 5px;\n    color: var(--text-color);\n}\n\n.cut-filter {\n    display: inline-flex;\n    align-items: center;\n    justify-content: flex-start;\n    gap: 8px;\n    min-height: 40px;\n    padding: 0 14px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: #202c3a;\n    color: var(--text-color);\n    font: inherit;\n    font-size: 0.88rem;\n    font-weight: 900;\n    cursor: pointer;\n}\n\n.cut-filter.selected {\n    border-color: rgba(255, 153, 0, 0.5);\n    color: var(--primary-2);\n}\n\n.cut-panel {\n    display: flex;\n    flex-direction: column;\n    min-width: 0;\n    overflow: visible;\n}\n\n.cut-segmented {\n    display: inline-flex;\n    padding: 4px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-3);\n}\n\n.cut-segmented button {\n    min-height: 30px;\n    padding: 0 10px;\n    border: 0;\n    border-radius: 6px;\n    background: transparent;\n    color: var(--muted);\n    font: inherit;\n    font-size: 0.78rem;\n    font-weight: 900;\n    cursor: pointer;\n}\n\n.cut-segmented button.selected {\n    background: #263444;\n    color: var(--text-color);\n}\n\n.cut-calculator {\n    margin-bottom: 16px;\n    padding: 14px;\n    border: 1px solid rgba(255, 153, 0, 0.34);\n    border-radius: 8px;\n    background: linear-gradient(180deg, rgba(255, 153, 0, 0.08), rgba(15, 23, 32, 0.9));\n}\n\n.cut-calculator-header {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 12px;\n    margin-bottom: 12px;\n}\n\n.cut-calculator-actions {\n    display: flex;\n    align-items: center;\n    gap: 10px;\n}\n\n.cut-calculator-actions .browse-btn {\n    min-height: 44px;\n    padding-inline: 16px;\n    border-color: rgba(56, 189, 248, 0.2);\n    background: linear-gradient(180deg, #27384d, #1b2735);\n}\n\n.cut-calculator-header h3 {\n    margin-bottom: 0;\n    color: var(--text-color);\n    font-size: 0.98rem;\n}\n\n.cut-help-btn,\n.cut-help-close {\n    display: inline-grid;\n    place-items: center;\n    width: 44px;\n    min-width: 44px;\n    height: 44px;\n    border: 1px solid var(--line);\n    border-radius: 999px;\n    background: linear-gradient(180deg, #26384c, #1b2838);\n    color: var(--primary-2);\n    cursor: pointer;\n    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);\n    transition: border-color 0.18s, box-shadow 0.18s, color 0.18s, transform 0.18s;\n}\n\n.cut-help-btn:hover,\n.cut-help-close:hover {\n    border-color: rgba(255, 153, 0, 0.54);\n    color: #ffd38a;\n    transform: translateY(-1px);\n    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.24);\n}\n\n.cut-help-btn:active,\n.cut-help-close:active {\n    transform: translateY(0);\n}\n\n.cut-help-btn:focus-visible,\n.cut-help-close:focus-visible {\n    outline: 2px solid rgba(255, 184, 77, 0.85);\n    outline-offset: 3px;\n}\n\n.cut-help-close {\n    width: 32px;\n    min-width: 32px;\n    height: 32px;\n    color: var(--muted);\n}\n\n.cut-calc-grid {\n    display: grid;\n    grid-template-columns: repeat(3, minmax(0, 1fr));\n    gap: 10px;\n    margin-bottom: 10px;\n}\n\n.cut-calc-grid.count-grid {\n    grid-template-columns: repeat(5, minmax(0, 1fr));\n}\n\n.cut-calc-grid label,\n.cut-calc-grid label {\n    display: grid;\n    gap: 6px;\n    color: #c9d6e2;\n    font-size: 0.72rem;\n    font-weight: 900;\n    letter-spacing: 0.04em;\n    text-transform: uppercase;\n}\n\n.cut-calc-grid input {\n    min-height: 38px;\n    padding: 8px 9px;\n}\n\n.cut-calc-grid select {\n    min-height: 38px;\n    padding: 8px 9px;\n}\n\n.cut-calc-grid select option {\n    background: #0b121a;\n    color: var(--text-color);\n}\n\n.cut-forecast-grid {\n    display: grid;\n    grid-template-columns: repeat(5, minmax(0, 1fr));\n    gap: 10px;\n}\n\n.cut-forecast-card {\n    min-height: 76px;\n    padding: 10px;\n    border: 1px solid var(--line);\n    border-left: 4px solid var(--cyan);\n    border-radius: 8px;\n    background: var(--panel-3);\n}\n\n.cut-forecast-card span,\n.cut-next-action {\n    color: var(--muted);\n    font-size: 0.76rem;\n    font-weight: 800;\n}\n\n.cut-forecast-card strong {\n    display: block;\n    margin-top: 8px;\n    color: var(--cyan);\n    font-size: 1.45rem;\n    line-height: 1;\n}\n\n.cut-forecast-card.warning {\n    border-left-color: var(--red);\n}\n\n.cut-forecast-card.warning strong {\n    color: var(--red);\n}\n\n.cut-forecast-card.safe {\n    border-left-color: var(--green);\n}\n\n.cut-forecast-card.safe strong {\n    color: var(--green);\n}\n\n.cut-next-action {\n    margin-top: 10px;\n    padding: 10px 12px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-3);\n    line-height: 1.35;\n}\n\n.cut-next-action.good {\n    border-color: rgba(74, 222, 128, 0.36);\n    color: var(--green);\n}\n\n.cut-next-action.warning {\n    border-color: rgba(255, 153, 0, 0.4);\n    color: var(--primary-2);\n}\n\n.cut-next-action.danger {\n    border-color: rgba(251, 113, 133, 0.42);\n    color: var(--red);\n}\n\n.cut-explanation-panel {\n    margin-top: 10px;\n    max-height: 460px;\n    overflow-y: auto;\n    padding: 14px;\n    border: 1px solid rgba(34, 211, 238, 0.3);\n    border-radius: 8px;\n    background: rgba(15, 23, 32, 0.92);\n}\n\n.cut-explanation-heading {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 10px;\n    margin-bottom: 8px;\n}\n\n.cut-explanation-heading strong {\n    color: var(--cyan);\n}\n\n#cut-explanation-.eos-body p {\n    margin: 10px 0 0;\n    color: #c9d6e2;\n    font-size: 0.84rem;\n    line-height: 1.5;\n}\n\n.cut-explanation-grid {\n    display: grid;\n    grid-template-columns: repeat(4, minmax(0, 1fr));\n    gap: 8px;\n    margin: 10px 0;\n}\n\n.cut-explanation-grid div {\n    padding: 9px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: #0b121a;\n}\n\n.cut-explanation-grid span,\n.cut-explanation-grid strong {\n    display: block;\n}\n\n.cut-explanation-grid span {\n    color: var(--muted);\n    font-size: 0.7rem;\n    font-weight: 900;\n    text-transform: uppercase;\n}\n\n.cut-explanation-grid strong {\n    margin-top: 5px;\n    color: var(--cyan);\n    font-size: 1.1rem;\n}\n\n.cut-metric-grid {\n    display: grid;\n    grid-template-columns: repeat(4, minmax(0, 1fr));\n    gap: 12px;\n}\n\n.cut-metric-card {\n    min-height: 116px;\n    padding: 14px;\n    border: 1px solid var(--line);\n    border-left-width: 4px;\n    border-radius: 8px;\n    background: linear-gradient(180deg, #182331, #121a23);\n}\n\n.cut-metric-card i {\n    margin-bottom: 14px;\n    font-size: 1.2rem;\n}\n\n.cut-metric-card strong {\n    display: block;\n    margin-top: 8px;\n    font-size: 1.9rem;\n    line-height: 1;\n}\n\n.cut-metric-card.red {\n    border-left-color: var(--red);\n}\n\n.cut-metric-card.red i,\n.cut-metric-card.red strong {\n    color: var(--red);\n}\n\n.cut-metric-card.orange {\n    border-left-color: var(--primary-color);\n}\n\n.cut-metric-card.orange i,\n.cut-metric-card.orange strong {\n    color: var(--primary-2);\n}\n\n.cut-metric-card.cyan {\n    border-left-color: var(--cyan);\n}\n\n.cut-metric-card.cyan i,\n.cut-metric-card.cyan strong {\n    color: var(--cyan);\n}\n\n.cut-metric-card.green {\n    border-left-color: var(--green);\n}\n\n.cut-metric-card.green i,\n.cut-metric-card.green strong {\n    color: var(--green);\n}\n\n.cut-toolbar {\n    display: grid;\n    grid-template-columns: minmax(280px, 1fr) auto auto;\n    align-items: center;\n    gap: 10px;\n    margin: 16px 0 12px;\n}\n\n.cut-search-box {\n    display: flex;\n    align-items: center;\n    gap: 10px;\n    min-height: 42px;\n    padding: 0 12px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-3);\n    color: var(--muted);\n}\n\n.cut-search-box input {\n    width: 100%;\n    border: 0;\n    outline: 0;\n    background: transparent;\n    color: var(--text-color);\n}\n\n.cut-table-wrap {\n    overflow: auto;\n    flex: 1 1 auto;\n    min-height: 260px;\n    max-height: calc(100vh - 430px);\n    border: 1px solid var(--line);\n    border-radius: 8px;\n}\n\n.cut-table {\n    width: 100%;\n    min-width: 1120px;\n    border-collapse: collapse;\n}\n\n.cut-table th,\n.cut-table td {\n    padding: 12px 13px;\n    border-bottom: 1px solid var(--line);\n    text-align: left;\n    vertical-align: middle;\n}\n\n.cut-table th {\n    position: sticky;\n    top: 0;\n    z-index: 2;\n    background: #1d2a38;\n    color: var(--primary-2);\n    font-size: 0.74rem;\n    font-weight: 900;\n    letter-spacing: 0.05em;\n    text-transform: uppercase;\n}\n\n.cut-table tbody tr {\n    background: rgba(15, 23, 32, 0.72);\n}\n\n.cut-table tbody tr:hover {\n    background: rgba(255, 255, 255, 0.04);\n}\n\n.cut-table td strong,\n.cut-table td span {\n    display: block;\n}\n\n.cut-table td span {\n    margin-top: 3px;\n    color: var(--muted);\n    font-size: 0.76rem;\n}\n\n.cut-rank {\n    display: inline-grid !important;\n    place-items: center;\n    width: 30px;\n    height: 30px;\n    border-radius: 999px;\n    background: #263444;\n    color: var(--text-color) !important;\n    font-weight: 900;\n}\n\n.cut-table tr.risk-high {\n    box-shadow: inset 4px 0 0 var(--red);\n}\n\n.cut-table tr.risk-soon {\n    box-shadow: inset 4px 0 0 var(--primary-color);\n}\n\n.cut-type-pill,\n.cut-source {\n    display: inline-flex !important;\n    align-items: center;\n    justify-content: center;\n    width: fit-content;\n    min-height: 26px;\n    padding: 4px 8px;\n    border-radius: 999px;\n    font-size: 0.72rem !important;\n    font-weight: 900;\n}\n\n.cut-type-pill.vendor,\n.cut-type-pill.live {\n    background: rgba(255, 153, 0, 0.14);\n    color: var(--primary-2) !important;\n}\n\n.cut-type-pill.transship {\n    background: rgba(34, 211, 238, 0.12);\n    color: var(--cyan) !important;\n}\n\n.cut-type-pill.parcel {\n    background: rgba(167, 139, 250, 0.15);\n    color: var(--violet) !important;\n}\n\n.cut-type-pill.other {\n    background: rgba(148, 163, 184, 0.14);\n    color: var(--muted) !important;\n}\n\n.cut-source.good {\n    background: rgba(34, 197, 94, 0.13);\n    color: var(--green) !important;\n}\n\n.cut-source.warn {\n    background: rgba(255, 153, 0, 0.13);\n    color: var(--primary-2) !important;\n}\n\n.cut-action-card {\n    display: flex;\n    gap: 12px;\n    margin-bottom: 12px;\n    padding: 12px;\n    border: 1px solid var(--line);\n    border-radius: 8px;\n    background: var(--panel-2);\n}\n\n.cut-action-card i {\n    margin-top: 2px;\n    color: var(--cyan);\n}\n\n.cut-action-card strong,\n.cut-action-card span {\n    display: block;\n}\n\n.cut-action-card span {\n    margin-top: 4px;\n}\n\n.cut-action-card.urgent {\n    border-color: rgba(251, 113, 133, 0.38);\n    background: rgba(251, 113, 133, 0.1);\n}\n\n.cut-action-card.urgent i {\n    color: var(--red);\n}\n\n.hub-grid textarea {\n    min-height: 250px;\n    padding: 10px;\n    font-family: Consolas, \"Courier New\", monospace;\n    resize: vertical;\n}\n\n.modal-actions {\n    display: flex;\n    justify-content: flex-end;\n    gap: 10px;\n    margin-top: 20px;\n}\n\n#scan-overlay {\n    position: fixed;\n    inset: 0;\n    z-index: 9999;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    padding: 28px;\n    background: rgba(245, 247, 250, 0.98);\n}\n\n.scan-content {\n    width: min(900px, 100%);\n    color: #1f2937;\n    text-align: center;\n}\n\n.scan-content h2 {\n    margin-bottom: 10px;\n    font-size: 1.35rem;\n}\n\n.scan-content p {\n    color: #5b6572;\n}\n\n.giant-barcode-wrapper {\n    margin: 30px auto;\n    padding: 20px;\n    border: 2px dashed #cbd5e1;\n    border-radius: 8px;\n    background: #ffffff;\n    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);\n}\n\n#giant-barcode {\n    width: 100%;\n    height: auto;\n    max-height: 400px;\n}\n\n.scan-controls {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    gap: 24px;\n}\n\n#scan-progress {\n    min-width: 90px;\n    color: #1f2937;\n    font-size: 1.1rem;\n    font-weight: 900;\n}\n\n.nav-btn {\n    background: #1f2937;\n    color: #ffffff;\n}\n\n.close-overlay {\n    position: absolute;\n    top: 20px;\n    right: 20px;\n    background: #ef4444;\n    color: #ffffff;\n}\n\nfooter {\n    padding: 12px 18px 16px;\n    color: rgba(238, 244, 248, 0.42);\n    font-size: 0.78rem;\n    text-align: center;\n}\n\n@media print {\n    .eos-body * {\n        visibility: hidden;\n    }\n\n    #printable-area,\n    #printable-area * {\n        visibility: visible;\n    }\n\n    #printable-area {\n        position: absolute;\n        top: 0;\n        left: 0;\n        width: 100%;\n        margin: 0;\n        padding: 20px;\n        background: #ffffff !important;\n        color: #000000 !important;\n    }\n\n    .barcode-wrapper {\n        display: inline-block;\n        width: 30%;\n        margin-bottom: 30px;\n        border: 0;\n        text-align: center;\n        page-break-inside: avoid;\n    }\n}\n\n@media (max-width: 1240px) {\n    .console-grid {\n        grid-template-columns: minmax(260px, var(--side-column)) minmax(0, 1fr);\n    }\n\n    .cut-shell {\n        grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);\n    }\n\n    .priority-panel {\n        grid-column: 1 / -1;\n    }\n\n    .priority-stack {\n        grid-template-columns: repeat(2, minmax(0, 1fr));\n    }\n\n    .parcel-grid {\n        grid-template-columns: repeat(3, minmax(0, 1fr));\n    }\n}\n\n@media (max-width: 940px) {\n    .app-header,\n    #action-panel {\n        align-items: stretch;\n        flex-direction: column;\n    }\n\n    .user-info,\n    .status-actions {\n        flex-wrap: wrap;\n    }\n\n    .console-grid,\n    .tool-split,\n    .hub-grid,\n    .cut-shell,\n    .cut-viewbar,\n    .cut-toolbar,\n    .cut-calc-grid,\n    .cut-calc-grid.count-grid,\n    .cut-forecast-grid {\n        grid-template-columns: 1fr;\n    }\n\n    .cut-viewbar-actions,\n    .cut-calculator-header,\n    .cut-calculator-actions {\n        flex-wrap: wrap;\n    }\n\n    .cut-panel {\n        max-height: none;\n        overflow: visible;\n    }\n\n    .cut-table-wrap {\n        max-height: 62vh;\n    }\n\n    .metrics-grid,\n    .parcel-grid,\n    .priority-stack,\n    .cut-metric-grid {\n        grid-template-columns: repeat(2, minmax(0, 1fr));\n    }\n}\n\n@media (max-width: 620px) {\n    main {\n        padding-inline: 14px;\n    }\n\n    .app-header {\n        padding-inline: 14px;\n    }\n\n    .upload-card,\n    .metrics-grid,\n    .parcel-grid,\n    .priority-stack,\n    .barcode-controls,\n    .cut-metric-grid,\n    .cut-forecast-grid,\n    .cut-explanation-grid {\n        grid-template-columns: 1fr;\n    }\n\n    .file-card-actions {\n        flex-direction: column;\n    }\n\n    .status-actions,\n    .tool-actions,\n    .modal-actions,\n    .scan-controls,\n    .cut-viewbar-actions {\n        align-items: stretch;\n        flex-direction: column;\n    }\n\n    .browse-btn,\n    .btn-warning,\n    .nav-btn {\n        width: 100%;\n    }\n}\n";
+    const icons = {"arrow-left":{"width":448,"height":512,"path":"M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.2 288 416 288c17.7 0 32-14.3 32-32s-14.3-32-32-32l-306.7 0L214.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"},"barcode":{"width":512,"height":512,"path":"M24 32C10.7 32 0 42.7 0 56V456c0 13.3 10.7 24 24 24H40c13.3 0 24-10.7 24-24V56c0-13.3-10.7-24-24-24H24zm88 0c-8.8 0-16 7.2-16 16V464c0 8.8 7.2 16 16 16s16-7.2 16-16V48c0-8.8-7.2-16-16-16zm72 0c-13.3 0-24 10.7-24 24V456c0 13.3 10.7 24 24 24h16c13.3 0 24-10.7 24-24V56c0-13.3-10.7-24-24-24H184zm96 0c-13.3 0-24 10.7-24 24V456c0 13.3 10.7 24 24 24h16c13.3 0 24-10.7 24-24V56c0-13.3-10.7-24-24-24H280zM448 56V456c0 13.3 10.7 24 24 24h16c13.3 0 24-10.7 24-24V56c0-13.3-10.7-24-24-24H472c-13.3 0-24 10.7-24 24zm-64-8V464c0 8.8 7.2 16 16 16s16-7.2 16-16V48c0-8.8-7.2-16-16-16s-16 7.2-16 16z"},"box-open":{"width":640,"height":512,"path":"M58.9 42.1c3-6.1 9.6-9.6 16.3-8.7L320 64 564.8 33.4c6.7-.8 13.3 2.7 16.3 8.7l41.7 83.4c9 17.9-.6 39.6-19.8 45.1L439.6 217.3c-13.9 4-28.8-1.9-36.2-14.3L320 64 236.6 203c-7.4 12.4-22.3 18.3-36.2 14.3L37.1 170.6c-19.3-5.5-28.8-27.2-19.8-45.1L58.9 42.1zM321.1 128l54.9 91.4c14.9 24.8 44.6 36.6 72.5 28.6L576 211.6v167c0 22-15 41.2-36.4 46.6l-204.1 51c-10.2 2.6-20.9 2.6-31 0l-204.1-51C79 419.7 64 400.5 64 378.5v-167L191.6 248c27.8 8 57.6-3.8 72.5-28.6L318.9 128h2.2z"},"boxes":{"width":576,"height":512,"path":"M248 0H208c-26.5 0-48 21.5-48 48V160c0 35.3 28.7 64 64 64H352c35.3 0 64-28.7 64-64V48c0-26.5-21.5-48-48-48H328V80c0 8.8-7.2 16-16 16H264c-8.8 0-16-7.2-16-16V0zM64 256c-35.3 0-64 28.7-64 64V448c0 35.3 28.7 64 64 64H224c35.3 0 64-28.7 64-64V320c0-35.3-28.7-64-64-64H184v80c0 8.8-7.2 16-16 16H120c-8.8 0-16-7.2-16-16V256H64zM352 512H512c35.3 0 64-28.7 64-64V320c0-35.3-28.7-64-64-64H472v80c0 8.8-7.2 16-16 16H408c-8.8 0-16-7.2-16-16V256H352c-15 0-28.8 5.1-39.7 13.8c4.9 10.4 7.7 22 7.7 34.2V464c0 12.2-2.8 23.8-7.7 34.2C323.2 506.9 337 512 352 512z"},"calculator":{"width":384,"height":512,"path":"M64 0C28.7 0 0 28.7 0 64V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V64c0-35.3-28.7-64-64-64H64zM96 64H288c17.7 0 32 14.3 32 32v32c0 17.7-14.3 32-32 32H96c-17.7 0-32-14.3-32-32V96c0-17.7 14.3-32 32-32zm32 160a32 32 0 1 1 -64 0 32 32 0 1 1 64 0zM96 352a32 32 0 1 1 0-64 32 32 0 1 1 0 64zM64 416c0-17.7 14.3-32 32-32h96c17.7 0 32 14.3 32 32s-14.3 32-32 32H96c-17.7 0-32-14.3-32-32zM192 256a32 32 0 1 1 0-64 32 32 0 1 1 0 64zm32 64a32 32 0 1 1 -64 0 32 32 0 1 1 64 0zm64-64a32 32 0 1 1 0-64 32 32 0 1 1 0 64zm32 64a32 32 0 1 1 -64 0 32 32 0 1 1 64 0zM288 448a32 32 0 1 1 0-64 32 32 0 1 1 0 64z"},"chevron-left":{"width":320,"height":512,"path":"M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l192 192c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256 246.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-192 192z"},"chevron-right":{"width":320,"height":512,"path":"M310.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L242.7 256 73.4 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"},"check-circle":{"width":512,"height":512,"path":"M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z"},"circle-info":{"width":512,"height":512,"path":"M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"},"info-circle":{"width":512,"height":512,"path":"M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"},"circle-question":{"width":512,"height":512,"path":"M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM169.8 165.3c7.9-22.3 29.1-37.3 52.8-37.3h58.3c34.9 0 63.1 28.3 63.1 63.1c0 22.6-12.1 43.5-31.7 54.8L280 264.4c-.2 13-10.9 23.6-24 23.6c-13.3 0-24-10.7-24-24V250.5c0-8.6 4.6-16.5 12.1-20.8l44.3-25.4c4.7-2.7 7.6-7.7 7.6-13.1c0-8.4-6.8-15.1-15.1-15.1H222.6c-3.4 0-6.4 2.1-7.5 5.3l-.4 1.2c-4.4 12.5-18.2 19-30.6 14.6s-19-18.2-14.6-30.6l.4-1.2zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z"},"times-circle":{"width":512,"height":512,"path":"M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z"},"clock":{"width":512,"height":512,"path":"M256 0a256 256 0 1 1 0 512A256 256 0 1 1 256 0zM232 120V256c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2V120c0-13.3-10.7-24-24-24s-24 10.7-24 24z"},"copy":{"width":448,"height":512,"path":"M208 0H332.1c12.7 0 24.9 5.1 33.9 14.1l67.9 67.9c9 9 14.1 21.2 14.1 33.9V336c0 26.5-21.5 48-48 48H208c-26.5 0-48-21.5-48-48V48c0-26.5 21.5-48 48-48zM48 128h80v64H64V448H256V416h64v48c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V176c0-26.5 21.5-48 48-48z"},"database":{"width":448,"height":512,"path":"M448 80v48c0 44.2-100.3 80-224 80S0 172.2 0 128V80C0 35.8 100.3 0 224 0S448 35.8 448 80zM393.2 214.7c20.8-7.4 39.9-16.9 54.8-28.6V288c0 44.2-100.3 80-224 80S0 332.2 0 288V186.1c14.9 11.8 34 21.2 54.8 28.6C99.7 230.7 159.5 240 224 240s124.3-9.3 169.2-25.3zM0 346.1c14.9 11.8 34 21.2 54.8 28.6C99.7 390.7 159.5 400 224 400s124.3-9.3 169.2-25.3c20.8-7.4 39.9-16.9 54.8-28.6V432c0 44.2-100.3 80-224 80S0 476.2 0 432V346.1z"},"door-open":{"width":576,"height":512,"path":"M320 32c0-9.9-4.5-19.2-12.3-25.2S289.8-1.4 280.2 1l-179.9 45C79 51.3 64 70.5 64 92.5V448H32c-17.7 0-32 14.3-32 32s14.3 32 32 32H96 288h32V480 32zM256 256c0 17.7-10.7 32-24 32s-24-14.3-24-32s10.7-32 24-32s24 14.3 24 32zm96-128h96V480c0 17.7 14.3 32 32 32h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H512V128c0-35.3-28.7-64-64-64H352v64z"},"expand":{"width":448,"height":512,"path":"M32 32C14.3 32 0 46.3 0 64v96c0 17.7 14.3 32 32 32s32-14.3 32-32V96h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H32zM64 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7 14.3 32 32 32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H64V352zM320 32c-17.7 0-32 14.3-32 32s14.3 32 32 32h64v64c0 17.7 14.3 32 32 32s32-14.3 32-32V64c0-17.7-14.3-32-32-32H320zM448 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v64H320c-17.7 0-32 14.3-32 32s14.3 32 32 32h96c17.7 0 32-14.3 32-32V352z"},"file-csv":{"width":512,"height":512,"path":"M0 64C0 28.7 28.7 0 64 0H224V128c0 17.7 14.3 32 32 32H384V304H176c-35.3 0-64 28.7-64 64V512H64c-35.3 0-64-28.7-64-64V64zm384 64H256V0L384 128zM200 352h16c22.1 0 40 17.9 40 40v8c0 8.8-7.2 16-16 16s-16-7.2-16-16v-8c0-4.4-3.6-8-8-8H200c-4.4 0-8 3.6-8 8v80c0 4.4 3.6 8 8 8h16c4.4 0 8-3.6 8-8v-8c0-8.8 7.2-16 16-16s16 7.2 16 16v8c0 22.1-17.9 40-40 40H200c-22.1 0-40-17.9-40-40V392c0-22.1 17.9-40 40-40zm133.1 0H368c8.8 0 16 7.2 16 16s-7.2 16-16 16H333.1c-7.2 0-13.1 5.9-13.1 13.1c0 5.2 3 9.9 7.8 12l37.4 16.6c16.3 7.2 26.8 23.4 26.8 41.2c0 24.9-20.2 45.1-45.1 45.1H304c-8.8 0-16-7.2-16-16s7.2-16 16-16h42.9c7.2 0 13.1-5.9 13.1-13.1c0-5.2-3-9.9-7.8-12l-37.4-16.6c-16.3-7.2-26.8-23.4-26.8-41.2c0-24.9 20.2-45.1 45.1-45.1zm98.9 0c8.8 0 16 7.2 16 16v31.6c0 23 5.5 45.6 16 66c10.5-20.3 16-42.9 16-66V368c0-8.8 7.2-16 16-16s16 7.2 16 16v31.6c0 34.7-10.3 68.7-29.6 97.6l-5.1 7.7c-3 4.5-8 7.1-13.3 7.1s-10.3-2.7-13.3-7.1l-5.1-7.7c-19.3-28.9-29.6-62.9-29.6-97.6V368c0-8.8 7.2-16 16-16z"},"file-export":{"width":576,"height":512,"path":"M0 64C0 28.7 28.7 0 64 0H224V128c0 17.7 14.3 32 32 32H384V288H216c-13.3 0-24 10.7-24 24s10.7 24 24 24H384V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V64zM384 336V288H494.1l-39-39c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l80 80c9.4 9.4 9.4 24.6 0 33.9l-80 80c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l39-39H384zm0-208H256V0L384 128z"},"fire":{"width":448,"height":512,"path":"M159.3 5.4c7.8-7.3 19.9-7.2 27.7 .1c27.6 25.9 53.5 53.8 77.7 84c11-14.4 23.5-30.1 37-42.9c7.9-7.4 20.1-7.4 28 .1c34.6 33 63.9 76.6 84.5 118c20.3 40.8 33.8 82.5 33.8 111.9C448 404.2 348.2 512 224 512C98.4 512 0 404.1 0 276.5c0-38.4 17.8-85.3 45.4-131.7C73.3 97.7 112.7 48.6 159.3 5.4zM225.7 416c25.3 0 47.7-7 68.8-21c42.1-29.4 53.4-88.2 28.1-134.4c-4.5-9-16-9.6-22.5-2l-25.2 29.3c-6.6 7.6-18.5 7.4-24.7-.5c-16.5-21-46-58.5-62.8-79.8c-6.3-8-18.3-8.1-24.7-.1c-33.8 42.5-50.8 69.3-50.8 99.4C112 375.4 162.6 416 225.7 416z"},"hand-pointer":{"width":448,"height":512,"path":"M128 40c0-22.1 17.9-40 40-40s40 17.9 40 40V188.2c8.5-7.6 19.7-12.2 32-12.2c20.6 0 38.2 13 45 31.2c8.8-9.3 21.2-15.2 35-15.2c25.3 0 46 19.5 47.9 44.3c8.5-7.7 19.8-12.3 32.1-12.3c26.5 0 48 21.5 48 48v48 16 48c0 70.7-57.3 128-128 128l-16 0H240l-.1 0h-5.2c-5 0-9.9-.3-14.7-1c-55.3-5.6-106.2-34-140-79L8 336c-13.3-17.7-9.7-42.7 8-56s42.7-9.7 56 8l56 74.7V40zM240 304c0-8.8-7.2-16-16-16s-16 7.2-16 16v96c0 8.8 7.2 16 16 16s16-7.2 16-16V304zm48-16c-8.8 0-16 7.2-16 16v96c0 8.8 7.2 16 16 16s16-7.2 16-16V304c0-8.8-7.2-16-16-16zm80 16c0-8.8-7.2-16-16-16s-16 7.2-16 16v96c0 8.8 7.2 16 16 16s16-7.2 16-16V304z"},"handshake":{"width":640,"height":512,"path":"M323.4 85.2l-96.8 78.4c-16.1 13-19.2 36.4-7 53.1c12.9 17.8 38 21.3 55.3 7.8l99.3-77.2c7-5.4 17-4.2 22.5 2.8s4.2 17-2.8 22.5l-20.9 16.2L512 316.8V128h-.7l-3.9-2.5L434.8 79c-15.3-9.8-33.2-15-51.4-15c-21.8 0-43 7.5-60 21.2zm22.8 124.4l-51.7 40.2C263 274.4 217.3 268 193.7 235.6c-22.2-30.5-16.6-73.1 12.7-96.8l83.2-67.3c-11.6-4.9-24.1-7.4-36.8-7.4C234 64 215.7 69.6 200 80l-72 48V352h28.2l91.4 83.4c19.6 17.9 49.9 16.5 67.8-3.1c5.5-6.1 9.2-13.2 11.1-20.6l17 15.6c19.5 17.9 49.9 16.6 67.8-2.9c4.5-4.9 7.8-10.6 9.9-16.5c19.4 13 45.8 10.3 62.1-7.5c17.9-19.5 16.6-49.9-2.9-67.8l-134.2-123zM16 128c-8.8 0-16 7.2-16 16V352c0 17.7 14.3 32 32 32H64c17.7 0 32-14.3 32-32V128H16zM48 320a16 16 0 1 1 0 32 16 16 0 1 1 0-32zM544 128V352c0 17.7 14.3 32 32 32h32c17.7 0 32-14.3 32-32V144c0-8.8-7.2-16-16-16H544zm32 208a16 16 0 1 1 32 0 16 16 0 1 1 -32 0z"},"hourglass-half":{"width":384,"height":512,"path":"M32 0C14.3 0 0 14.3 0 32S14.3 64 32 64V75c0 42.4 16.9 83.1 46.9 113.1L146.7 256 78.9 323.9C48.9 353.9 32 394.6 32 437v11c-17.7 0-32 14.3-32 32s14.3 32 32 32H64 320h32c17.7 0 32-14.3 32-32s-14.3-32-32-32V437c0-42.4-16.9-83.1-46.9-113.1L237.3 256l67.9-67.9c30-30 46.9-70.7 46.9-113.1V64c17.7 0 32-14.3 32-32s-14.3-32-32-32H320 64 32zM96 75V64H288V75c0 19-5.6 37.4-16 53H112c-10.3-15.6-16-34-16-53zm16 309c3.5-5.3 7.6-10.3 12.1-14.9L192 301.3l67.9 67.9c4.6 4.6 8.6 9.6 12.1 14.9H112z"},"id-badge":{"width":384,"height":512,"path":"M64 0C28.7 0 0 28.7 0 64V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V64c0-35.3-28.7-64-64-64H64zm96 320h64c44.2 0 80 35.8 80 80c0 8.8-7.2 16-16 16H96c-8.8 0-16-7.2-16-16c0-44.2 35.8-80 80-80zm-32-96a64 64 0 1 1 128 0 64 64 0 1 1 -128 0zM144 64h96c8.8 0 16 7.2 16 16s-7.2 16-16 16H144c-8.8 0-16-7.2-16-16s7.2-16 16-16z"},"keyboard":{"width":576,"height":512,"path":"M64 64C28.7 64 0 92.7 0 128V384c0 35.3 28.7 64 64 64H512c35.3 0 64-28.7 64-64V128c0-35.3-28.7-64-64-64H64zm16 64h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16H80c-8.8 0-16-7.2-16-16V144c0-8.8 7.2-16 16-16zM64 240c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16H80c-8.8 0-16-7.2-16-16V240zm16 80h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16H80c-8.8 0-16-7.2-16-16V336c0-8.8 7.2-16 16-16zm80-176c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16H176c-8.8 0-16-7.2-16-16V144zm16 80h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16H176c-8.8 0-16-7.2-16-16V240c0-8.8 7.2-16 16-16zM160 336c0-8.8 7.2-16 16-16H400c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16H176c-8.8 0-16-7.2-16-16V336zM272 128h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16H272c-8.8 0-16-7.2-16-16V144c0-8.8 7.2-16 16-16zM256 240c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16H272c-8.8 0-16-7.2-16-16V240zM368 128h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16H368c-8.8 0-16-7.2-16-16V144c0-8.8 7.2-16 16-16zM352 240c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16H368c-8.8 0-16-7.2-16-16V240zM464 128h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16H464c-8.8 0-16-7.2-16-16V144c0-8.8 7.2-16 16-16zM448 240c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16H464c-8.8 0-16-7.2-16-16V240zm16 80h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16H464c-8.8 0-16-7.2-16-16V336c0-8.8 7.2-16 16-16z"},"laptop-code":{"width":640,"height":512,"path":"M64 96c0-35.3 28.7-64 64-64H512c35.3 0 64 28.7 64 64V352H512V96H128V352H64V96zM0 403.2C0 392.6 8.6 384 19.2 384H620.8c10.6 0 19.2 8.6 19.2 19.2c0 42.4-34.4 76.8-76.8 76.8H76.8C34.4 480 0 445.6 0 403.2zM281 209l-31 31 31 31c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-48-48c-9.4-9.4-9.4-24.6 0-33.9l48-48c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9zM393 175l48 48c9.4 9.4 9.4 24.6 0 33.9l-48 48c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l31-31-31-31c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0z"},"list":{"width":512,"height":512,"path":"M40 48C26.7 48 16 58.7 16 72v48c0 13.3 10.7 24 24 24H88c13.3 0 24-10.7 24-24V72c0-13.3-10.7-24-24-24H40zM192 64c-17.7 0-32 14.3-32 32s14.3 32 32 32H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H192zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H192zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H192zM16 232v48c0 13.3 10.7 24 24 24H88c13.3 0 24-10.7 24-24V232c0-13.3-10.7-24-24-24H40c-13.3 0-24 10.7-24 24zM40 368c-13.3 0-24 10.7-24 24v48c0 13.3 10.7 24 24 24H88c13.3 0 24-10.7 24-24V392c0-13.3-10.7-24-24-24H40z"},"search":{"width":512,"height":512,"path":"M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"},"search-plus":{"width":512,"height":512,"path":"M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM184 296c0 13.3 10.7 24 24 24s24-10.7 24-24V232h64c13.3 0 24-10.7 24-24s-10.7-24-24-24H232V120c0-13.3-10.7-24-24-24s-24 10.7-24 24v64H120c-13.3 0-24 10.7-24 24s10.7 24 24 24h64v64z"},"network-wired":{"width":640,"height":512,"path":"M256 64H384v64H256V64zM240 0c-26.5 0-48 21.5-48 48v96c0 26.5 21.5 48 48 48h48v32H32c-17.7 0-32 14.3-32 32s14.3 32 32 32h96v32H80c-26.5 0-48 21.5-48 48v96c0 26.5 21.5 48 48 48H240c26.5 0 48-21.5 48-48V368c0-26.5-21.5-48-48-48H192V288H448v32H400c-26.5 0-48 21.5-48 48v96c0 26.5 21.5 48 48 48H560c26.5 0 48-21.5 48-48V368c0-26.5-21.5-48-48-48H512V288h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H352V192h48c26.5 0 48-21.5 48-48V48c0-26.5-21.5-48-48-48H240zM96 448V384H224v64H96zm320-64H544v64H416V384z"},"pallet":{"width":640,"height":512,"path":"M32 320c-17.7 0-32 14.3-32 32s14.3 32 32 32H64v64H32c-17.7 0-32 14.3-32 32s14.3 32 32 32H96 320 544h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H576V384h32c17.7 0 32-14.3 32-32s-14.3-32-32-32H544 320 96 32zm96 64H288v64H128V384zm224 0H512v64H352V384z"},"plug-circle-bolt":{"width":576,"height":512,"path":"M96 0C78.3 0 64 14.3 64 32v96h64V32c0-17.7-14.3-32-32-32zM288 0c-17.7 0-32 14.3-32 32v96h64V32c0-17.7-14.3-32-32-32zM32 160c-17.7 0-32 14.3-32 32s14.3 32 32 32v32c0 77.4 55 142 128 156.8V480c0 17.7 14.3 32 32 32s32-14.3 32-32V412.8c12.3-2.5 24.1-6.4 35.1-11.5c-2.1-10.8-3.1-21.9-3.1-33.3c0-80.3 53.8-148 127.3-169.2c.5-2.2 .7-4.5 .7-6.8c0-17.7-14.3-32-32-32H32zM432 512a144 144 0 1 0 0-288 144 144 0 1 0 0 288zm47.9-225c4.3 3.7 5.4 9.9 2.6 14.9L452.4 356H488c5.2 0 9.8 3.3 11.4 8.2s-.1 10.3-4.2 13.4l-96 72c-4.5 3.4-10.8 3.2-15.1-.6s-5.4-9.9-2.6-14.9L411.6 380H376c-5.2 0-9.8-3.3-11.4-8.2s.1-10.3 4.2-13.4l96-72c4.5-3.4 10.8-3.2 15.1 .6z"},"print":{"width":512,"height":512,"path":"M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zM432 248a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"},"question":{"width":320,"height":512,"path":"M80 160c0-35.3 28.7-64 64-64h32c35.3 0 64 28.7 64 64v3.6c0 21.8-11.1 42.1-29.4 53.8l-42.2 27.1c-25.2 16.2-40.4 44.1-40.4 74V320c0 17.7 14.3 32 32 32s32-14.3 32-32v-1.4c0-8.2 4.2-15.8 11-20.2l42.2-27.1c36.6-23.6 58.8-64.1 58.8-107.7V160c0-70.7-57.3-128-128-128H144C73.3 32 16 89.3 16 160c0 17.7 14.3 32 32 32s32-14.3 32-32zm80 320a40 40 0 1 0 0-80 40 40 0 1 0 0 80z"},"exchange-alt":{"width":512,"height":512,"path":"M32 96l320 0V32c0-12.9 7.8-24.6 19.8-29.6s25.7-2.2 34.9 6.9l96 96c6 6 9.4 14.1 9.4 22.6s-3.4 16.6-9.4 22.6l-96 96c-9.2 9.2-22.9 11.9-34.9 6.9s-19.8-16.6-19.8-29.6V160L32 160c-17.7 0-32-14.3-32-32s14.3-32 32-32zM480 352c17.7 0 32 14.3 32 32s-14.3 32-32 32H160v64c0 12.9-7.8 24.6-19.8 29.6s-25.7 2.2-34.9-6.9l-96-96c-6-6-9.4-14.1-9.4-22.6s3.4-16.6 9.4-22.6l96-96c9.2-9.2 22.9-11.9 34.9-6.9s19.8 16.6 19.8 29.6l0 64H480z"},"rotate":{"width":512,"height":512,"path":"M142.9 142.9c62.2-62.2 162.7-62.5 225.3-1L327 183c-6.9 6.9-8.9 17.2-5.2 26.2s12.5 14.8 22.2 14.8H463.5c0 0 0 0 0 0H472c13.3 0 24-10.7 24-24V72c0-9.7-5.8-18.5-14.8-22.2s-19.3-1.7-26.2 5.2L413.4 96.6c-87.6-86.5-228.7-86.2-315.8 1C73.2 122 55.6 150.7 44.8 181.4c-5.9 16.7 2.9 34.9 19.5 40.8s34.9-2.9 40.8-19.5c7.7-21.8 20.2-42.3 37.8-59.8zM16 312v7.6 .7V440c0 9.7 5.8 18.5 14.8 22.2s19.3 1.7 26.2-5.2l41.6-41.6c87.6 86.5 228.7 86.2 315.8-1c24.4-24.4 42.1-53.1 52.9-83.7c5.9-16.7-2.9-34.9-19.5-40.8s-34.9 2.9-40.8 19.5c-7.7 21.8-20.2 42.3-37.8 59.8c-62.2 62.2-162.7 62.5-225.3 1L185 329c6.9-6.9 8.9-17.2 5.2-26.2s-12.5-14.8-22.2-14.8H48.4h-.7H40c-13.3 0-24 10.7-24 24z"},"sync-alt":{"width":512,"height":512,"path":"M142.9 142.9c62.2-62.2 162.7-62.5 225.3-1L327 183c-6.9 6.9-8.9 17.2-5.2 26.2s12.5 14.8 22.2 14.8H463.5c0 0 0 0 0 0H472c13.3 0 24-10.7 24-24V72c0-9.7-5.8-18.5-14.8-22.2s-19.3-1.7-26.2 5.2L413.4 96.6c-87.6-86.5-228.7-86.2-315.8 1C73.2 122 55.6 150.7 44.8 181.4c-5.9 16.7 2.9 34.9 19.5 40.8s34.9-2.9 40.8-19.5c7.7-21.8 20.2-42.3 37.8-59.8zM16 312v7.6 .7V440c0 9.7 5.8 18.5 14.8 22.2s19.3 1.7 26.2-5.2l41.6-41.6c87.6 86.5 228.7 86.2 315.8-1c24.4-24.4 42.1-53.1 52.9-83.7c5.9-16.7-2.9-34.9-19.5-40.8s-34.9 2.9-40.8 19.5c-7.7 21.8-20.2 42.3-37.8 59.8c-62.2 62.2-162.7 62.5-225.3 1L185 329c6.9-6.9 8.9-17.2 5.2-26.2s-12.5-14.8-22.2-14.8H48.4h-.7H40c-13.3 0-24 10.7-24 24z"},"ruler-combined":{"width":512,"height":512,"path":"M.2 468.9C2.7 493.1 23.1 512 48 512l96 0 320 0c26.5 0 48-21.5 48-48l0-96c0-26.5-21.5-48-48-48l-48 0 0 80c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-80-64 0 0 80c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-80-64 0 0 80c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-80-80 0c-8.8 0-16-7.2-16-16s7.2-16 16-16l80 0 0-64-80 0c-8.8 0-16-7.2-16-16s7.2-16 16-16l80 0 0-64-80 0c-8.8 0-16-7.2-16-16s7.2-16 16-16l80 0 0-48c0-26.5-21.5-48-48-48L48 0C21.5 0 0 21.5 0 48L0 368l0 96c0 1.7 .1 3.3 .2 4.9z"},"sort":{"width":320,"height":512,"path":"M137.4 41.4c12.5-12.5 32.8-12.5 45.3 0l128 128c9.2 9.2 11.9 22.9 6.9 34.9s-16.6 19.8-29.6 19.8H32c-12.9 0-24.6-7.8-29.6-19.8s-2.2-25.7 6.9-34.9l128-128zm0 429.3l-128-128c-9.2-9.2-11.9-22.9-6.9-34.9s16.6-19.8 29.6-19.8H288c12.9 0 24.6 7.8 29.6 19.8s2.2 25.7-6.9 34.9l-128 128c-12.5 12.5-32.8 12.5-45.3 0z"},"parking":{"width":448,"height":512,"path":"M64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64zM192 256h48c17.7 0 32-14.3 32-32s-14.3-32-32-32H192v64zm48 64H192v32c0 17.7-14.3 32-32 32s-32-14.3-32-32V288 168c0-22.1 17.9-40 40-40h72c53 0 96 43 96 96s-43 96-96 96z"},"trash":{"width":448,"height":512,"path":"M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"},"triangle-exclamation":{"width":512,"height":512,"path":"M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z"},"exclamation-triangle":{"width":512,"height":512,"path":"M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z"},"shipping-fast":{"width":640,"height":512,"path":"M112 0C85.5 0 64 21.5 64 48V96H16c-8.8 0-16 7.2-16 16s7.2 16 16 16H64 272c8.8 0 16 7.2 16 16s-7.2 16-16 16H64 48c-8.8 0-16 7.2-16 16s7.2 16 16 16H64 240c8.8 0 16 7.2 16 16s-7.2 16-16 16H64 16c-8.8 0-16 7.2-16 16s7.2 16 16 16H64 208c8.8 0 16 7.2 16 16s-7.2 16-16 16H64V416c0 53 43 96 96 96s96-43 96-96H384c0 53 43 96 96 96s96-43 96-96h32c17.7 0 32-14.3 32-32s-14.3-32-32-32V288 256 237.3c0-17-6.7-33.3-18.7-45.3L512 114.7c-12-12-28.3-18.7-45.3-18.7H416V48c0-26.5-21.5-48-48-48H112zM544 237.3V256H416V160h50.7L544 237.3zM160 368a48 48 0 1 1 0 96 48 48 0 1 1 0-96zm272 48a48 48 0 1 1 96 0 48 48 0 1 1 -96 0z"},"truck-ramp-box":{"width":640,"height":512,"path":"M640 0V400c0 61.9-50.1 112-112 112c-61 0-110.5-48.7-112-109.3L48.4 502.9c-17.1 4.6-34.6-5.4-39.3-22.5s5.4-34.6 22.5-39.3L352 353.8V64c0-35.3 28.7-64 64-64H640zM576 400a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM23.1 207.7c-4.6-17.1 5.6-34.6 22.6-39.2l46.4-12.4 20.7 77.3c2.3 8.5 11.1 13.6 19.6 11.3l30.9-8.3c8.5-2.3 13.6-11.1 11.3-19.6l-20.7-77.3 46.4-12.4c17.1-4.6 34.6 5.6 39.2 22.6l41.4 154.5c4.6 17.1-5.6 34.6-22.6 39.2L103.7 384.9c-17.1 4.6-34.6-5.6-39.2-22.6L23.1 207.7z"},"truck-loading":{"width":640,"height":512,"path":"M640 0V400c0 61.9-50.1 112-112 112c-61 0-110.5-48.7-112-109.3L48.4 502.9c-17.1 4.6-34.6-5.4-39.3-22.5s5.4-34.6 22.5-39.3L352 353.8V64c0-35.3 28.7-64 64-64H640zM576 400a48 48 0 1 0 -96 0 48 48 0 1 0 96 0zM23.1 207.7c-4.6-17.1 5.6-34.6 22.6-39.2l46.4-12.4 20.7 77.3c2.3 8.5 11.1 13.6 19.6 11.3l30.9-8.3c8.5-2.3 13.6-11.1 11.3-19.6l-20.7-77.3 46.4-12.4c17.1-4.6 34.6 5.6 39.2 22.6l41.4 154.5c4.6 17.1-5.6 34.6-22.6 39.2L103.7 384.9c-17.1 4.6-34.6-5.6-39.2-22.6L23.1 207.7z"},"user-clock":{"width":640,"height":512,"path":"M224 0a128 128 0 1 1 0 256A128 128 0 1 1 224 0zM178.3 304h91.4c20.6 0 40.4 3.5 58.8 9.9C323 331 320 349.1 320 368c0 59.5 29.5 112.1 74.8 144H29.7C13.3 512 0 498.7 0 482.3C0 383.8 79.8 304 178.3 304zM352 368a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-80c-8.8 0-16 7.2-16 16v64c0 8.8 7.2 16 16 16h48c8.8 0 16-7.2 16-16s-7.2-16-16-16H512V304c0-8.8-7.2-16-16-16z"},"wand-magic-sparkles":{"width":576,"height":512,"path":"M234.7 42.7L197 56.8c-3 1.1-5 4-5 7.2s2 6.1 5 7.2l37.7 14.1L248.8 123c1.1 3 4 5 7.2 5s6.1-2 7.2-5l14.1-37.7L315 71.2c3-1.1 5-4 5-7.2s-2-6.1-5-7.2L277.3 42.7 263.2 5c-1.1-3-4-5-7.2-5s-6.1 2-7.2 5L234.7 42.7zM46.1 395.4c-18.7 18.7-18.7 49.1 0 67.9l34.6 34.6c18.7 18.7 49.1 18.7 67.9 0L529.9 116.5c18.7-18.7 18.7-49.1 0-67.9L495.3 14.1c-18.7-18.7-49.1-18.7-67.9 0L46.1 395.4zM484.6 82.6l-105 105-23.3-23.3 105-105 23.3 23.3zM7.5 117.2C3 118.9 0 123.2 0 128s3 9.1 7.5 10.8L64 160l21.2 56.5c1.7 4.5 6 7.5 10.8 7.5s9.1-3 10.8-7.5L128 160l56.5-21.2c4.5-1.7 7.5-6 7.5-10.8s-3-9.1-7.5-10.8L128 96 106.8 39.5C105.1 35 100.8 32 96 32s-9.1 3-10.8 7.5L64 96 7.5 117.2zm352 256c-4.5 1.7-7.5 6-7.5 10.8s3 9.1 7.5 10.8L416 416l21.2 56.5c1.7 4.5 6 7.5 10.8 7.5s9.1-3 10.8-7.5L480 416l56.5-21.2c4.5-1.7 7.5-6 7.5-10.8s-3-9.1-7.5-10.8L480 352l-21.2-56.5c-1.7-4.5-6-7.5-10.8-7.5s-9.1 3-10.8 7.5L416 352l-56.5 21.2z"},"xmark":{"width":384,"height":512,"path":"M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"}};
     const storageKey = 'gyr2-eos-browser-test-v1';
-    let frame;
-    let container;
-    let channel;
-    let values = {};
-    let storageError = '';
-    try {
-        const stored = typeof GM_getValue === 'function' ? GM_getValue(storageKey, '{}') : localStorage.getItem(storageKey);
-        values = JSON.parse(stored || '{}');
-        if (!values || typeof values !== 'object' || Array.isArray(values)) throw new Error('Invalid stored memory');
-    } catch (error) {
-        values = {};
-        storageError = 'Saved browser memory could not be loaded: ' + error.message;
+    let overlay;
+
+    function installEosIcons(root, document, icons) {
+    function update(node) {
+        const elements = [];
+        if (node.nodeType === 1 && node.matches('i.fas, i.far, i.fa')) elements.push(node);
+        if (node.querySelectorAll) elements.push(...node.querySelectorAll('i.fas, i.far, i.fa'));
+        for (const element of elements) {
+            const name = [...element.classList].map(value => value.replace(/^fa-/, '')).find(value => icons[value]);
+            if (!name || element.dataset.eosIcon === name && element.firstChild) continue;
+            const icon = icons[name];
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', `0 0 ${icon.width} ${icon.height}`);
+            svg.setAttribute('width', '1em');
+            svg.setAttribute('height', '1em');
+            svg.setAttribute('fill', 'currentColor');
+            svg.setAttribute('aria-hidden', 'true');
+            for (const shape of Array.isArray(icon.path) ? icon.path : [icon.path]) {
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', shape);
+                svg.appendChild(path);
+            }
+            element.replaceChildren(svg);
+            element.dataset.eosIcon = name;
+        }
+    }
+    update(root);
+    const observer = new MutationObserver(records => {
+        for (const record of records) {
+            if (record.type === 'attributes') update(record.target);
+            else record.addedNodes.forEach(update);
+        }
+    });
+    observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    return observer;
+}
+
+    // Builds only EOS's controlled templates through DOM APIs. No HTML/script injection sinks.
+function replaceEosMarkup(target, markup) {
+    const document = target.ownerDocument;
+    const fragment = document.createDocumentFragment();
+    const stack = [fragment];
+    const tags = new Set('div span p strong b small header footer main section aside article h1 h2 h3 h4 label button input textarea select option optgroup table thead tbody tr td th i fieldset legend br hr ul ol li pre dialog svg'.split(' '));
+    const voidTags = new Set(['input', 'br', 'hr']);
+    const entities = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: '\u00a0', times: '\u00d7' };
+    const decode = value => value.replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (original, code) => {
+        if (code[0] !== '#') return entities[code.toLowerCase()] ?? original;
+        const number = code[1].toLowerCase() === 'x' ? parseInt(code.slice(2), 16) : Number(code.slice(1));
+        return number > 0 && number <= 0x10ffff ? String.fromCodePoint(number) : '\ufffd';
+    });
+    const tokens = String(markup).match(/<!--[\s\S]*?-->|<\/?[a-z][\w:-]*(?:"[^"]*"|'[^']*'|[^'">])*\/?>|[^<]+|</gi) || [];
+    for (const token of tokens) {
+        if (token.startsWith('<!--')) continue;
+        const tag = token.match(/^<(\/?)([a-z][\w:-]*)\b/i);
+        if (!tag) { stack[stack.length - 1].appendChild(document.createTextNode(decode(token))); continue; }
+        const name = tag[2].toLowerCase();
+        if (!tags.has(name)) throw new Error(`Unsupported EOS template tag: ${name}`);
+        if (tag[1]) {
+            if (stack.length < 2 || stack[stack.length - 1].localName !== name) throw new Error(`Unbalanced EOS template: ${name}`);
+            stack.pop();
+            continue;
+        }
+        const element = name === 'svg' ? document.createElementNS('http://www.w3.org/2000/svg', name) : document.createElement(name);
+        const attributes = token.slice(tag[0].length).replace(/\/?\s*>$/, '');
+        for (const match of attributes.matchAll(/([^\s=/'">]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+)))?/g)) {
+            const key = match[1].toLowerCase();
+            const value = decode(match[2] ?? match[3] ?? match[4] ?? '');
+            if (/^on/.test(key) || ['src', 'srcdoc', 'href', 'action', 'formaction', 'is'].includes(key)) throw new Error(`Unsupported EOS template attribute: ${key}`);
+            if (key === 'style') element.style.cssText = value;
+            else element.setAttribute(key, value);
+        }
+        stack[stack.length - 1].appendChild(element);
+        if (!voidTags.has(name) && !/\/\s*>$/.test(token)) stack.push(element);
+    }
+    if (stack.length !== 1) throw new Error('Unclosed EOS template tag');
+    target.replaceChildren(fragment);
+}
+
+
+    function runApp(window, document, parent, sessionStorage) {
+        (function () {
+    'use strict';
+    const boot = window.__EOS_BOOT__;
+    const values = { ...boot.values };
+    const files = new Map();
+    const pending = new Map();
+    let sequence = 0;
+    const send = (action, extra = {}) => parent.postMessage({ eosChannel: boot.channel, action, ...extra }, '*');
+
+    window.eosStorage = {
+        getItem: key => Object.prototype.hasOwnProperty.call(values, key) ? values[key] : null,
+        setItem(key, value) {
+            values[key] = String(value);
+            send('storage', { key, value: String(value) });
+        },
+        removeItem(key) { delete values[key]; send('storage', { key, value: null }); }
+    };
+
+    function warning(message) {
+        let box = document.getElementById('browser-warning');
+        if (!box) {
+            box = document.createElement('div');
+            box.id = 'browser-warning';
+            box.style.cssText = 'position:fixed;bottom:12px;left:12px;right:12px;z-index:99999;background:#fff4d6;color:#392700;border:2px solid #e9ae32;padding:12px;white-space:pre-wrap';
+            document.body.appendChild(box);
+        }
+        box.textContent = message;
+        box.onclick = () => box.remove();
+    }
+    window.addEventListener('message', event => {
+        if (event.source !== parent || event.data?.eosChannel !== boot.channel) return;
+        if (event.data.action === 'warning') warning(event.data.message);
+        const resolve = pending.get(event.data.id);
+        if (resolve) { pending.delete(event.data.id); resolve(event.data); }
+    });
+
+    function download(content, name) {
+        const url = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = name;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
     }
 
-    const reply = data => frame?.contentWindow.postMessage({ eosChannel: channel, ...data }, '*');
-    window.addEventListener('message', async event => {
-        if (!frame || event.source !== frame.contentWindow || event.data?.eosChannel !== channel) return;
-        const data = event.data;
-        if (data.action === 'ready' && storageError) reply({ action: 'warning', message: storageError });
-        if (data.action === 'storage' && typeof data.key === 'string') {
-            if (data.value === null) delete values[data.key];
-            else Object.defineProperty(values, data.key, { value: String(data.value), enumerable: true, configurable: true, writable: true });
-            try {
-                if (typeof GM_setValue === 'function') GM_setValue(storageKey, JSON.stringify(values));
-                else localStorage.setItem(storageKey, JSON.stringify(values));
-            } catch (error) {
-                reply({ action: 'warning', message: 'Memory could not be saved. Keep this page open until you finish EOS. ' + error.message });
+    window.api = {
+        openFile: () => new Promise(resolve => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.csv,text/csv';
+            input.hidden = true;
+            input.dataset.eosFilePicker = 'true';
+            const finish = file => {
+                input.remove();
+                if (!file) return resolve(null);
+                const key = `/browser-${++sequence}/${file.name}`;
+                files.set(key, file);
+                resolve(key);
+            };
+            input.onchange = () => finish(input.files[0]);
+            input.oncancel = () => finish(null);
+            document.body.appendChild(input);
+            input.click();
+        }),
+        readCsvFile: async key => {
+            const file = files.get(key);
+            if (!file) throw new Error('Please select the CSV again.');
+            try { return await file.text(); } finally { files.delete(key); }
+        },
+        saveCsv: async content => {
+            download(content, 'Verified_EOS_Report.csv');
+            return true;
+        },
+        writeToClipboard: async text => {
+            const id = ++sequence;
+            const result = await new Promise(resolve => {
+                pending.set(id, resolve);
+                send('clipboard', { id, text: String(text) });
+                setTimeout(() => {
+                    if (pending.delete(id)) resolve({ ok: false });
+                }, 5000);
+            });
+            if (!result.ok) {
+                const dialog = document.createElement('dialog');
+                dialog.style.cssText = 'width:min(650px,90vw);padding:20px';
+                replaceEosMarkup(dialog, '<p>Automatic copy was unavailable. Select this text and press Ctrl+C.</p><textarea style="width:100%;height:280px"></textarea><button>Close</button>');
+                dialog.querySelector('textarea').value = text;
+                dialog.querySelector('button').onclick = () => dialog.remove();
+                document.body.appendChild(dialog);
+                dialog.showModal();
+                dialog.querySelector('textarea').select();
             }
+        },
+        getAppVersion: async () => boot.version + ' Browser Test',
+        getDisplayMetrics: async () => ({ workAreaSize: { width: screen.availWidth, height: screen.availHeight }, scaleFactor: devicePixelRatio }),
+        onDisplayMetricsChanged: callback => {
+            const listener = async () => callback(await window.api.getDisplayMetrics());
+            window.addEventListener('resize', listener);
+            return () => window.removeEventListener('resize', listener);
         }
-        if (data.action === 'clipboard') {
-            let ok = false;
-            try {
-                if (typeof GM_setClipboard === 'function') { GM_setClipboard(data.text, 'text'); ok = true; }
-                else if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(data.text); ok = true; }
-            } catch (_) { /* The in-app manual copy dialog handles browser restrictions. */ }
-            reply({ id: data.id, ok });
+    };
+    window.addEventListener('unhandledrejection', event => warning(`Browser test error: ${event.reason?.message || event.reason}`));
+    window.addEventListener('error', event => {
+        if (event.message) warning(`Browser test error: ${event.message}`);
+    });
+    window.addEventListener('DOMContentLoaded', () => {
+        const apiButton = document.getElementById('fc-api-submit-btn');
+        if (apiButton) {
+            apiButton.disabled = true;
+            apiButton.textContent = 'Unavailable in browser test';
+        }
+        const introduction = document.querySelector('#fc-api-modal .modal-intro');
+        if (introduction) introduction.textContent = 'This test supports CSV-based EOS. The desktop FC API connection is not included.';
+        const footer = document.querySelector('footer');
+        if (footer) footer.textContent = 'Browser test | CSV workflow | Memory is separate from the desktop app';
+        send('ready');
+    });
+})();
+
+// database.js - The Memory System
+
+const DB_KEY = 'gyr2_trailer_memory';
+const OCULUS_DB_KEY = 'gyr2_oculus_memory';
+const MEMORY_LIMIT_HOURS = 96;
+
+function loadDatabase() {
+    const raw = window.eosStorage.getItem(DB_KEY);
+    return raw ? JSON.parse(raw) : {};
+}
+
+function saveDatabase(db) {
+    window.eosStorage.setItem(DB_KEY, JSON.stringify(db));
+}
+
+function loadOculusMemory() {
+    const raw = window.eosStorage.getItem(OCULUS_DB_KEY);
+    return raw ? JSON.parse(raw) : { byIsa: {}, uploadedAt: null, counts: { vendor: 0, transship: 0 } };
+}
+
+function saveOculusMemory(records, counts) {
+    const db = {
+        byIsa: records || {},
+        uploadedAt: Date.now(),
+        counts: counts || { vendor: 0, transship: 0 }
+    };
+
+    window.eosStorage.setItem(OCULUS_DB_KEY, JSON.stringify(db));
+    return db;
+}
+
+function clearOculusMemory() {
+    window.eosStorage.removeItem(OCULUS_DB_KEY);
+}
+
+function recallOculusTrailer(isa) {
+    const db = loadOculusMemory();
+    const record = db.byIsa?.[isa];
+    if (!record) return null;
+
+    const now = Date.now();
+    const limitMS = MEMORY_LIMIT_HOURS * 60 * 60 * 1000;
+    if (db.uploadedAt && now - db.uploadedAt > limitMS) {
+        window.eosStorage.removeItem(OCULUS_DB_KEY);
+        console.log("Oculus memory expired and was cleared.");
+        return null;
+    }
+
+    return record;
+}
+
+function purgeOldRecords() {
+    const db = loadDatabase();
+    const now = Date.now();
+    const limitMS = MEMORY_LIMIT_HOURS * 60 * 60 * 1000;
+    let deletedCount = 0;
+
+    Object.keys(db).forEach(isa => {
+        if (now - db[isa].timestamp > limitMS) {
+            delete db[isa];
+            deletedCount++;
         }
     });
 
-    function open() {
-        if (container) { container.style.display = 'flex'; return; }
-        channel = Array.from(crypto.getRandomValues(new Uint32Array(4)), value => value.toString(16)).join('-');
-        container = document.createElement('div');
-        container.style.cssText = 'position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;background:#0b121a';
-        const bar = document.createElement('div');
-        bar.style.cssText = 'display:flex;gap:16px;align-items:center;padding:6px 12px;background:#13303b;color:white;font:13px sans-serif;flex-shrink:0';
-        const label = document.createElement('span');
-        label.textContent = 'EOS browser test | Your desktop data is separate | Close hides EOS; refreshing clears loaded CSVs';
-        const close = document.createElement('button');
-        close.textContent = 'Close EOS';
-        close.style.cssText = 'margin-left:auto;padding:5px 12px;cursor:pointer';
-        close.onclick = () => { container.style.display = 'none'; };
-        bar.append(label, close);
-        frame = document.createElement('iframe');
-        frame.title = 'EOS browser test';
-        frame.setAttribute('sandbox', 'allow-scripts allow-forms allow-modals allow-downloads');
-        frame.style.cssText = 'width:100%;min-height:0;flex:1;border:0;background:#0b121a';
-        const bootstrap = JSON.stringify({ channel, values, version: appVersion }).replace(/</g, '\\u003c');
-        frame.srcdoc = appHtml.replace('/*EOS_BOOTSTRAP*/', `window.__EOS_BOOT__ = ${bootstrap};`);
-        container.append(bar, frame);
-        document.body.appendChild(container);
+    saveDatabase(db);
+    if (deletedCount > 0) console.log(`Cleaned up ${deletedCount} old records from memory.`);
+}
+
+function rememberTrailer(isa, vrid, category, units, notes) {
+    const db = loadDatabase();
+    db[isa] = {
+        vrid,
+        category,
+        units: parseInt(units, 10) || 0,
+        notes,
+        timestamp: Date.now(),
+    };
+    saveDatabase(db);
+}
+
+function recallTrailer(isa, currentVrid) {
+    const db = loadDatabase();
+    const record = db[isa];
+
+    if (!record) return null;
+
+    if (record.vrid !== currentVrid) {
+        console.log(`Memory mismatch for ${isa}: old VRID ${record.vrid} vs new ${currentVrid}`);
+        return null;
     }
 
-    const launch = document.createElement('button');
-    launch.textContent = 'Open EOS';
-    launch.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:2147483646;padding:14px 22px;border:1px solid #ffc36b;border-radius:8px;background:#ffad32;color:#172332;font:bold 16px sans-serif;cursor:pointer';
-    launch.onclick = open;
-    document.body.appendChild(launch);
-    if (typeof GM_info === 'undefined') open();
+    return record;
+}
+
+purgeOldRecords();
+
+﻿// =========================================================================
+// 1. Dependencies & Global State
+// =========================================================================
+let ymsFilePath = null;
+let dockdashFilePath = null;
+let ymsData = []; 
+let dockdashData = []; 
+
+// =========================================================================
+// 0. Monitor-Aware UI Scaling
+// =========================================================================
+const BASE_DISPLAY_SIZE = { width: 1440, height: 900 };
+
+let currentDisplayMetrics = null;
+
+function clampNumber(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+}
+
+function applyResponsiveScale(metrics = currentDisplayMetrics) {
+    const root = document.documentElement;
+    const displaySize = metrics?.workAreaSize || {
+        width: window.innerWidth,
+        height: window.innerHeight,
+    };
+
+    const displayScale = Math.min(
+        displaySize.width / BASE_DISPLAY_SIZE.width,
+        displaySize.height / BASE_DISPLAY_SIZE.height
+    );
+    const viewportScale = Math.min(window.innerWidth / 1280, window.innerHeight / 760);
+    const appScale = clampNumber(Math.min(displayScale, viewportScale), 0.82, 1.16);
+    const layoutWidth = clampNumber(Math.round(displaySize.width * 0.94), 1040, 1720);
+
+    root.style.setProperty('--app-scale', appScale.toFixed(3));
+    root.style.setProperty('--app-max-width', `${layoutWidth}px`);
+    root.classList.toggle('compact-display', appScale < 0.92);
+    root.classList.toggle('wide-display', appScale > 1.06);
+}
+
+function setupMonitorAwareScaling() {
+    applyResponsiveScale();
+    window.addEventListener('resize', () => applyResponsiveScale());
+
+    if (!window.api?.getDisplayMetrics) return;
+
+    window.api.getDisplayMetrics()
+        .then(metrics => {
+            currentDisplayMetrics = metrics;
+            applyResponsiveScale(metrics);
+        })
+        .catch(() => applyResponsiveScale());
+
+    if (window.api.onDisplayMetricsChanged) {
+        window.api.onDisplayMetricsChanged(metrics => {
+            currentDisplayMetrics = metrics;
+            applyResponsiveScale(metrics);
+        });
+    }
+}
+
+function isMemoryBypassEnabled() { return false; }
+
+// --- NEW: HUB DATA STORAGE ---
+let hubData = {
+    vendorDock: {},
+    vendorYard: {},
+    transshipDock: {},
+    transshipYard: {}
+};
+let pendingOculusUploads = {
+    vendor: null,
+    transship: null
+};
+let gapFillerData = { byIsa: {}, byVrid: {} }; 
+let lastProcessedStats = {}; 
+let fcApiTrailerLookup = {};
+
+const FC_API_ENDPOINT_KEY = 'gyr2_fc_ids_api_endpoint';
+const FC_API_WAREHOUSE_KEY = 'gyr2_fc_ids_warehouse_id';
+const FC_API_AUTH_SESSION_KEY = 'gyr2_fc_ids_auth_token';
+
+// Helper to normalize strings
+function normalize(val) { 
+    let str = String(val || "").trim().toUpperCase();
+    if (str.startsWith('"') && str.endsWith('"')) str = str.slice(1, -1).trim();
+    if (str.includes("E+") && !isNaN(parseFloat(str))) {
+        let num = parseFloat(str);
+        if (num > 1e10) return String(Math.round(num)); 
+    }
+    return str;
+}
+
+function parseHours(str) { return parseFloat(String(str || "").toLowerCase().replace("hrs", "").trim()) || 0; }
+
+function getField(record, keyName) {
+    if (!record) return undefined;
+    const normalizedKey = keyName.toUpperCase().trim();
+    const actualKey = Object.keys(record).find(k => k.trim().toUpperCase() === normalizedKey);
+    return actualKey ? record[actualKey] : undefined;
+}
+
+function escapeHtmlAttr(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+const PARCEL_CARRIERS = ['UPSS', 'UPSN', 'FDEG', 'FED EX', 'FEDEX', 'DHLC'];
+
+function isParcelCarrier(carrier) {
+    const normalizedCarrier = normalize(carrier).replace(/\s+/g, ' ');
+    const compactCarrier = normalizedCarrier.replace(/\s+/g, '');
+
+    return PARCEL_CARRIERS.some(code => {
+        const normalizedCode = normalize(code).replace(/\s+/g, ' ');
+        const compactCode = normalizedCode.replace(/\s+/g, '');
+
+        return normalizedCarrier.includes(normalizedCode) || compactCarrier.includes(compactCode);
+    });
+}
+
+function isLiveDropCarrier(carrier) {
+    const normalizedCarrier = normalize(carrier);
+    const compactCarrier = normalizedCarrier.replace(/\s+/g, '');
+
+    return normalizedCarrier === "ATSB" || compactCarrier.includes("ATSB");
+}
+
+function isClampLoadNote(notes) {
+    return normalize(notes).includes("CLAMP");
+}
+
+function isDoorLocation(location) {
+    return normalize(location).startsWith("DD");
+}
+
+function isYardLocation(location) {
+    return normalize(location).startsWith("PS");
+}
+
+function categoryAllowsLocation(category, location) {
+    if (['dropPallets', 'dropFloor', 'parcelsYard', 'transshipYard', 'azngOver72'].includes(category)) {
+        return isYardLocation(location);
+    }
+
+    if (['parcelsDock', 'livesHanded'].includes(category)) {
+        return isDoorLocation(location);
+    }
+
+    return true;
+}
+
+const DISRUPTION_NOTE_TERMS = [
+    "DAMAGED",
+    "DAMAGE",
+    "RED TAG",
+    "RED TAGGED",
+    "REDTAG",
+    "BAD TRAILER",
+    "BAD ORDER",
+    "UNUSABLE",
+    "DO NOT USE",
+    "DONT USE",
+    "OUT OF SERVICE",
+    "OOS",
+    "BROKEN",
+    "NOT USABLE",
+    "CAN'T USE",
+    "CANNOT USE",
+    "CAN NOT USE",
+    "UNSAFE",
+    "UNSAFE TO UNLOAD",
+    "UNSAFE TO LOAD",
+    "DO NOT LOAD",
+    "DONT LOAD",
+    "DO NOT UNLOAD",
+    "DONT UNLOAD",
+    "CANNOT UNLOAD",
+    "CAN NOT UNLOAD",
+    "CAN'T UNLOAD",
+    "CANNOT LOAD",
+    "CAN NOT LOAD",
+    "CAN'T LOAD",
+    "NEEDS REPAIR",
+    "NEED REPAIR",
+    "REPAIR NEEDED",
+    "TRAILER REPAIR",
+    "MECHANICAL ISSUE",
+    "MECHANICAL",
+    "FLAT TIRE",
+    "TIRE ISSUE",
+    "NO BRAKES",
+    "BRAKE ISSUE",
+    "AIR LEAK",
+    "LEAKING",
+    "HOLE IN",
+    "DOOR BROKEN",
+    "DOOR ISSUE"
+];
+
+const DISRUPTION_NOTE_PATTERNS = [
+    /\bCASE\s*(#|:)?\s*\d{6,}\b/,
+    /\bUNSAFE\b.*\b(LOAD|UNLOAD|USE|TRAILER)\b/,
+    /\b(DO NOT|DONT|DON'T|CANNOT|CAN NOT|CAN'T)\b.*\b(LOAD|UNLOAD|USE)\b/,
+    /\b(LOAD|UNLOAD|USE)\b.*\b(UNSAFE|DAMAGED|BROKEN)\b/,
+    /\b(NEED|NEEDS|REQUIRES?)\b.*\b(REPAIR|FIX|MAINTENANCE)\b/,
+    /\b(RED|ORANGE)\b.*\bTAG(GED)?\b/,
+    /\bOUT\b.*\bSERVICE\b/
+];
+
+const PROBLEM_SOLVE_NOTE_PATTERNS = [
+    /\bPROBLEM\s*SOLVE\b/,
+    /\bPROBLEM\s*SOLV(E|ING)\b/,
+    /\bPS\s*TRAILER\b/
+];
+
+const FREIGHT_DISRUPTION_PATTERNS = [
+    /\bREJECT(?:ED|ING|ION|IONS|S)?\b/,
+    /\bMISS?\s*SHIP(?:S|PED|PING|MENT|MENTS)?\b/,
+    /\b(?:NO|WITHOUT|MISSING|AWAITING|PENDING)\s+(?:(?:A|THE|AVAILABLE|VALID)\s+)?MANI(?:FEST(?:S|ED)?)?\b/,
+    /\bMANI(?:FEST)?\s+(?:(?:IS|WAS|STILL)\s+)?(?:MISSING|UNAVAILABLE|PENDING|NOT\s+(?:FOUND|AVAILABLE|RECEIVED|ATTACHED|PROVIDED))\b/,
+    /\b(?:UNMANIFESTED|NOT\s+MANIFESTED)\b/
+];
+
+function hasFreightDisruptionNote(notes) {
+    const text = normalize(notes).replace(/[-_\u2010-\u2015]+/g, ' ').replace(/\s+/g, ' ');
+    return FREIGHT_DISRUPTION_PATTERNS.some(pattern => {
+        for (const match of text.matchAll(new RegExp(pattern.source, 'g'))) {
+            // A clerk explicitly saying "not rejected" or "no misships" is not a disruption.
+            const before = text.slice(0, match.index);
+            if (!/\b(?:(?:NOT|NEVER|NO|WITHOUT)\s+(?:BEEN\s+)?|NO\s+LONGER\s+)$/.test(before)) return true;
+        }
+        return false;
+    });
+}
+
+function isParcelCategory(category) {
+    return category === 'parcelsDock' || category === 'parcelsYard';
+}
+
+function isProblemSolveNote(normalizedNotes) {
+    return PROBLEM_SOLVE_NOTE_PATTERNS.some(pattern => pattern.test(normalizedNotes));
+}
+
+function isDisruptionNote(notes, category = "") {
+    const normalizedNotes = normalize(notes);
+    const hasDisruptionSignal = DISRUPTION_NOTE_TERMS.some(term => normalizedNotes.includes(term)) ||
+        DISRUPTION_NOTE_PATTERNS.some(pattern => pattern.test(normalizedNotes));
+
+    if (hasDisruptionSignal || hasFreightDisruptionNote(notes)) return true;
+
+    return isProblemSolveNote(normalizedNotes) && !isParcelCategory(category);
+}
+
+function createDisruptionBuckets() {
+    return {
+        dropPallets: [],
+        dropFloor: [],
+        parcelsDock: [],
+        parcelsYard: [],
+        transshipYard: [],
+        azngOver72: [],
+        livesHanded: []
+    };
+}
+
+function getDisruptionCount(stats, category) {
+    return stats.disruptions?.[category]?.length || 0;
+}
+
+function formatCountWithDisruptions(count, disruptions) {
+    return disruptions > 0 ? `${count} + ${disruptions} DISRUPTIONS` : count;
+}
+
+function formatMetricWithDisruptions(stats, category) {
+    return formatCountWithDisruptions(stats[category].length, getDisruptionCount(stats, category));
+}
+
+function addCategorizedRecord(stats, category, record) {
+    if (!Array.isArray(stats[category])) return;
+
+    if (isDisruptionNote(record.notes, category)) {
+        stats.disruptions[category].push(record);
+    } else {
+        stats[category].push(record);
+    }
+}
+
+function formatLivesValue(stats) {
+    const liveDropCount = stats.liveDrops ? stats.liveDrops.length : 0;
+    const trueLiveCount = Math.max(stats.livesHanded.length - liveDropCount, 0);
+    const liveValue = liveDropCount > 0 ?
+        `${trueLiveCount} (${liveDropCount} live/drops)` :
+        String(stats.livesHanded.length);
+
+    return formatCountWithDisruptions(liveValue, getDisruptionCount(stats, 'livesHanded'));
+}
+
+function inferYmsOnlyCategory(ymsInfo) {
+    const notes = normalize(ymsInfo.notes);
+
+    if (notes.includes("IBTRANS")) {
+        if (isYardLocation(ymsInfo.location)) {
+            return { category: 'transshipYard', confidence: 'MEDIUM', reason: 'IBTRANS in notes, PS location' };
+        }
+
+        if (isDoorLocation(ymsInfo.location)) {
+            return { category: null, confidence: 'IGNORE', reason: 'IBTRANS already on DD; units unknown' };
+        }
+    }
+
+    if (notes.includes("PARCEL")) {
+        if (isDoorLocation(ymsInfo.location)) {
+            return { category: 'parcelsDock', confidence: 'MEDIUM', reason: 'PARCEL in notes, DD location' };
+        }
+
+        if (isYardLocation(ymsInfo.location)) {
+            return { category: 'parcelsYard', confidence: 'MEDIUM', reason: 'PARCEL in notes, PS location' };
+        }
+    }
+
+    return null;
+}
+
+function resolveOculusCategory(oculusRecord, ymsInfo) {
+    const loc = normalize(ymsInfo.location);
+    const sourceType = normalize(oculusRecord.sourceType);
+    const isParcel = isParcelCarrier(ymsInfo.carrier);
+    const isLive = normalize(ymsInfo.loadType) === "LIVE";
+
+    if (sourceType === "TRANSSHIP") {
+        if (isYardLocation(loc)) return 'transshipYard';
+        if (isDoorLocation(loc)) return 'volumeDoors';
+        return null;
+    }
+
+    if (isParcel) {
+        if (isDoorLocation(loc)) return 'parcelsDock';
+        if (isYardLocation(loc)) return 'parcelsYard';
+        return null;
+    }
+
+    if (isLive && isDoorLocation(loc)) return 'livesHanded';
+    if (isDoorLocation(loc)) return 'volumeDoors';
+    if (isYardLocation(loc)) return (oculusRecord.pallets > 0 || isClampLoadNote(ymsInfo.notes)) ? 'dropPallets' : 'dropFloor';
+
+    return null;
+}
+
+function normalizeFcApiTrailer(record) {
+    const isa = normalize(record?.isa || record?.ISA);
+    if (!isa) return null;
+
+    return {
+        isa,
+        warehouseId: normalize(record.warehouseId),
+        location: normalize(record.locationCode || record.location || record.LOCATION),
+        updatedAt: record.updatedAt || "",
+        priorityLastUpdatedAt: record.priorityLastUpdatedAt || "",
+        appointmentType: normalize(record.appointmentType || record["APPOINTMENT TYPE"]),
+        carrierLoadType: normalize(record.carrierLoadType || record["CARRIER LOAD TYPE"]),
+        dockArrivalTime: record.dockArrivalTime || "",
+        priorityScore: Number(record.priorityScore || 0),
+        pallets: Number(record.pallets || 0),
+        cartons: Number(record.cartons || 0),
+        units: Number(record.units || 0),
+        empty: Boolean(record.empty),
+        raw: record
+    };
+}
+
+function resolveFcApiCategory(apiTrailer) {
+    if (!apiTrailer) return null;
+
+    const loc = normalize(apiTrailer.location);
+    const appt = normalize(apiTrailer.appointmentType);
+    const loadType = normalize(apiTrailer.carrierLoadType);
+
+    if (appt === "TRANSSHIP") {
+        if (isYardLocation(loc)) return 'transshipYard';
+        if (isDoorLocation(loc)) return 'volOnlyDoors';
+    }
+
+    if (appt === "SMALL_PARCEL") {
+        if (isDoorLocation(loc)) return 'parcelsDock';
+        if (isYardLocation(loc)) return 'parcelsYard';
+    }
+
+    if (loadType === "LIVE" && isDoorLocation(loc)) return 'livesHanded';
+    if (isDoorLocation(loc)) return 'volOnlyDoors';
+    if (isYardLocation(loc)) return apiTrailer.pallets > 0 ? 'dropPallets' : 'dropFloor';
+
+    return null;
+}
+
+function parseSpdDate(value) {
+    const raw = String(value || "").trim().replace(/^"|"$/g, '');
+    if (!raw || raw.toLowerCase() === 'undefined') return null;
+
+    const match = raw.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\s+(\d{1,2}):(\d{2})$/);
+    if (!match) return null;
+
+    const month = parseInt(match[1], 10);
+    const day = parseInt(match[2], 10);
+    let year = match[3] ? parseInt(match[3], 10) : new Date().getFullYear();
+    if (year < 100) year += 2000;
+
+    const hour = parseInt(match[4], 10);
+    const minute = parseInt(match[5], 10);
+    const date = new Date(year, month - 1, day, hour, minute);
+
+    return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatSpdDate(date) {
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const year = date.getFullYear();
+    const hour = String(date.getHours()).padStart(2, '0');
+    const minute = String(date.getMinutes()).padStart(2, '0');
+
+    return `${month}/${day}/${year} ${hour}:${minute}`;
+}
+
+function findOldestSpdRecord(records, ymsLookup) {
+    return records
+        .map(record => {
+            const isa = normalize(getField(record, "ISA"));
+            const ymsInfo = ymsLookup[isa];
+            const dockLocation = normalize(getField(record, "LOCATION"));
+            const spdDate = parseSpdDate(getField(record, "SPD"));
+
+            return { isa, dockLocation, ymsInfo, spdDate };
+        })
+        .filter(candidate =>
+            candidate.isa &&
+            candidate.ymsInfo &&
+            candidate.spdDate &&
+            !isDoorLocation(candidate.dockLocation) &&
+            !isDoorLocation(candidate.ymsInfo.location)
+        )
+        .sort((a, b) => a.spdDate - b.spdDate)[0] || null;
+}
+
+function findOldestTrailerInYard(records, ymsLookup) {
+    return records
+        .map(record => {
+            const isa = normalize(getField(record, "ISA"));
+            const ymsInfo = ymsLookup[isa];
+            const dockLocation = normalize(getField(record, "LOCATION"));
+            const dwellHours = parseHours(getField(record, "YARD DWELL"));
+
+            return { isa, dockLocation, ymsInfo, dwellHours };
+        })
+        .filter(candidate =>
+            candidate.isa &&
+            candidate.ymsInfo &&
+            candidate.dwellHours > 0 &&
+            !isDoorLocation(candidate.dockLocation) &&
+            !isDoorLocation(candidate.ymsInfo.location)
+        )
+        .sort((a, b) => b.dwellHours - a.dwellHours)[0] || null;
+}
+
+// =========================================================================
+// 2. Clipboard Logic
+// =========================================================================
+function copyStatsToClipboard(stats) {
+    if (!stats || !stats.dropPallets) return;
+    
+    const totalParcels = stats.parcelsDock.length + stats.parcelsYard.length;
+    const parcelDisruptions = getDisruptionCount(stats, 'parcelsDock') + getDisruptionCount(stats, 'parcelsYard');
+    const livesClipboardValue = formatLivesValue(stats);
+    
+    const oldestSpdIsa = stats.oldestSpd ? stats.oldestSpd.isa : "";
+    const oldestSpdDate = stats.oldestSpd ? stats.oldestSpd.date : "";
+    const oldestTrailerIsa = stats.oldestTrailer ? stats.oldestTrailer.isa : "";
+    const formatVolume = value => Math.round(value || 0).toLocaleString();
+
+    const clipboardString = [
+        oldestSpdIsa,                   // Oldest SPD ISA
+        oldestSpdDate,                  // Oldest SPD Date
+        oldestTrailerIsa,               // Oldest Trailer In Yard ISA
+        "",
+        formatMetricWithDisruptions(stats, 'dropPallets'), // 1. Drop PL
+        formatMetricWithDisruptions(stats, 'dropFloor'),   // 2. Drop FL
+        formatMetricWithDisruptions(stats, 'parcelsDock'), // 3. Parcels Dock
+        formatMetricWithDisruptions(stats, 'parcelsYard'), // 4. Parcels Yard
+        formatCountWithDisruptions(totalParcels, parcelDisruptions), // 5. Total Parcels
+        formatMetricWithDisruptions(stats, 'transshipYard'), // 6. Transship Yard
+        formatMetricWithDisruptions(stats, 'azngOver72'),    // 7. AZNG > 72h
+        "",                             // 8. Space
+        livesClipboardValue,            // 9. Lives Handed
+        "",                             // 10. Space
+        "",                             // 11. Space
+        formatVolume(stats.volumeDoors), // 12. Volume Doors
+        formatVolume(stats.volumeYard)   // 13. Volume Yard
+    ].join('\n');
+
+    window.api.writeToClipboard(clipboardString);
+}
+
+// =========================================================================
+// 3. UI Update Functions 
+// =========================================================================
+function updateMetricsUI(stats) {
+    const updateTile = (id, value, isCritical = false) => {
+        const element = document.getElementById(id);
+        if (element) {
+            const valueElement = element.querySelector('.value'); 
+            if (valueElement) {
+                const formattedValue = value.toLocaleString();
+                valueElement.textContent = formattedValue;
+                valueElement.title = formattedValue;
+                valueElement.classList.toggle('long-value', formattedValue.length >= 6);
+                valueElement.classList.toggle('extra-long-value', formattedValue.length >= 8);
+            }
+            const numericValue = typeof value === 'number' ?
+                value :
+                (String(value).match(/\d+/g) || []).reduce((sum, part) => sum + Number(part), 0);
+            if (isCritical && numericValue > 0) element.classList.add('critical-active');
+            else element.classList.remove('critical-active');
+        }
+    };
+
+    const totalParcels = stats.parcelsDock.length + stats.parcelsYard.length;
+    const parcelDisruptions = getDisruptionCount(stats, 'parcelsDock') + getDisruptionCount(stats, 'parcelsYard');
+
+    updateTile('dropPallets', formatMetricWithDisruptions(stats, 'dropPallets'));
+    updateTile('dropFloor', formatMetricWithDisruptions(stats, 'dropFloor'));
+    updateTile('totalParcels', formatCountWithDisruptions(totalParcels, parcelDisruptions));
+    updateTile('parcelsDock', formatMetricWithDisruptions(stats, 'parcelsDock'));
+    updateTile('parcelsYard', formatMetricWithDisruptions(stats, 'parcelsYard'));
+    updateTile('transshipYard', formatMetricWithDisruptions(stats, 'transshipYard'));
+    updateTile('livesHanded', formatLivesValue(stats));
+    updateTile('azngOver72', formatMetricWithDisruptions(stats, 'azngOver72'), true);
+    updateTile('researchQueue', stats.researchQueue, true); 
+    
+    updateTile('volumeDoors', Math.round(stats.volumeDoors));
+    updateTile('volumeYard', Math.round(stats.volumeYard));
+}
+
+function updateActionPanel(status) {
+    const panel = document.getElementById('action-panel');
+    const message = document.getElementById('action-message');
+    const icon = document.getElementById('action-icon');
+    panel.classList.remove('status-neutral', 'status-critical', 'status-success');
+
+    if (status.reconciled) {
+        const isCritical = status.azngOver72 > 0 || status.researchQueue > 0;
+        panel.classList.add(isCritical ? 'status-critical' : 'status-success');
+        icon.className = isCritical ? 'fas fa-exclamation-triangle' : 'fas fa-check-circle';
+        message.textContent = isCritical ?
+            `CRITICAL: ${status.researchQueue} items need research.` :
+            'SUCCESS: Metrics generated.';
+    } else {
+        panel.classList.add('status-neutral');
+        icon.className = 'fas fa-info-circle';
+        message.textContent = status.message || "Ready.";
+    }
+}
+
+function updateCardStatus(type, text, success) {
+    const card = document.getElementById(`${type}-card`);
+    const status = document.getElementById(`${type}-status`);
+    const icon = card ? card.querySelector('.main-icon') : null;
+
+    if (!card) return;
+
+    card.classList.remove('success', 'error');
+    
+    if (success === true) {
+        card.classList.add('success');
+        if(icon) icon.className = 'fas fa-check-circle main-icon fa-5x';
+    } else if (success === false) {
+        card.classList.add('error');
+        if(icon) icon.className = 'fas fa-times-circle main-icon fa-5x';
+    } else {
+        // Reset to default icons
+        if(icon) {
+            if (type === 'yms') icon.className = 'fas fa-database main-icon fa-5x';
+            else if (type === 'dockdash') icon.className = 'fas fa-file-csv main-icon fa-5x';
+            else if (type === 'gap-filler') icon.className = 'fas fa-network-wired main-icon fa-5x'; // Updated Icon
+        }
+    }
+    if (status) status.textContent = text;
+}
+
+function updateFcApiStatus(message, state = null) {
+    const status = document.getElementById('fc-api-status');
+    const card = document.querySelector('.api-test-card');
+    if (status) status.textContent = message;
+    if (card) {
+        card.classList.remove('success', 'error');
+        if (state) card.classList.add(state);
+    }
+}
+
+function getFcApiConfig() {
+    const savedEndpoint = window.eosStorage.getItem(FC_API_ENDPOINT_KEY) || '';
+    const savedWarehouse = window.eosStorage.getItem(FC_API_WAREHOUSE_KEY) || 'GYR2';
+    const savedAuthToken = sessionStorage.getItem(FC_API_AUTH_SESSION_KEY) || '';
+
+    return new Promise(resolve => {
+        const modal = document.getElementById('fc-api-modal');
+        const endpointInput = document.getElementById('fc-api-endpoint-input');
+        const warehouseInput = document.getElementById('fc-api-warehouse-input');
+        const tokenInput = document.getElementById('fc-api-token-input');
+        const submitBtn = document.getElementById('fc-api-submit-btn');
+        const cancelBtn = document.getElementById('fc-api-cancel-btn');
+
+        if (!modal || !endpointInput || !warehouseInput || !tokenInput || !submitBtn || !cancelBtn) {
+            resolve(null);
+            return;
+        }
+
+        endpointInput.value = savedEndpoint;
+        warehouseInput.value = savedWarehouse;
+        tokenInput.value = savedAuthToken;
+        modal.style.display = 'block';
+        endpointInput.focus();
+
+        const cleanup = () => {
+            modal.style.display = 'none';
+            submitBtn.removeEventListener('click', handleSubmit);
+            cancelBtn.removeEventListener('click', handleCancel);
+            modal.removeEventListener('click', handleBackdrop);
+            document.removeEventListener('keydown', handleKeydown);
+        };
+
+        const handleCancel = () => {
+            cleanup();
+            resolve(null);
+        };
+
+        const handleSubmit = () => {
+            const endpoint = endpointInput.value.trim();
+            const warehouseId = warehouseInput.value.trim().toUpperCase();
+            const authToken = tokenInput.value.trim();
+
+            if (!endpoint || !warehouseId) {
+                updateFcApiStatus('Endpoint and warehouse are required.', 'error');
+                return;
+            }
+
+            window.eosStorage.setItem(FC_API_ENDPOINT_KEY, endpoint);
+            window.eosStorage.setItem(FC_API_WAREHOUSE_KEY, warehouseId);
+            sessionStorage.setItem(FC_API_AUTH_SESSION_KEY, authToken);
+
+            cleanup();
+            resolve({ endpoint, warehouseId, authToken });
+        };
+
+        const handleBackdrop = event => {
+            if (event.target === modal) handleCancel();
+        };
+
+        const handleKeydown = event => {
+            if (event.key === 'Escape') handleCancel();
+            if (event.key === 'Enter' && document.activeElement !== tokenInput) handleSubmit();
+        };
+
+        submitBtn.addEventListener('click', handleSubmit);
+        cancelBtn.addEventListener('click', handleCancel);
+        modal.addEventListener('click', handleBackdrop);
+        document.addEventListener('keydown', handleKeydown);
+    });
+}
+
+async function testFcApiForResearchQueue() {
+    if (!window.api?.getTrailersByFC) {
+        alert('FC API bridge is not available.');
+        return;
+    }
+
+    const config = await getFcApiConfig();
+    if (!config) return;
+
+    updateFcApiStatus('Calling FCInboundDockService...', null);
+
+    try {
+        const result = await window.api.getTrailersByFC(config);
+        const trailers = (result.trailers || [])
+            .map(normalizeFcApiTrailer)
+            .filter(Boolean);
+
+        fcApiTrailerLookup = trailers.reduce((lookup, trailer) => {
+            lookup[trailer.isa] = trailer;
+            return lookup;
+        }, {});
+
+        const researchRecords = lastProcessedStats.researchQueueRecords || [];
+        let matched = 0;
+        let enriched = 0;
+
+        researchRecords.forEach(record => {
+            const apiTrailer = fcApiTrailerLookup[normalize(record.isa)];
+            if (!apiTrailer) return;
+
+            matched += 1;
+            const suggestedCategory = resolveFcApiCategory(apiTrailer);
+            if (suggestedCategory) {
+                record.suggestedCategory = suggestedCategory;
+                record.confidence = 'API';
+            }
+            if (apiTrailer.units > 0) record.suggestedUnits = apiTrailer.units;
+            if (apiTrailer.location) record.location = apiTrailer.location;
+            record.apiMatch = {
+                units: apiTrailer.units,
+                cartons: apiTrailer.cartons,
+                pallets: apiTrailer.pallets,
+                appointmentType: apiTrailer.appointmentType,
+                carrierLoadType: apiTrailer.carrierLoadType,
+                priorityScore: apiTrailer.priorityScore,
+                updatedAt: apiTrailer.updatedAt
+            };
+            record.notes = `FC-IDS ${apiTrailer.appointmentType || 'UNKNOWN'} ${apiTrailer.carrierLoadType || ''} ${record.notes || ''}`.trim();
+            enriched += 1;
+        });
+
+        updateFcApiStatus(`API OK: ${trailers.length} trailers returned, ${matched} Research Queue matches.`, 'success');
+
+        if (researchRecords.length) {
+            lastProcessedStats.researchQueue = researchRecords.length;
+            showDetailModal('researchQueue');
+        }
+
+        if (!enriched) {
+            alert(`API worked and returned ${trailers.length} trailers, but none matched the current Research Queue.`);
+        }
+    } catch (error) {
+        console.error('FC API test failed:', error);
+        updateFcApiStatus(`API failed: ${error.message}`, 'error');
+        alert(`FC API test failed:\n${error.message}`);
+    }
+}
+
+// =========================================================================
+// 4. Modal & Research Logic
+// =========================================================================
+
+function parseOculusNumber(value) {
+    return parseFloat(String(value || "0").replace(/,/g, "")) || 0;
+}
+
+function cleanOculusText(value) {
+    return String(value || "").trim();
+}
+
+function getFlexibleField(record, candidates) {
+    const keys = Object.keys(record || {});
+    for (const candidate of candidates) {
+        const normalizedCandidate = normalize(candidate);
+        const exactKey = keys.find(key => normalize(key) === normalizedCandidate);
+        if (exactKey) return record[exactKey];
+    }
+
+    for (const candidate of candidates) {
+        const normalizedCandidate = normalize(candidate);
+        const fuzzyKey = keys.find(key => normalize(key).includes(normalizedCandidate));
+        if (fuzzyKey) return record[fuzzyKey];
+    }
+
+    return "";
+}
+
+function extractOculusIsa(record) {
+    const directIsa = getFlexibleField(record, [
+        "ISA",
+        "ISA ID",
+        "INBOUND SHIPMENT APPOINTMENT",
+        "INBOUND SHIPMENT APPOINTMENT ID",
+        "APPOINTMENT ID",
+        "LOAD ID",
+        "LOAD IDENTIFIER"
+    ]);
+    const directMatch = String(directIsa || "").match(/\b(2\d{11})\b/);
+    if (directMatch) return normalize(directMatch[1]);
+
+    const joinedValues = Object.values(record || {}).join(" ");
+    const fallbackMatch = joinedValues.match(/\b(2\d{11})\b/);
+    return fallbackMatch ? normalize(fallbackMatch[1]) : "";
+}
+
+function extractOculusVrid(record) {
+    return normalize(getFlexibleField(record, [
+        "VRID",
+        "TRAILER VRID",
+        "TRIP ID",
+        "TOUR ID"
+    ]));
+}
+
+function parseOculusCsvRows(rows, sourceType) {
+    const records = {};
+    let count = 0;
+
+    rows.forEach(row => {
+        const isa = extractOculusIsa(row);
+        if (!isa) return;
+
+        const cartons = parseOculusNumber(getFlexibleField(row, [
+            "CARTONS/TOTES",
+            "CARTONS / TOTES",
+            "CARTON/TOTE",
+            "CARTON / TOTE",
+            "CARTONS",
+            "CARTON COUNT",
+            "CARTON QTY",
+            "TOTES",
+            "TOTE COUNT",
+            "TOTE QTY",
+            "CASES",
+            "CASE COUNT"
+        ]));
+        const units = parseOculusNumber(getFlexibleField(row, ["UNITS", "UNIT COUNT", "UNIT QTY", "TOTAL UNITS", "PENDING UNITS", "EXPECTED UNITS", "EACHES", "EACH QTY", "QUANTITY", "QTY"]));
+        const pallets = parseOculusNumber(getFlexibleField(row, ["PALLETS", "PALLET COUNT", "PALLET QTY", "NUMBER OF PALLETS"]));
+        const cut = cleanOculusText(getFlexibleField(row, ["CRITICAL UNLOAD TIME", "CUT"]));
+        const trailerNumber = cleanOculusText(getFlexibleField(row, ["TRAILER NUMBER", "TRAILER NUM", "TRAILER"]));
+        const trailerLocation = cleanOculusText(getFlexibleField(row, ["TRAILER LOCATION", "LOCATION"]));
+        const status = cleanOculusText(getFlexibleField(row, ["STATUS", "APPT. STATUS", "TRANSLOAD STATUS", "TRANSSHIP STATUS"]));
+        const loadConfig = cleanOculusText(getFlexibleField(row, ["LOAD CONFIG", "FL TYPE"]));
+        const scac = cleanOculusText(getFlexibleField(row, ["SCAC", "CARRIER"]));
+        const apptType = cleanOculusText(getFlexibleField(row, ["APPT. TYPE", "APPOINTMENT TYPE"]));
+        const liveVsDrop = cleanOculusText(getFlexibleField(row, ["LIVE VS DROP", "LOAD TYPE"]));
+
+        records[isa] = {
+            isa,
+            vrid: extractOculusVrid(row),
+            sourceType,
+            cartons,
+            units,
+            pallets,
+            cut,
+            trailerNumber,
+            trailerLocation,
+            status,
+            loadConfig,
+            scac,
+            apptType,
+            liveVsDrop,
+            isPalletized: pallets > 0,
+            timestamp: Date.now()
+        };
+        count++;
+    });
+
+    return { records, count };
+}
+
+function updateOculusUploadStatus(type, text, success) {
+    const status = document.getElementById(`oculus-${type}-status`);
+    const card = document.getElementById(`oculus-${type}-card`);
+
+    if (status) status.textContent = text;
+    if (card) {
+        card.classList.remove('success', 'error');
+        if (success === true) card.classList.add('success');
+        if (success === false) card.classList.add('error');
+    }
+}
+
+function updateOculusSyncButton() {
+    const button = document.getElementById('sync-oculus-memory-btn');
+    const summary = document.getElementById('oculus-sync-summary');
+    const vendorCount = pendingOculusUploads.vendor?.count || 0;
+    const transshipCount = pendingOculusUploads.transship?.count || 0;
+
+    if (button) button.disabled = !(vendorCount > 0 && transshipCount > 0);
+    if (summary) {
+        summary.textContent = vendorCount || transshipCount ?
+            `Ready: ${vendorCount} vendor records and ${transshipCount} transship records selected.` :
+            "No Oculus files selected.";
+    }
+}
+
+function refreshOculusMemoryCard() {
+    if (typeof loadOculusMemory !== 'function') {
+        updateCardStatus('gap-filler', 'Sync Oculus memory', null);
+        return;
+    }
+
+    const saved = loadOculusMemory();
+    const total = Object.keys(saved.byIsa || {}).length;
+    if (!total) {
+        updateCardStatus('gap-filler', 'Sync Oculus memory', null);
+        return;
+    }
+
+    const uploadedDate = saved.uploadedAt ? new Date(saved.uploadedAt).toLocaleDateString() : 'saved';
+    updateCardStatus('gap-filler', `Oculus Memory: ${total} records (${uploadedDate})`, true);
+}
+
+async function handleOculusFileSelection(type) {
+    const filePath = await window.api.openFile();
+    if (!filePath) return;
+
+    updateOculusUploadStatus(type, "Reading...", null);
+
+    try {
+        const rawData = await window.api.readCsvFile(filePath);
+        const rows = parseCSV(rawData, []);
+        const parsed = parseOculusCsvRows(rows, type);
+        const fileName = filePath.split(/[/\\]/).pop();
+
+        pendingOculusUploads[type] = parsed;
+        updateOculusUploadStatus(type, `Loaded: ${fileName} (${parsed.count} ISA records)`, parsed.count > 0);
+    } catch (error) {
+        console.error(`Failed to read Oculus ${type} file:`, error);
+        pendingOculusUploads[type] = null;
+        updateOculusUploadStatus(type, "Failed to load file.", false);
+    }
+
+    updateOculusSyncButton();
+    updateFileClearButtons();
+}
+
+window.processHubData = function() {
+    const vendorUpload = pendingOculusUploads.vendor;
+    const transshipUpload = pendingOculusUploads.transship;
+
+    if (!vendorUpload?.count || !transshipUpload?.count) {
+        alert("Please load both the Oculus Vendor CSV and Transship CSV before syncing.");
+        return;
+    }
+
+    const records = {
+        ...vendorUpload.records,
+        ...transshipUpload.records
+    };
+    const total = Object.keys(records).length;
+
+    if (typeof saveOculusMemory === 'function') {
+        saveOculusMemory(records, {
+            vendor: vendorUpload.count,
+            transship: transshipUpload.count
+        });
+    }
+
+    document.getElementById('research-hub-modal').style.display = 'none';
+    refreshOculusMemoryCard();
+
+    const reconcileBtn = document.getElementById('reconcile-btn');
+    if (ymsFilePath && dockdashFilePath && reconcileBtn) reconcileBtn.disabled = false;
+};
+
+// --- MANUAL INTERACTION ---
+window.editResearchItem = function(index) {
+    const record = lastProcessedStats.researchQueueRecords[index];
+    const newLoc = prompt("Enter new Location (leave blank to keep current):", record.location);
+    if (newLoc) {
+        lastProcessedStats.researchQueueRecords[index].location = newLoc;
+        showDetailModal('researchQueue');
+    }
+};
+
+window.moveResearchItem = function(index) {
+    const record = lastProcessedStats.researchQueueRecords[index];
+    const select = document.getElementById(`assign-select-${index}`);
+    const unitsInput = document.getElementById(`assign-units-${index}`);
+    
+    const targetCategory = select.value;
+    const manualUnits = parseFloat(unitsInput.value.replace(/,/g, '')) || 0;
+
+    if (!targetCategory) { alert("Please select a category."); return; }
+
+    // 1. SAVE TO MEMORY
+    if (!isMemoryBypassEnabled() && typeof rememberTrailer === 'function') {
+        rememberTrailer(record.isa, record.vrid, targetCategory, manualUnits, record.notes);
+    }
+
+    // 2. Update Stats
+    const recordInfo = { 
+        isa: record.isa, 
+        vrid: record.vrid, 
+        location: record.location, 
+        dwell: record.dwell, 
+        pallets: 'MANUAL',
+        category: targetCategory,
+        units: manualUnits,
+        notes: record.notes || ''
+    };
+
+    if (Array.isArray(lastProcessedStats[targetCategory])) {
+        addCategorizedRecord(lastProcessedStats, targetCategory, recordInfo);
+    }
+
+    switch(targetCategory) {
+        case 'dropPallets':
+        case 'dropFloor':
+        case 'transshipYard':
+        case 'parcelsYard': lastProcessedStats.volumeYard += manualUnits; break;
+        case 'parcelsDock':
+        case 'livesHanded': lastProcessedStats.volumeDoors += manualUnits; break;
+        case 'volOnlyDoors': lastProcessedStats.volumeDoors += manualUnits; break;
+        case 'volOnlyYard': lastProcessedStats.volumeYard += manualUnits; break;
+    }
+
+    // 3. Remove from Queue & Refresh UI
+    lastProcessedStats.researchQueueRecords.splice(index, 1);
+    lastProcessedStats.researchQueue = lastProcessedStats.researchQueueRecords.length;
+
+    updateMetricsUI(lastProcessedStats);
+    copyStatsToClipboard(lastProcessedStats);
+
+    if (lastProcessedStats.researchQueue > 0) {
+        showDetailModal('researchQueue'); 
+    } else {
+        document.getElementById('detail-modal').style.display = 'none';
+        updateActionPanel({ 
+            reconciled: true, 
+            excluded: lastProcessedStats.excluded.length, 
+            azngOver72: lastProcessedStats.azngOver72.length, 
+            researchQueue: 0,
+            message: "All research items resolved."
+        });
+    }
+};
+
+function showDetailModal(metricId) {
+    if (!lastProcessedStats || Object.keys(lastProcessedStats).length === 0) {
+        return;
+    }
+
+    let records = lastProcessedStats[metricId];
+    let modalTitle = metricId.toUpperCase().replace(/([A-Z])/g, ' $1');
+    const isResearchQueue = (metricId === 'researchQueue');
+    const hasDisruptionDetails = Array.isArray(lastProcessedStats.disruptions?.[metricId]);
+    
+    if (isResearchQueue) records = lastProcessedStats.researchQueueRecords;
+    if (metricId === 'excluded') records = lastProcessedStats.excluded;
+    if (hasDisruptionDetails) {
+        const usableRecords = (lastProcessedStats[metricId] || []).map(record => ({
+            ...record,
+            detailStatus: 'USABLE'
+        }));
+        const disruptions = (lastProcessedStats.disruptions[metricId] || []).map(record => ({
+            ...record,
+            detailStatus: 'DISRUPTION'
+        }));
+
+        records = [...usableRecords, ...disruptions];
+    }
+
+    if (!Array.isArray(records) || records.length === 0) { 
+        return; 
+    }
+
+    const modal = document.getElementById('detail-modal'); 
+    const tbody = document.getElementById('detail-table-body');
+    const thead = modal.querySelector('thead tr');
+    const title = document.getElementById('modal-title');
+    
+    title.textContent = `${modalTitle} (${records.length})`;
+    thead.replaceChildren(); 
+    
+    let headers = isResearchQueue ? 
+        ['ISA', 'VRID', 'LOC', 'NOTES', 'CATEGORY', 'UNITS', 'ACTION'] : 
+        (metricId === 'excluded' ? ['ISA', 'VRID', 'LOCATION'] : ['ISA', 'VRID', 'LOCATION', 'DWELL', 'PALLETS']);
+
+    if (hasDisruptionDetails) headers = ['ISA', 'VRID / TRAILER', 'LOCATION', 'DWELL', 'PALLETS', 'STATUS', 'NOTES'];
+
+    headers.forEach(h => { const th = document.createElement('th'); th.textContent = h; thead.appendChild(th); });
+    
+    tbody.replaceChildren(); 
+    records.forEach((record, index) => {
+        const row = tbody.insertRow();
+        row.insertCell().textContent = record.isa || (record.countSource === 'yard-notes' ? 'No ISA (yard notes)' : 'N/A');
+        row.insertCell().textContent = record.vrid || record.trailer || 'N/A';
+        row.insertCell().textContent = record.location || 'N/A';
+        
+        if (isResearchQueue) {
+            const notesCell = row.insertCell();
+            notesCell.textContent = record.notes || ''; 
+            notesCell.style.maxWidth = "200px"; notesCell.style.overflow = "hidden"; notesCell.style.textOverflow = "ellipsis"; notesCell.style.whiteSpace = "nowrap";
+
+            // Auto-Select Logic
+            const defaultCat = record.suggestedCategory || ""; 
+            const defaultUnits = record.suggestedUnits ? String(record.suggestedUnits) : "";
+            const cellAssign = row.insertCell();
+            replaceEosMarkup(cellAssign, `
+                <div class="research-assignment-controls">
+                <button data-eos-edit="${index}" class="research-edit-btn">EDIT LOC</button>
+                <select id="assign-select-${index}" class="research-select">
+                    <option value="" disabled ${!defaultCat ? 'selected' : ''}>Select...</option>
+                    <optgroup label="Volume Only">
+                        <option value="volOnlyDoors" ${defaultCat === 'volOnlyDoors' ? 'selected' : ''}>Volume on Doors</option>
+                        <option value="volOnlyYard" ${defaultCat === 'volOnlyYard' ? 'selected' : ''}>Volume in Yard</option>
+                    </optgroup>
+                    <optgroup label="Assign to Tile">
+                        <option value="dropPallets" ${defaultCat === 'dropPallets' ? 'selected' : ''}>Drop Pallets</option>
+                        <option value="dropFloor" ${defaultCat === 'dropFloor' ? 'selected' : ''}>Drop Floor</option>
+                        <option value="transshipYard" ${defaultCat === 'transshipYard' ? 'selected' : ''}>Transship Yard</option>
+                        <option value="parcelsDock" ${defaultCat === 'parcelsDock' ? 'selected' : ''}>Parcels on Dock</option>
+                        <option value="parcelsYard" ${defaultCat === 'parcelsYard' ? 'selected' : ''}>Parcels in Yard</option>
+                        <option value="livesHanded" ${defaultCat === 'livesHanded' ? 'selected' : ''}>Lives Handed Over</option>
+                    </optgroup>
+                </select>
+                <input type="text" inputmode="decimal" id="assign-units-${index}" class="research-units-input" placeholder="Units" value="${escapeHtmlAttr(defaultUnits)}">
+                <button data-eos-move="${index}" class="research-move-btn">MOVE</button>
+                </div>`);
+        } else if (hasDisruptionDetails) {
+            row.insertCell().textContent = record.dwell || 'N/A';
+            row.insertCell().textContent = record.pallets || '0';
+            row.insertCell().textContent = record.detailStatus || 'USABLE';
+            row.insertCell().textContent = record.notes || '';
+        } else if (metricId !== 'excluded') {
+            row.insertCell().textContent = record.dwell || 'N/A';
+            row.insertCell().textContent = record.pallets || '0';
+        }
+    });
+    modal.style.display = 'block';
+}
+
+// =========================================================================
+// 5. File Handling & Parsing
+// =========================================================================
+function parseCSV(text, requiredHeaders = []) {
+    text = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    const rows = [];
+    let currentRow = [];
+    let currentVal = "";
+    let insideQuote = false;
+
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        if (char === '"') insideQuote = !insideQuote;
+        else if (char === ',' && !insideQuote) { currentRow.push(currentVal.trim()); currentVal = ""; }
+        else if (char === '\n' && !insideQuote) {
+            currentRow.push(currentVal.trim());
+            if (currentRow.length > 1 || currentRow[0] !== "") rows.push(currentRow);
+            currentRow = []; currentVal = "";
+        } else currentVal += char;
+    }
+    if (currentVal) currentRow.push(currentVal.trim());
+    if (currentRow.length > 0) rows.push(currentRow);
+    if (rows.length < 2) return [];
+
+    if (requiredHeaders.length === 0) {
+        // Broad parsing (for Gap Filler backup)
+        const headers = rows[0].map(h => h.trim().toUpperCase());
+        const data = [];
+        for (let i = 1; i < rows.length; i++) {
+            const record = {};
+            if (rows[i].length >= headers.length) {
+                headers.forEach((h, index) => { record[h] = rows[i][index]; });
+                data.push(record);
+            }
+        }
+        return data;
+    }
+
+    const headers = rows[0].map(h => h.trim().toUpperCase());
+    const missing = requiredHeaders.filter(h => !headers.some(header => header.includes(h)));
+    if (missing.length > 0) { alert(`Missing required headers: ${missing.join(", ")}`); return []; }
+
+    const data = [];
+    for (let i = 1; i < rows.length; i++) {
+        const record = {};
+        if (rows[i].length >= headers.length) {
+            headers.forEach((h, index) => { record[h] = rows[i][index]; });
+            data.push(record);
+        }
+    }
+    return data;
+}
+
+async function handleFileSelection(type) {
+    const filePath = await window.api.openFile();
+    if (!filePath) return;
+    
+    updateCardStatus(type, "Reading...", null);
+    const rawData = await window.api.readCsvFile(filePath);
+    
+    // YMS needs "LOAD IDENTIFIER(S)", DockDash needs "ISA"
+    const headers = type === 'yms' ? ["LOAD IDENTIFIER(S)"] : ["ISA", "VRID"];
+    const parsed = parseCSV(rawData, headers);
+    
+    if (parsed.length === 0) {
+        updateCardStatus(type, "Failed to load or empty.", false);
+        return;
+    }
+    
+    if (type === 'yms') { ymsData = parsed; ymsFilePath = filePath; }
+    else { dockdashData = parsed; dockdashFilePath = filePath; }
+    
+    const fileName = filePath.split(/[/\\]/).pop();
+    updateCardStatus(type, `Loaded: ${fileName} (${parsed.length} rows)`, true);
+    
+    const reconcileBtn = document.getElementById('reconcile-btn');
+    const dockdashBtn = document.getElementById('browse-dockdash-btn');
+    
+    if (type === 'yms' && dockdashBtn) dockdashBtn.disabled = false;
+    if (ymsFilePath && dockdashFilePath && reconcileBtn) reconcileBtn.disabled = false;
+    updateFileClearButtons();
+}
+
+function updateFileClearButtons() {
+    const clearYmsBtn = document.getElementById('clear-yms-btn');
+    const clearDockdashBtn = document.getElementById('clear-dockdash-btn');
+    const clearVendorBtn = document.getElementById('clear-oculus-vendor-btn');
+    const clearTransshipBtn = document.getElementById('clear-oculus-transship-btn');
+
+    if (clearYmsBtn) clearYmsBtn.disabled = !ymsFilePath;
+    if (clearDockdashBtn) clearDockdashBtn.disabled = !dockdashFilePath;
+    if (clearVendorBtn) clearVendorBtn.disabled = !(pendingOculusUploads.vendor?.count > 0);
+    if (clearTransshipBtn) clearTransshipBtn.disabled = !(pendingOculusUploads.transship?.count > 0);
+}
+
+function updateRequiredFileControls() {
+    const reconcileBtn = document.getElementById('reconcile-btn');
+    const exportBtn = document.getElementById('export-btn');
+    const dockdashBtn = document.getElementById('browse-dockdash-btn');
+
+    if (dockdashBtn) dockdashBtn.disabled = !ymsFilePath;
+    if (reconcileBtn) reconcileBtn.disabled = !(ymsFilePath && dockdashFilePath);
+    if (exportBtn && !(ymsFilePath && dockdashFilePath)) exportBtn.disabled = true;
+    updateFileClearButtons();
+}
+
+function clearLoadedFile(type) {
+    if (type === 'yms') {
+        ymsFilePath = null;
+        ymsData = [];
+        dockdashFilePath = null;
+        dockdashData = [];
+        lastProcessedStats = {};
+        updateCardStatus('yms', 'Select YMS File', null);
+        updateCardStatus('dockdash', 'Select Dock Dash File', null);
+    } else if (type === 'dockdash') {
+        dockdashFilePath = null;
+        dockdashData = [];
+        lastProcessedStats = {};
+        updateCardStatus('dockdash', 'Select Dock Dash File', null);
+    }
+
+    updateRequiredFileControls();
+    updateActionPanel({ reconciled: false, message: 'Awaiting file selections...' });
+}
+
+function clearOculusUpload(type) {
+    pendingOculusUploads[type] = null;
+    updateOculusUploadStatus(type, type === 'vendor' ? 'Drops and AF lives/live-drops.' : 'Transship trailers and unit counts.', null);
+    updateOculusSyncButton();
+    updateFileClearButtons();
+}
+
+// Backup Gap Filler Selection
+async function handleGapFillerSelection() {
+    const filePath = await window.api.openFile();
+    if (!filePath) return;
+
+    updateCardStatus('gap-filler', "Reading...", null);
+    const rawData = await window.api.readCsvFile(filePath);
+    const rows = parseCSV(rawData, []); 
+    
+    gapFillerData = { byIsa: {}, byVrid: {} };
+    let count = 0;
+
+    rows.forEach(row => {
+        const isa = normalize(getField(row, "ISA") || getField(row, "Container ID"));
+        const vrid = normalize(getField(row, "Trailer VRID") || getField(row, "VRID"));
+        const rawUnits = getField(row, "Total Units") || getField(row, "Pending Units") || "0";
+        const units = parseFloat(rawUnits.replace(/,/g, '')) || 0;
+
+        if (isa && isa.length > 4) {
+            gapFillerData.byIsa[isa] = { units: units, vrid: vrid || "UNKNOWN" };
+            count++;
+        }
+        if (vrid && vrid.length > 4) {
+            gapFillerData.byVrid[vrid] = { units: units, isa: isa || "UNKNOWN" };
+            if (!isa || isa.length <= 4) count++;
+        }
+    });
+
+    updateCardStatus('gap-filler', `Loaded: ${count} Records`, true);
+    console.log("Gap Filler Data Loaded:", gapFillerData);
+}
+
+// =========================================================================
+// 6. Core Logic: Reconcile (UPGRADED)
+// =========================================================================
+function extractYmsIsa(record) {
+    const fullLoadId = getField(record, "LOAD IDENTIFIER(S)");
+    if (fullLoadId) {
+        const match = fullLoadId.match(/ISA\W*(\d+)/i);
+        if (match) return normalize(match[1]);
+    }
+    return null;
+}
+
+function getYmsCarrier(record) {
+    return normalize(getField(record, 'CARRIER') || getField(record, 'OWNER (OPERATOR)') || getField(record, 'OWNER'));
+}
+
+function getYmsTrailerIdentity(record) {
+    const vrid = normalize(getField(record, 'VRID') || String(getField(record, 'LOAD IDENTIFIER(S)') || '').match(/\bVRID\W*([A-Z0-9]+)/i)?.[1]);
+    const trailer = normalize(getField(record, 'VEHICLE ID') || getField(record, 'TRAILER NUMBER') || getField(record, 'TRAILER ID'));
+    const location = normalize(getField(record, 'LOCATION'));
+    const carrier = getYmsCarrier(record).replace(/\s+/g, '');
+    const keys = [];
+    if (vrid) keys.push(`vrid:${vrid}`);
+    if (trailer) keys.push(`trailer:${carrier}:${trailer}`);
+    if (!keys.length) keys.push(`location:${carrier}:${location}`);
+    return { vrid, trailer, keys };
+}
+
+function collectUnassignedYardParcels(rows) {
+    const seen = new Set();
+    // Rows with an attached ISA are handled by the existing reconciliation/research flow.
+    rows.filter(row => extractYmsIsa(row)).forEach(row => {
+        getYmsTrailerIdentity(row).keys.forEach(key => seen.add(key));
+    });
+    const parcels = [];
+    rows.forEach(row => {
+        if (extractYmsIsa(row)) return;
+        const location = normalize(getField(row, 'LOCATION'));
+        const notes = getField(row, 'NOTES') || '';
+        const carrier = getYmsCarrier(row);
+        const equipmentType = normalize(getField(row, 'TYPE'));
+        if (!isYardLocation(location) || !isParcelCarrier(carrier) || !/\bISA\b/i.test(notes)) return;
+        if (equipmentType && !/\bTRAILER\b/.test(equipmentType)) return;
+        const identity = getYmsTrailerIdentity(row);
+        const alreadySeen = identity.keys.some(key => seen.has(key));
+        identity.keys.forEach(key => seen.add(key));
+        if (alreadySeen) return;
+        parcels.push({
+            isa: '', vrid: identity.vrid, trailer: identity.trailer, location, carrier,
+            dwell: getField(row, 'YARD DWELL') || getField(row, 'TIME IN YARD') || '',
+            pallets: '', units: 0, notes, countSource: 'yard-notes'
+        });
+    });
+    return parcels;
+}
+
+function calculateMetrics(data, excluded) {
+    let stats = {
+        dropPallets: [], dropFloor: [], parcelsDock: [], parcelsYard: [],
+        transshipYard: [], azngOver72: [], livesHanded: [], liveDrops: [], researchQueue: 0,
+        volumeDoors: 0, volumeYard: 0, excluded: excluded, disruptions: createDisruptionBuckets()
+    };
+    
+    data.forEach(record => {
+        const type = normalize(getField(record, "CARRIER LOAD TYPE"));
+        const appt = normalize(getField(record, "APPOINTMENT TYPE"));
+        const loc = normalize(getField(record, "LOCATION"));
+        const carrier = normalize(getField(record, "CARRIER"));
+        const units = parseFloat(String(getField(record, "UNITS") || "0").replace(/,/g, '')) || 0;
+        const dwell = parseHours(getField(record, "YARD DWELL"));
+        const isParcel = appt === "SMALL_PARCEL" || isParcelCarrier(carrier);
+        
+        const info = { 
+            isa: getField(record, "ISA"), 
+            vrid: getField(record, "VRID"), 
+            location: loc, 
+            dwell: getField(record, "YARD DWELL"), 
+            pallets: getField(record, "PALLETS"),
+            carrier,
+            loadType: type,
+            notes: [getField(record, "__YMS_NOTES"), getField(record, "NOTES")].filter(Boolean).join(' | ')
+        };
+        
+        if (isDoorLocation(loc)) stats.volumeDoors += units;
+        else if (isYardLocation(loc)) stats.volumeYard += units;
+
+        if (type === "DROP" && appt === "CARP" && isYardLocation(loc)) {
+            const dropCategory = (parseFloat(getField(record, "PALLETS")) > 0 || isClampLoadNote(info.notes)) ? 'dropPallets' : 'dropFloor';
+            addCategorizedRecord(stats, dropCategory, info);
+        }
+        if (isParcel) {
+            if (isDoorLocation(loc)) addCategorizedRecord(stats, 'parcelsDock', info);
+            if (isYardLocation(loc)) addCategorizedRecord(stats, 'parcelsYard', info);
+        }
+        if (appt === "TRANSSHIP" && isYardLocation(loc)) addCategorizedRecord(stats, 'transshipYard', info);
+        if (carrier.startsWith("AZNG") && dwell >= 72 && isYardLocation(loc)) addCategorizedRecord(stats, 'azngOver72', info);
+        if (type === "LIVE" && isDoorLocation(loc)) {
+            addCategorizedRecord(stats, 'livesHanded', info);
+            if (!isDisruptionNote(info.notes, 'livesHanded') && isLiveDropCarrier(carrier)) stats.liveDrops.push(info);
+        }
+    });
+    return stats;
+}
+
+async function reconcileAndDisplay() {
+    if (!ymsData.length || !dockdashData.length) return;
+    
+    updateActionPanel({ reconciled: false, message: 'Processing with Hub...' });
+
+    try {
+        const ymsIsaSet = new Set();
+        const ymsLookup = {}; 
+        
+        ymsData.forEach(r => { 
+            const isa = extractYmsIsa(r); 
+            if (isa) {
+                ymsIsaSet.add(isa);
+                ymsLookup[isa] = {
+                    location: normalize(getField(r, "LOCATION")),
+                    dwell: getField(r, "YARD DWELL"),
+                    fullLoadId: getField(r, "LOAD IDENTIFIER(S)"),
+                    notes: (getField(r, "NOTES") || "").toUpperCase(),
+                    owner: (getField(r, "OWNER (OPERATOR)") || getField(r, "OWNER") || "").toUpperCase(),
+                    carrier: getYmsCarrier(r),
+                    loadType: normalize(getField(r, "CARRIER LOAD TYPE"))
+                };
+            }
+        });
+
+        const dockdashIsaSet = new Set();
+        const finalMetricsData = [];
+        const excludedRecords = [];
+
+        dockdashData.forEach(r => {
+            let isa = normalize(getField(r, "ISA"));
+            if (!isa || isa.includes("E+") || isa.length < 5) return; 
+            dockdashIsaSet.add(isa);
+            
+            if (ymsIsaSet.has(isa)) {
+                finalMetricsData.push({
+                    ...r,
+                    __YMS_NOTES: ymsLookup[isa]?.notes || ""
+                });
+            } else {
+                excludedRecords.push({ isa, vrid: normalize(getField(r, "VRID")), location: getField(r, "LOCATION") });
+            }
+        });
+
+        const researchQueueRecords = []; 
+        const autoAssignedGhosts = [];
+
+        // GHOST PROCESSING (Logic: Hub -> Memory -> Auto)
+        ymsData.forEach(r => {
+            const isa = extractYmsIsa(r);
+            if (isa && !dockdashIsaSet.has(isa)) {
+                const ymsInfo = ymsLookup[isa];
+                let vrid = 'UNKNOWN';
+                if (ymsInfo.fullLoadId) {
+                    const match = ymsInfo.fullLoadId.match(/VRID\W*([A-Z0-9]+)/i);
+                    if (match) vrid = normalize(match[1]);
+                }
+
+                let oculusMatch = null;
+                let finalCategory = null;
+
+                if (typeof recallOculusTrailer === 'function') {
+                    oculusMatch = recallOculusTrailer(isa);
+                    if (oculusMatch) finalCategory = resolveOculusCategory(oculusMatch, ymsInfo);
+                }
+
+                // --- MEMORY CHECK ---
+                let memory = null;
+                if ((!oculusMatch || !finalCategory) && !isMemoryBypassEnabled() && typeof recallTrailer === 'function') {
+                    memory = recallTrailer(isa, vrid);
+                }
+
+                if (oculusMatch && finalCategory && !(oculusMatch.units > 0)) {
+                    researchQueueRecords.push({
+                        isa,
+                        vrid,
+                        location: ymsInfo.location,
+                        dwell: ymsInfo.dwell,
+                        notes: `OCULUS ${normalize(oculusMatch.sourceType)} matched but units were missing: ${ymsInfo.notes}`,
+                        owner: ymsInfo.owner,
+                        suggestedCategory: finalCategory,
+                        confidence: 'MEDIUM'
+                    });
+                } else if (oculusMatch && finalCategory) {
+                    autoAssignedGhosts.push({
+                        isa, vrid: oculusMatch.vrid || vrid,
+                        location: ymsInfo.location, dwell: ymsInfo.dwell,
+                        category: finalCategory,
+                        units: oculusMatch.units,
+                        cartons: oculusMatch.cartons,
+                        pallets: oculusMatch.pallets,
+                        carrier: ymsInfo.carrier, loadType: ymsInfo.loadType,
+                        isMemory: true,
+                        notes: `OCULUS ${normalize(oculusMatch.sourceType)}: ${ymsInfo.notes}`
+                    });
+                } else if (memory) {
+                    autoAssignedGhosts.push({
+                        isa, vrid, location: ymsInfo.location, dwell: ymsInfo.dwell,
+                        category: memory.category, units: memory.units,
+                        carrier: ymsInfo.carrier, loadType: ymsInfo.loadType,
+                        isMemory: true, notes: `MEM: ${ymsInfo.notes}`
+                    });
+                } else {
+                    const inferred = inferYmsOnlyCategory(ymsInfo);
+                    if (inferred) {
+                        if (inferred.category) {
+                            autoAssignedGhosts.push({
+                                isa, vrid,
+                                location: ymsInfo.location, dwell: ymsInfo.dwell,
+                                category: inferred.category,
+                                units: 0,
+                                carrier: ymsInfo.carrier,
+                                loadType: ymsInfo.loadType,
+                                isMemory: false,
+                                confidence: inferred.confidence,
+                                notes: `${inferred.reason}: ${ymsInfo.notes}`
+                            });
+                        }
+                        return;
+                    }
+
+                    // Send to Research Queue
+                    researchQueueRecords.push({ 
+                        isa, vrid, location: ymsInfo.location, dwell: ymsInfo.dwell, 
+                        notes: ymsInfo.notes, owner: ymsInfo.owner,
+                        suggestedCategory: 'dropPallets', confidence: 'LOW'
+                    });
+                }
+            }
+        });
+
+        lastProcessedStats = calculateMetrics(finalMetricsData, excludedRecords);
+        const oldestSpd = findOldestSpdRecord(dockdashData, ymsLookup);
+        lastProcessedStats.oldestSpd = oldestSpd ? {
+            isa: oldestSpd.isa,
+            date: formatSpdDate(oldestSpd.spdDate)
+        } : null;
+
+        const oldestTrailer = findOldestTrailerInYard(dockdashData, ymsLookup);
+        lastProcessedStats.oldestTrailer = oldestTrailer ? {
+            isa: oldestTrailer.isa,
+            dwellHours: oldestTrailer.dwellHours
+        } : null;
+        
+        autoAssignedGhosts.forEach(ghost => {
+            if (
+                Array.isArray(lastProcessedStats[ghost.category]) &&
+                categoryAllowsLocation(ghost.category, ghost.location)
+            ) {
+                addCategorizedRecord(lastProcessedStats, ghost.category, ghost);
+                if (
+                    ghost.category === 'livesHanded' &&
+                    ghost.loadType === "LIVE" &&
+                    !isDisruptionNote(ghost.notes, 'livesHanded') &&
+                    isLiveDropCarrier(ghost.carrier)
+                ) {
+                    lastProcessedStats.liveDrops.push(ghost);
+                }
+            }
+            if (isDoorLocation(ghost.location)) lastProcessedStats.volumeDoors += (ghost.units || 0);
+            else if (isYardLocation(ghost.location)) lastProcessedStats.volumeYard += (ghost.units || 0);
+        });
+
+        collectUnassignedYardParcels(ymsData).forEach(parcel => {
+            addCategorizedRecord(lastProcessedStats, 'parcelsYard', parcel);
+        });
+
+        lastProcessedStats.researchQueueRecords = researchQueueRecords;
+        lastProcessedStats.researchQueue = researchQueueRecords.length;
+
+        updateMetricsUI(lastProcessedStats);
+        
+        const exportBtn = document.getElementById('export-btn');
+        if(exportBtn) exportBtn.disabled = false;
+
+        updateActionPanel({ 
+            reconciled: true, 
+            excluded: excludedRecords.length, 
+            azngOver72: lastProcessedStats.azngOver72.length, 
+            researchQueue: lastProcessedStats.researchQueue,
+            message: `Resolved ${autoAssignedGhosts.length} items via Hub/Memory/notes. ${researchQueueRecords.length} need review.`
+        });
+        
+        copyStatsToClipboard(lastProcessedStats);
+
+    } catch (error) {
+        console.error("Reconcile Error:", error);
+        alert(`CRASH: ${error.message}\nCheck console.`);
+        updateActionPanel({ reconciled: false, message: 'Process Failed' });
+    }
+}
+
+// =========================================================================
+// 8. CSV Export Logic (Improved & Verified)
+// =========================================================================
+function exportVerifiedCsv() {
+    console.log("Export process started...");
+
+    if (!dockdashData || dockdashData.length === 0) {
+        alert("Error: No Dock Dash data loaded to export.");
+        return;
+    }
+    if (!ymsData || ymsData.length === 0) {
+        alert("Error: No YMS data loaded for verification.");
+        return;
+    }
+
+    const ymsMap = {};
+    ymsData.forEach(row => {
+        const isa = extractYmsIsa(row);
+        if (isa) {
+            ymsMap[isa] = { 
+                loc: getField(row, "LOCATION") || "UNKNOWN", 
+                notes: getField(row, "NOTES") || "" 
+            };
+        }
+    });
+
+    const validRows = [];
+    const originalHeaders = Object.keys(dockdashData[0]);
+    
+    const exportHeaders = [...originalHeaders];
+    if (!exportHeaders.includes("NOTES")) exportHeaders.push("NOTES");
+
+    dockdashData.forEach(ddRow => {
+        const isa = normalize(getField(ddRow, "ISA"));
+        
+        if (ymsMap[isa]) {
+            const correctedRow = { ...ddRow };
+            const locKey = Object.keys(correctedRow).find(k => k.toUpperCase().includes("LOCATION"));
+            if (locKey) correctedRow[locKey] = ymsMap[isa].loc;
+            correctedRow["NOTES"] = ymsMap[isa].notes;
+            validRows.push(correctedRow);
+        }
+    });
+
+    console.log(`Verification complete. Matches found: ${validRows.length}`);
+
+    if (validRows.length === 0) {
+        alert("No matching verified records found.\n\nThis usually means the ISAs in your YMS file don't match the ISAs in your Dock Dash file.");
+        return;
+    }
+
+    try {
+        const csvContent = [
+            exportHeaders.join(","), 
+            ...validRows.map(row => 
+                exportHeaders.map(fieldName => {
+                    let val = row[fieldName] || "";
+                    return `"${String(val).replace(/"/g, '""')}"`;
+                }).join(",")
+            )
+        ].join("\n");
+
+        if (!window.api.saveCsv) {
+            throw new Error('Save API is not available.');
+        }
+
+        window.api.saveCsv(csvContent).then(success => {
+            if (success) {
+                alert(`Verified export saved.\n(${validRows.length} trailers exported)`);
+            }
+        });
+    } catch (err) {
+        console.error("Export Error:", err);
+        alert("Failed to generate CSV file: " + err.message);
+    }
+}
+
+// =========================================================================
+// 9. Initialization & Events
+// =========================================================================
+function setupCosmicBackground() {
+    const starfield = document.getElementById('starfield');
+    if (!starfield) return;
+    for (let i = 0; i < 200; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        star.style.top = `${Math.random() * 100}%`;
+        star.style.left = `${Math.random() * 100}%`;
+        star.style.animationDuration = `${2 + Math.random() * 3}s`;
+        starfield.appendChild(star);
+    }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    console.log("App started: DOM content loaded");
+
+    setupMonitorAwareScaling();
+    setupCosmicBackground();
+
+    
+    if (window.api && window.api.getAppVersion) {
+        window.api.getAppVersion().then(v => {
+            const el = document.getElementById('eos-version');
+            if (el) el.textContent = `Version: ${v}`;
+        });
+    }
+
+    // 2. Button Listeners 
+    const ymsBtn = document.getElementById('browse-yms-btn');
+    if (ymsBtn) {
+        ymsBtn.addEventListener('click', () => handleFileSelection('yms'));
+        console.log("YMS button connected");
+    }
+
+    const clearYmsBtn = document.getElementById('clear-yms-btn');
+    if (clearYmsBtn) {
+        clearYmsBtn.addEventListener('click', () => clearLoadedFile('yms'));
+    }
+
+    const ddBtn = document.getElementById('browse-dockdash-btn');
+    if (ddBtn) {
+        ddBtn.addEventListener('click', () => handleFileSelection('dockdash'));
+        console.log("Dock Dash button connected");
+    }
+
+    const clearDockdashBtn = document.getElementById('clear-dockdash-btn');
+    if (clearDockdashBtn) {
+        clearDockdashBtn.addEventListener('click', () => clearLoadedFile('dockdash'));
+    }
+    
+    // --- UPDATED: HUB BUTTON LISTENER ---
+    const hubBtn = document.getElementById('open-hub-btn');
+    if (hubBtn) {
+        hubBtn.addEventListener('click', () => {
+            document.getElementById('research-hub-modal').style.display = 'block';
+            updateOculusSyncButton();
+        });
+        console.log("Hub button connected");
+    }
+
+    const oculusVendorBtn = document.getElementById('browse-oculus-vendor-btn');
+    if (oculusVendorBtn) {
+        oculusVendorBtn.addEventListener('click', () => handleOculusFileSelection('vendor'));
+    }
+
+    const clearOculusVendorBtn = document.getElementById('clear-oculus-vendor-btn');
+    if (clearOculusVendorBtn) {
+        clearOculusVendorBtn.addEventListener('click', () => clearOculusUpload('vendor'));
+    }
+
+    const oculusTransshipBtn = document.getElementById('browse-oculus-transship-btn');
+    if (oculusTransshipBtn) {
+        oculusTransshipBtn.addEventListener('click', () => handleOculusFileSelection('transship'));
+    }
+
+    const clearOculusTransshipBtn = document.getElementById('clear-oculus-transship-btn');
+    if (clearOculusTransshipBtn) {
+        clearOculusTransshipBtn.addEventListener('click', () => clearOculusUpload('transship'));
+    }
+    
+    const recBtn = document.getElementById('reconcile-btn');
+    if (recBtn) {
+        recBtn.addEventListener('click', reconcileAndDisplay);
+        console.log("Reconcile button connected");
+    }
+
+    const expBtn = document.getElementById('export-btn');
+    if (expBtn) {
+        expBtn.addEventListener('click', exportVerifiedCsv);
+        console.log("Export button connected");
+    }
+
+    const fcApiBtn = document.getElementById('test-fc-api-btn');
+    if (fcApiBtn) {
+        fcApiBtn.addEventListener('click', testFcApiForResearchQueue);
+        console.log("FC API test button connected");
+    }
+
+    // 3. Tile Listeners
+    const tiles = document.querySelectorAll('.metric-tile');
+    console.log(`Found ${tiles.length} metric tiles.`);
+    
+    tiles.forEach(tile => {
+        tile.addEventListener('click', (e) => {
+            console.log("Tile clicked:", e.currentTarget.id);
+            showDetailModal(e.currentTarget.id);
+        });
+    });
+    
+    const modal = document.getElementById('detail-modal');
+    const closeBtn = document.getElementById('close-modal-btn');
+    if (closeBtn && modal) {
+        closeBtn.addEventListener('click', () => modal.style.display = 'none');
+        window.addEventListener('click', (e) => { 
+            if (e.target === modal) modal.style.display = 'none';
+            // Also close Hub Modal if clicked outside
+            if (e.target === document.getElementById('research-hub-modal')) {
+                document.getElementById('research-hub-modal').style.display = 'none';
+            }
+        });
+    }
+    
+    // 4. Initial Status
+    updateCardStatus('yms', 'Select YMS File', null); 
+    updateCardStatus('dockdash', 'Select Dock Dash File', null); 
+    refreshOculusMemoryCard();
+    updateOculusSyncButton();
+    updateRequiredFileControls();
+});
+
+
+
+
+
+        /* EOS_RUNTIME_READY */
+    }
+
+    function readMemory() {
+        const raw = typeof GM_getValue === 'function' ? GM_getValue(storageKey, '{}') : '{}';
+        const values = JSON.parse(raw);
+        if (!values || typeof values !== 'object' || Array.isArray(values)) throw new Error('Invalid saved EOS memory');
+        return values;
+    }
+
+    function openEos() {
+        if (overlay) { overlay.style.setProperty('display', 'block', 'important'); return; }
+        overlay = hostDocument.createElement('div');
+        overlay.id = 'gyr2-eos-slack-overlay';
+        overlay.style.cssText = 'all:initial!important;position:fixed!important;inset:0!important;z-index:2147483647!important;display:block!important;background:#0b121a!important';
+        const root = overlay.attachShadow({ mode: 'closed' });
+        // Constructed sheets and extension listeners do not depend on inline page scripts.
+        const sheet = new CSSStyleSheet();
+        sheet.replaceSync(appCss + `
+            :host{font:15px "Segoe UI",sans-serif;color:#eef4f8}
+            .eos-root{height:100vh;overflow:auto;position:relative;isolation:isolate;background:var(--bg)}
+            .eos-toolbar{position:sticky;top:0;z-index:5000;display:flex;gap:16px;align-items:center;padding:6px 12px;background:#13303b;color:#fff;font:13px sans-serif}
+            .eos-toolbar button{margin-left:auto;padding:5px 12px;cursor:pointer;background:#edf2f5;color:#172332;border:1px solid #8796a5;border-radius:3px}
+            .eos-body{min-height:calc(100vh - 38px);background:transparent}
+            .fas,.far,.fa{display:inline-block;line-height:1;font-style:normal}
+            .fas svg,.far svg,.fa svg{vertical-align:-.125em;overflow:visible}
+            .fa-5x{font-size:5em}
+        `);
+        root.adoptedStyleSheets = [sheet];
+        const appRoot = hostDocument.createElement('div');
+        appRoot.className = 'eos-root';
+        const bar = hostDocument.createElement('div');
+        bar.className = 'eos-toolbar';
+        const label = hostDocument.createElement('span');
+        label.textContent = 'EOS for Slack | Desktop memory is separate | Close hides EOS; refreshing clears loaded CSVs';
+        const close = hostDocument.createElement('button');
+        close.textContent = 'Close EOS';
+        close.addEventListener('click', () => { overlay.style.setProperty('display', 'none', 'important'); });
+        bar.append(label, close);
+        const body = hostDocument.createElement('div');
+        body.className = 'eos-body';
+        replaceEosMarkup(body, appBodyHtml);
+        appRoot.append(bar, body);
+        root.append(appRoot);
+        hostDocument.documentElement.appendChild(overlay);
+        installEosIcons(root, hostDocument, icons);
+
+        const ready = [];
+        const messages = [];
+        const channel = Array.from(crypto.getRandomValues(new Uint32Array(4)), value => value.toString(16)).join('-');
+        let memoryError = '';
+        let values = {};
+        try { values = readMemory(); } catch (error) { memoryError = error.message; }
+        const reply = data => messages.forEach(callback => callback({ source: parentBridge, data: { eosChannel: channel, ...data } }));
+        const parentBridge = {
+            async postMessage(data) {
+                if (data.action === 'ready' && memoryError) reply({ action: 'warning', message: 'EOS memory could not be loaded: ' + memoryError });
+                if (data.action === 'storage') {
+                    try {
+                        const current = readMemory();
+                        if (data.value === null) delete current[data.key];
+                        else Object.defineProperty(current, data.key, { value: String(data.value), enumerable: true, configurable: true });
+                        GM_setValue(storageKey, JSON.stringify(current));
+                    } catch (error) { reply({ action: 'warning', message: 'EOS memory could not be saved: ' + error.message }); }
+                }
+                if (data.action === 'clipboard') {
+                    let ok = false;
+                    try { GM_setClipboard(data.text, 'text'); ok = true; } catch (_) {}
+                    reply({ id: data.id, ok });
+                }
+            }
+        };
+        const appWindow = {
+            __EOS_BOOT__: { values, channel, version: appVersion },
+            get innerWidth() { return hostWindow.innerWidth; },
+            get innerHeight() { return hostWindow.innerHeight - bar.offsetHeight; },
+            addEventListener(type, callback, options) {
+                if (type === 'DOMContentLoaded') ready.push(callback);
+                else if (type === 'message') messages.push(callback);
+                else if (type === 'click') root.addEventListener(type, callback, options);
+                else if (type === 'resize') hostWindow.addEventListener(type, callback, options);
+            },
+            print() {
+                const printSheet = new CSSStyleSheet();
+                printSheet.replaceSync('@media print { body { display:none!important } #gyr2-eos-slack-overlay { position:static!important } }');
+                const original = hostDocument.adoptedStyleSheets;
+                hostDocument.adoptedStyleSheets = [...original, printSheet];
+                try { hostWindow.print(); } finally { hostDocument.adoptedStyleSheets = original; }
+            }
+        };
+        const appDocument = {
+            body, documentElement: appRoot,
+            get activeElement() { return root.activeElement; },
+            getElementById: id => root.getElementById(id),
+            querySelector: selector => root.querySelector(selector),
+            querySelectorAll: selector => root.querySelectorAll(selector),
+            createElement: hostDocument.createElement.bind(hostDocument),
+            createElementNS: hostDocument.createElementNS.bind(hostDocument),
+            createTextNode: hostDocument.createTextNode.bind(hostDocument),
+            addEventListener: root.addEventListener.bind(root),
+            removeEventListener: root.removeEventListener.bind(root)
+        };
+        const session = new Map();
+        try {
+            runApp(appWindow, appDocument, parentBridge, {
+                getItem: key => session.get(key) ?? null,
+                setItem: (key, value) => session.set(key, String(value))
+            });
+            root.addEventListener('click', event => {
+                const button = event.target.closest?.('button');
+                if (!button || button.disabled) return;
+                if (button.dataset.eosEdit !== undefined) appWindow.editResearchItem(Number(button.dataset.eosEdit));
+                if (button.dataset.eosMove !== undefined) appWindow.moveResearchItem(Number(button.dataset.eosMove));
+                if (button.dataset.eosAction === 'sync') appWindow.processHubData();
+                if (button.dataset.eosAction === 'cancel-hub') root.getElementById('research-hub-modal').style.display = 'none';
+            });
+            ready.forEach(callback => callback());
+        } catch (error) {
+            label.textContent = 'EOS could not start: ' + error.message;
+            console.error('EOS startup failed', error);
+        }
+    }
+
+    // A separate closed root keeps Slack's button rules out of the EOS launcher.
+    const launcher = hostDocument.createElement('div');
+    launcher.id = 'gyr2-eos-slack-launcher';
+    launcher.style.cssText = 'all:initial!important;position:fixed!important;bottom:24px!important;right:24px!important;z-index:2147483646!important';
+    const launcherRoot = launcher.attachShadow({ mode: 'closed' });
+    const launchButton = hostDocument.createElement('button');
+    launchButton.textContent = 'Open EOS';
+    launchButton.style.cssText = 'padding:14px 22px;border:1px solid #ffc36b;border-radius:8px;background:#ffad32;color:#172332;font:bold 16px sans-serif;cursor:pointer';
+    launchButton.addEventListener('click', () => {
+        try { openEos(); } catch (error) { hostWindow.alert('EOS could not open: ' + error.message); }
+    });
+    launcherRoot.appendChild(launchButton);
+    hostDocument.documentElement.appendChild(launcher);
 })();
