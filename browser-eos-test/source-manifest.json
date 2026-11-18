@@ -1,0 +1,13 @@
+{
+  "desktopVersion": "3.4.2",
+  "browserVersion": "0.1.2",
+  "generatedAt": "2026-11-18T13:09:45.360Z",
+  "sources": {
+    "index.html": "fbceab10a965be96505094dc09099608b6d69208b4b128372b3e0f263b0492f9",
+    "styles.css": "afc409f7e92ca485ef14e3696d93b28bce4f9b668abd2e615c84adf767946279",
+    "vendor/JsBarcode.all.min.js": "9c6d079b69a763191e38de8f3d69a252cb2413ea8f35af15478a5a870c7edfa2",
+    "database.js": "30423f71c4a91752c5abe7b97458fc53fb7316a82c9f748b129a75e29bf04ee2",
+    "renderer.js": "4fa210ec7cbf92485766cd8911d1ce44dc1810bae9e4c1cb760d419859c2d278"
+  },
+  "adaptations": "Browser window.api adapter; localStorage references use isolated browser memory; desktop FC API unavailable; CUT Helper button, view, and script excluded."
+}

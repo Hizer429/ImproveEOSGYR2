@@ -1,0 +1,12 @@
+Location,Type,Time in Yard,Owner (Operator),Vehicle ID,Load identifier(s),Notes
+PS201,Trailer,3,UPSN,TESTPARCEL1,ISA: 210000000001,Reject
+PS202,Trailer,2,UPSS,TESTPARCEL2,,isa pending
+PS202,Trailer,2,UPSS,TESTPARCEL2,,isa pending
+PS203,Trailer,4,FEDEX,TESTPARCEL3,,ISA - No mani
+PS204,Trailer,4,FDEG,TESTPARCEL4,,ISA - mis-ship
+PS205,Trailer,5,DHLC,TESTPARCEL5,,needs ISA
+DD206,Trailer,1,UPSN,TESTPARCEL6,,needs ISA
+PS207,Trailer,1,UPSN,TESTPARCEL7,,empty
+PS208,Tractor,1,UPSN,TESTTRACTOR1,,needs ISA
+PS209,Trailer,1,OTHER,TESTOTHER1,,needs ISA
+PS201,Trailer,3,UPSN,TESTPARCEL1,,ISA pending

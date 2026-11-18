@@ -160,7 +160,6 @@ function categoryAllowsLocation(category, location) {
 }
 
 const DISRUPTION_NOTE_TERMS = [
-    "REJECTED",
     "DAMAGED",
     "DAMAGE",
     "RED TAG",
@@ -212,7 +211,7 @@ const DISRUPTION_NOTE_PATTERNS = [
     /\bCASE\s*(#|:)?\s*\d{6,}\b/,
     /\bUNSAFE\b.*\b(LOAD|UNLOAD|USE|TRAILER)\b/,
     /\b(DO NOT|DONT|DON'T|CANNOT|CAN NOT|CAN'T)\b.*\b(LOAD|UNLOAD|USE)\b/,
-    /\b(LOAD|UNLOAD|USE)\b.*\b(UNSAFE|REJECTED|DAMAGED|BROKEN)\b/,
+    /\b(LOAD|UNLOAD|USE)\b.*\b(UNSAFE|DAMAGED|BROKEN)\b/,
     /\b(NEED|NEEDS|REQUIRES?)\b.*\b(REPAIR|FIX|MAINTENANCE)\b/,
     /\b(RED|ORANGE)\b.*\bTAG(GED)?\b/,
     /\bOUT\b.*\bSERVICE\b/
@@ -223,6 +222,26 @@ const PROBLEM_SOLVE_NOTE_PATTERNS = [
     /\bPROBLEM\s*SOLV(E|ING)\b/,
     /\bPS\s*TRAILER\b/
 ];
+
+const FREIGHT_DISRUPTION_PATTERNS = [
+    /\bREJECT(?:ED|ING|ION|IONS|S)?\b/,
+    /\bMISS?\s*SHIP(?:S|PED|PING|MENT|MENTS)?\b/,
+    /\b(?:NO|WITHOUT|MISSING|AWAITING|PENDING)\s+(?:(?:A|THE|AVAILABLE|VALID)\s+)?MANI(?:FEST(?:S|ED)?)?\b/,
+    /\bMANI(?:FEST)?\s+(?:(?:IS|WAS|STILL)\s+)?(?:MISSING|UNAVAILABLE|PENDING|NOT\s+(?:FOUND|AVAILABLE|RECEIVED|ATTACHED|PROVIDED))\b/,
+    /\b(?:UNMANIFESTED|NOT\s+MANIFESTED)\b/
+];
+
+function hasFreightDisruptionNote(notes) {
+    const text = normalize(notes).replace(/[-_\u2010-\u2015]+/g, ' ').replace(/\s+/g, ' ');
+    return FREIGHT_DISRUPTION_PATTERNS.some(pattern => {
+        for (const match of text.matchAll(new RegExp(pattern.source, 'g'))) {
+            // A clerk explicitly saying "not rejected" or "no misships" is not a disruption.
+            const before = text.slice(0, match.index);
+            if (!/\b(?:(?:NOT|NEVER|NO|WITHOUT)\s+(?:BEEN\s+)?|NO\s+LONGER\s+)$/.test(before)) return true;
+        }
+        return false;
+    });
+}
 
 function isParcelCategory(category) {
     return category === 'parcelsDock' || category === 'parcelsYard';
@@ -237,7 +256,7 @@ function isDisruptionNote(notes, category = "") {
     const hasDisruptionSignal = DISRUPTION_NOTE_TERMS.some(term => normalizedNotes.includes(term)) ||
         DISRUPTION_NOTE_PATTERNS.some(pattern => pattern.test(normalizedNotes));
 
-    if (hasDisruptionSignal) return true;
+    if (hasDisruptionSignal || hasFreightDisruptionNote(notes)) return true;
 
     return isProblemSolveNote(normalizedNotes) && !isParcelCategory(category);
 }
@@ -967,16 +986,21 @@ window.moveResearchItem = function(index) {
         dwell: record.dwell, 
         pallets: 'MANUAL',
         category: targetCategory,
-        units: manualUnits
+        units: manualUnits,
+        notes: record.notes || ''
     };
 
+    if (Array.isArray(lastProcessedStats[targetCategory])) {
+        addCategorizedRecord(lastProcessedStats, targetCategory, recordInfo);
+    }
+
     switch(targetCategory) {
-        case 'dropPallets': lastProcessedStats.dropPallets.push(recordInfo); lastProcessedStats.volumeYard += manualUnits; break;
-        case 'dropFloor': lastProcessedStats.dropFloor.push(recordInfo); lastProcessedStats.volumeYard += manualUnits; break;
-        case 'transshipYard': lastProcessedStats.transshipYard.push(recordInfo); lastProcessedStats.volumeYard += manualUnits; break;
-        case 'parcelsYard': lastProcessedStats.parcelsYard.push(recordInfo); lastProcessedStats.volumeYard += manualUnits; break;
-        case 'parcelsDock': lastProcessedStats.parcelsDock.push(recordInfo); lastProcessedStats.volumeDoors += manualUnits; break;
-        case 'livesHanded': lastProcessedStats.livesHanded.push(recordInfo); lastProcessedStats.volumeDoors += manualUnits; break;
+        case 'dropPallets':
+        case 'dropFloor':
+        case 'transshipYard':
+        case 'parcelsYard': lastProcessedStats.volumeYard += manualUnits; break;
+        case 'parcelsDock':
+        case 'livesHanded': lastProcessedStats.volumeDoors += manualUnits; break;
         case 'volOnlyDoors': lastProcessedStats.volumeDoors += manualUnits; break;
         case 'volOnlyYard': lastProcessedStats.volumeYard += manualUnits; break;
     }
@@ -1043,15 +1067,15 @@ function showDetailModal(metricId) {
         ['ISA', 'VRID', 'LOC', 'NOTES', 'CATEGORY', 'UNITS', 'ACTION'] : 
         (metricId === 'excluded' ? ['ISA', 'VRID', 'LOCATION'] : ['ISA', 'VRID', 'LOCATION', 'DWELL', 'PALLETS']);
 
-    if (hasDisruptionDetails) headers = ['ISA', 'VRID', 'LOCATION', 'DWELL', 'PALLETS', 'STATUS', 'NOTES'];
+    if (hasDisruptionDetails) headers = ['ISA', 'VRID / TRAILER', 'LOCATION', 'DWELL', 'PALLETS', 'STATUS', 'NOTES'];
 
     headers.forEach(h => { const th = document.createElement('th'); th.textContent = h; thead.appendChild(th); });
     
     tbody.innerHTML = ''; 
     records.forEach((record, index) => {
         const row = tbody.insertRow();
-        row.insertCell().textContent = record.isa || 'N/A';
-        row.insertCell().textContent = record.vrid || 'N/A';
+        row.insertCell().textContent = record.isa || (record.countSource === 'yard-notes' ? 'No ISA (yard notes)' : 'N/A');
+        row.insertCell().textContent = record.vrid || record.trailer || 'N/A';
         row.insertCell().textContent = record.location || 'N/A';
         
         if (isResearchQueue) {
@@ -1289,6 +1313,50 @@ function extractYmsIsa(record) {
     return null;
 }
 
+function getYmsCarrier(record) {
+    return normalize(getField(record, 'CARRIER') || getField(record, 'OWNER (OPERATOR)') || getField(record, 'OWNER'));
+}
+
+function getYmsTrailerIdentity(record) {
+    const vrid = normalize(getField(record, 'VRID') || String(getField(record, 'LOAD IDENTIFIER(S)') || '').match(/\bVRID\W*([A-Z0-9]+)/i)?.[1]);
+    const trailer = normalize(getField(record, 'VEHICLE ID') || getField(record, 'TRAILER NUMBER') || getField(record, 'TRAILER ID'));
+    const location = normalize(getField(record, 'LOCATION'));
+    const carrier = getYmsCarrier(record).replace(/\s+/g, '');
+    const keys = [];
+    if (vrid) keys.push(`vrid:${vrid}`);
+    if (trailer) keys.push(`trailer:${carrier}:${trailer}`);
+    if (!keys.length) keys.push(`location:${carrier}:${location}`);
+    return { vrid, trailer, keys };
+}
+
+function collectUnassignedYardParcels(rows) {
+    const seen = new Set();
+    // Rows with an attached ISA are handled by the existing reconciliation/research flow.
+    rows.filter(row => extractYmsIsa(row)).forEach(row => {
+        getYmsTrailerIdentity(row).keys.forEach(key => seen.add(key));
+    });
+    const parcels = [];
+    rows.forEach(row => {
+        if (extractYmsIsa(row)) return;
+        const location = normalize(getField(row, 'LOCATION'));
+        const notes = getField(row, 'NOTES') || '';
+        const carrier = getYmsCarrier(row);
+        const equipmentType = normalize(getField(row, 'TYPE'));
+        if (!isYardLocation(location) || !isParcelCarrier(carrier) || !/\bISA\b/i.test(notes)) return;
+        if (equipmentType && !/\bTRAILER\b/.test(equipmentType)) return;
+        const identity = getYmsTrailerIdentity(row);
+        const alreadySeen = identity.keys.some(key => seen.has(key));
+        identity.keys.forEach(key => seen.add(key));
+        if (alreadySeen) return;
+        parcels.push({
+            isa: '', vrid: identity.vrid, trailer: identity.trailer, location, carrier,
+            dwell: getField(row, 'YARD DWELL') || getField(row, 'TIME IN YARD') || '',
+            pallets: '', units: 0, notes, countSource: 'yard-notes'
+        });
+    });
+    return parcels;
+}
+
 function calculateMetrics(data, excluded) {
     let stats = {
         dropPallets: [], dropFloor: [], parcelsDock: [], parcelsYard: [],
@@ -1313,7 +1381,7 @@ function calculateMetrics(data, excluded) {
             pallets: getField(record, "PALLETS"),
             carrier,
             loadType: type,
-            notes: getField(record, "__YMS_NOTES") || getField(record, "NOTES") || ""
+            notes: [getField(record, "__YMS_NOTES"), getField(record, "NOTES")].filter(Boolean).join(' | ')
         };
         
         if (isDoorLocation(loc)) stats.volumeDoors += units;
@@ -1356,7 +1424,7 @@ async function reconcileAndDisplay() {
                     fullLoadId: getField(r, "LOAD IDENTIFIER(S)"),
                     notes: (getField(r, "NOTES") || "").toUpperCase(),
                     owner: (getField(r, "OWNER (OPERATOR)") || getField(r, "OWNER") || "").toUpperCase(),
-                    carrier: normalize(getField(r, "CARRIER")),
+                    carrier: getYmsCarrier(r),
                     loadType: normalize(getField(r, "CARRIER LOAD TYPE"))
                 };
             }
@@ -1498,6 +1566,10 @@ async function reconcileAndDisplay() {
             }
             if (isDoorLocation(ghost.location)) lastProcessedStats.volumeDoors += (ghost.units || 0);
             else if (isYardLocation(ghost.location)) lastProcessedStats.volumeYard += (ghost.units || 0);
+        });
+
+        collectUnassignedYardParcels(ymsData).forEach(parcel => {
+            addCategorizedRecord(lastProcessedStats, 'parcelsYard', parcel);
         });
 
         lastProcessedStats.researchQueueRecords = researchQueueRecords;
